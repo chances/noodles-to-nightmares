@@ -19,6 +19,8 @@ Text.PrintHelpString("Don't you ~r~dare ~w~die!")
 wait 3500
 Text.ClearHelp()
 
+// TODO: Hud.FlashObject() map
+
 while true
   wait 0
 

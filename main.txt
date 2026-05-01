@@ -22,13 +22,29 @@ DEFINE MISSION 0 AT @Tutorial
 
 :MAIN
 script_name 'MAIN'
-//
-Game.SetMaxWantedLevel(3)
+
+Game.SetMaxWantedLevel(6)
 set_deatharrest_state 0
-Clock.SetTimeOfDay(12, 0)
-$player = Player.Create(0, 1130.71, 1285.37, 126.81)
+
+// Load Portland
+Streaming.LoadCollision(0)
+// QUESTION: Why not also `Streaming.LoadCollision(LevelName.Industrial)`?
+
+// Show the splash screen
+Camera.DoFade(0, Fade.Out)
+Hud.LoadSplash('SPLASH2')
+
+// Put the player at the front door of the ramen shop in Chinatown
+$player = Player.Create(0, 1039.66, -653.112, 14.015)
+Player.SetHeading($player, 90.0)
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
+Player.SetNeverGetsTired($player, True)
+Player.SetControl($player, False)
+
+// QUESTION: This removes the bridge barriers?
+World.SetVisibilityOfClosestObjectOfType(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, False)
+World.SwapNearestBuildingModel(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, #LOD_LAND014)
 
 // Sunshine! 🌞 :D
 Weather.ForceNow(WeatherType.Sunny)
@@ -37,71 +53,58 @@ Weather.ForceNow(WeatherType.Sunny)
 Stat.SetIndustrialPassed
 Stat.SetCommercialPassed
 
+// Set player model
+Char.Undress($playerChar, 'PLAYER')
+Char.Dress($playerChar)
+
 // Setup mission state
 declare_mission_flag $onMission
 wait 500
 $onMission = False
 
 // Initialize all the things!
+// FIXME: Something here dead-locks the game
+/*
 initCars()
 initBlips()
 initHiddenPkgs()
 initPickups()
 initGarages()
+*/
 
 // Setup spawn points
 {$INCLUDE utils/spawn_points.txt}
 
-// Prevent cars and peds from spawning in certain areas
-// QUESTION: _Which_ areas?
-/**
-Path.SwitchRoadsOff(1340.00, -200.00, 40.0, 1430.00, -300.00, 50.0)
-Path.SwitchRoadsOff(268.69, 14.26, 16.22, 335.26, -36.89, 16.22)
-Path.SwitchPedRoadsOff(846.00, -294.00, 5.00, 900.00, -310, 10.00)
-Path.SwitchRoadsOff(1604.375, 1593.8125, 85.5625, 1770.625, 1871.375, 185.5625)
-Path.SwitchRoadsOff(1138.1875, 1735.875, 85.5625, 1604.375, 1871.375, 185.5625)
-*/
-
-// NOTE: Assume player is alive and not arrested
-Char.Undress($playerChar, 'PLAYER')
-Char.Dress($playerChar)
-
-// Load Portland
-Streaming.LoadCollision(LevelName.Industrial)
-// Wait for the collision stuff to load
+// Wait for the scene to load
 while not Streaming.IsCollisionInMemory(LevelName.Industrial)
   wait 250
 end
-// Wait for the scene to load
-Hud.LoadSplash('SPLASH3')
-while not Streaming.LoadScene(1023.36, -651.512, 14.0141)
-  wait 250
-end
-
-// Put the player at the front door of the ramen shop in Chinatown
-Player.SetCoordinates($player, 1023.36, -651.512, 14.0141)
-Player.SetHeading($player, 180.0)
 
 // We're done! Show the game to the user
-World.ClearArea(1023.36, -651.512, 14.0141, 20.0, False)
-Camera.DoFade(1000, Fade.In)
+Clock.SetTimeOfDay(12, 0)
+Camera.DoFade(750, Fade.In)
 Player.SetControl($player, True)
-Player.SetNeverGetsTired($player, True)
 Weather.Release
+
+// FIXME: The ramen shop's building model is not loaded...
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
-  script_name 'Main'
   wait 250 ms
 
   // Try to start the next mission
-  gosub @M_TRIG
+  // FIXME: gosub @M_TRIG
+
+  // TODO: Hud.LoadSplash('SPLASH1') (?)
+  // TODO: Hud.LoadSplash('SPLASH2')
+  // TODO: Hud.LoadSplash('SPLASH3')
 
   // TODO: Monitor pickups and teleportation locations
+
   // Prompt the user to teleport
   if and
     $willPromptTeleport == True
-    Player.LocateAnyMeans3D($player, 1130.71, 1285.37, 126.81, 1.0, 1.0, 1.0, True)
+    Player.LocateAnyMeans3D($player, 1030.66, -636.612, 14.0141, 0.5, 0.5, 0.5, True)
   then
     Text.PrintHelpString("Press the T Key to teleport.")
     $willPromptTeleport = False
@@ -111,13 +114,12 @@ while true
   // Check keyboard shortcuts
   //=========================
   // FIXME: These shortcuts don't work immediately. We found a race condition!😱
-
-  // B: Print the current player coordinates
-  monitorShortcutKey_B()
+  //---------------------------------------
   // P: Quickly open the save screen
-  // FIXME: monitorShortcutKey_P()
+  monitorShortcutKey_P()
+  //---------------------------------------
   // T: Teleportation! 🧝‍♂️
-  monitorShortcutKey_P_teleport()
+  monitorShortcutKey_T_teleport()
 end
 
 //================================
