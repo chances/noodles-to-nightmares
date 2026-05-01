@@ -351,11 +351,11 @@ end
 
 function monitorShortcutKey_B()
   if and
-    Player.IsPlaying($player1)
+    Player.IsPlaying($player)
     Pad.IsKeyPressed(KeyCode.B)
   then
-    Char.GetCoordinates($scplayer, $x, $y, $z)
-    Char.GetHeading($player1, $h)
+    Char.GetCoordinates($playerChar, $x, $y, $z)
+    Char.GetHeading($player, $h)
     wait 0
     Text.PrintHelpFormatted("Current Coordinates: ~n~%.2f ~n~%.2f ~n~%.2f ~n~%.2f", float:$x, float:$y, float:$z, float:$h)
     wait 5000
@@ -368,10 +368,10 @@ function monitorShortcutKey_P_teleport()
   // Where is the source? (1172.41, -104.52, 7.47)
   if and
     Pad.IsKeyPressed(KeyCode.T)
-    Player.LocateAnyMeans3D($player1, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
+    Player.LocateAnyMeans3D($player, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
   then
-    Player.SetCoordinates($player1, 1161.56, -115.92, 15.0)
+    Player.SetCoordinates($player, 1161.56, -115.92, 15.0)
     Text.PrintString("Teleport Succeeded!", 3000)
-    Player.SetControl($player1, True)
+    Player.SetControl($player, True)
   end
 end

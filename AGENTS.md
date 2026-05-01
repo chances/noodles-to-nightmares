@@ -95,8 +95,8 @@ while true
 
 :M_TRIG
   if and
-    Player.IsPlaying($player1)
-    Player.CanStartMission($player1)
+    Player.IsPlaying($player)
+    Player.CanStartMission($player)
     $onMission == False
   then
     Mission.LoadAndLaunchInternal($missionIndex)
@@ -117,7 +117,7 @@ end
 ### Mission Definition
 ```sanny
 DEFINE MISSIONS 1
-DEFINE MISSION 0 AT @CarTut
+DEFINE MISSION 0 AT @Tutorial
 ```
 
 - **Syntax**: `DEFINE MISSION {index} AT @{label}`
@@ -128,8 +128,8 @@ DEFINE MISSION 0 AT @CarTut
 
 ### Mission Script Structure
 ```sanny
-:CarTut
-script_name 'CarTut'
+:Tutorial
+script_name 'Tutorial'
 wait 0
 
 // Mission logic here
@@ -154,8 +154,8 @@ terminate_this_script
 ### Variable Declaration
 ```sanny
 var
-  $player1: Player
-  $scplayer: Char
+  $player: Player
+  $playerChar: Char
   $missionIndex: int
 end
 ```

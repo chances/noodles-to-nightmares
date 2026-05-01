@@ -5,7 +5,7 @@ DEFINE OBJECT LOD_LAND014              // Object number -2
 
 DEFINE MISSIONS 1
 // Syntax: DEFINE MISSION {ID} 0 AT {LABEL} @mission
-DEFINE MISSION 0 AT @CarTut
+DEFINE MISSION 0 AT @Tutorial
 // DEFINE MISSION 1 AT @Car
 // DEFINE MISSION 2 AT @Gun
 // DEFINE MISSION 3 AT @Alley
@@ -26,20 +26,16 @@ script_name 'MAIN'
 Game.SetMaxWantedLevel(3)
 set_deatharrest_state 0
 Clock.SetTimeOfDay(12, 0)
-$player1 = Player.Create(0, 1130.71, 1285.37, 126.81)
-Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-Player.SetHeading($player1, 180.0)
-$scplayer = Player.GetChar($player1)
+$player = Player.Create(0, 1130.71, 1285.37, 126.81)
+$playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
 
 // Sunshine! ?? :D
 Weather.ForceNow(WeatherType.Sunny)
+
+// Unlock the whole world
 Stat.SetIndustrialPassed
 Stat.SetCommercialPassed
-
-// Set player skin
-Char.Undress($scplayer, 'PLAYER')
-Char.Dress($scplayer)
 
 // Setup mission state
 declare_mission_flag $onMission
@@ -73,21 +69,30 @@ Path.SwitchRoadsOff(1604.375, 1593.8125, 85.5625, 1770.625, 1871.375, 185.5625)
 Path.SwitchRoadsOff(1138.1875, 1735.875, 85.5625, 1604.375, 1871.375, 185.5625)
 
 // NOTE: Assume player is alive and not arrested
-Hud.LoadSplash('SPLASH3')
-// Load Upstate Liberty and put the player in downtown Gostburg
-Streaming.LoadCollision(LevelName.Suburban)
+Char.Undress($playerChar, 'PLAYER')
+Char.Dress($playerChar)
+
+// Load Portland
+Streaming.LoadCollision(LevelName.Industrial)
 // Wait for the collision stuff to load
-while not Streaming.IsCollisionInMemory(LevelName.Suburban)
+while not Streaming.IsCollisionInMemory(LevelName.Industrial)
   wait 250
 end
-// Wait for the map to fade-in
-wait 1500
+// Wait for the scene to load
+Hud.LoadSplash('SPLASH3')
+while not Streaming.LoadScene(1023.36, -651.512, 14.0141)
+  wait 250
+end
+
+// Put the player at the front door of the ramen shop in Chinatown
+Player.SetCoordinates($player, 1023.36, -651.512, 14.0141)
+Player.SetHeading($player, 180.0)
 
 // We're done! Show the game to the user
-World.ClearArea(1130.71, 1285.37, 126.81, 20.0, False)
+World.ClearArea(1023.36, -651.512, 14.0141, 20.0, False)
 Camera.DoFade(1000, Fade.In)
-Player.SetControl($player1, True)
-Player.SetNeverGetsTired($player1, True)
+Player.SetControl($player, True)
+Player.SetNeverGetsTired($player, True)
 Weather.Release
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
@@ -104,7 +109,7 @@ while true
   // Prompt the user to teleport
   if and
     $willPromptTeleport == True
-    Player.LocateAnyMeans3D($player1, 1130.71, 1285.37, 126.81, 1.0, 1.0, 1.0, True)
+    Player.LocateAnyMeans3D($player, 1130.71, 1285.37, 126.81, 1.0, 1.0, 1.0, True)
   then
     Text.PrintHelpString("Press the T Key to teleport.")
     $willPromptTeleport = False
@@ -136,10 +141,10 @@ end
 :M_TRIG
 
 wait 0
-// TODO: Modify the trigger logic in @M_TRIG to our rules
+// TODO: Modify the trigger logic to our rules
 if and
-  Player.IsPlaying($player1)
-  Player.CanStartMission($player1)
+  Player.IsPlaying($player)
+  Player.CanStartMission($player)
   $onMission == False
 then
   $onMission = True
@@ -147,8 +152,6 @@ then
 end
 
 return
-
-// What are you doing down here? ??
 
 //================================
 //--------- FUNCTIONS ------------

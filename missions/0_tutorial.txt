@@ -6,8 +6,8 @@
 // Mission 0: Car Tutorial
 // Teach the player how to steal, drive, and store their cars
 //============================================================
-:CarTut
-script_name 'CarTut'
+:Tutorial
+script_name 'Tutor'
 wait 0
 
 $REWARD = 500
@@ -21,7 +21,7 @@ while true
   wait 0
 
   // Check if player is wasted or busted
-  if not Player.IsPlaying($player1)
+  if not Player.IsPlaying($player)
   then
     break
   end
@@ -29,7 +29,7 @@ end
 
 // Mission Passed!
 Audio.PlayMissionPassedTune(1)
-Player.AddScore($player1, $REWARD)
+Player.AddScore($player, $REWARD)
 Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
 
 terminate_this_script
@@ -52,7 +52,7 @@ while true
   end
 
   // Wait for the player to "steal" a car
-  if Char.IsInAnyCar($player1)
+  if Char.IsInAnyCar($player)
   then
     Text.ClearPrints()
   else

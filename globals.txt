@@ -2,8 +2,8 @@ const START_MISSION_INDEX = 0
 const MAX_MISSION_INDEX = 0
 
 var
-  $player1: Player
-  $scplayer: Char
+  $player: Player
+  $playerChar: Char
   $missionIndex: int
 end
 
