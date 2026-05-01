@@ -38,7 +38,7 @@ Hud.LoadSplash('SPLASH2')
 
 // Put the player at the front door of the ramen shop in Chinatown
 $player = Player.Create(0, 1039.66, -653.112, 14.015)
-Player.SetHeading($player, 90.0)
+Player.SetHeading($player, 45.0)
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
 Player.SetNeverGetsTired($player, True)
