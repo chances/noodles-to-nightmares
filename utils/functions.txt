@@ -45,7 +45,8 @@ function initCars()
 end
 
 function initHiddenPkgs()
-  Game.SetCollectableTotal(70)
+  Game.SetCollectableTotal(72)
+
   Game.CreateCollectable(1272.20, -610.26, 29.45)
   Game.CreateCollectable(1179.21, -566.37, 27.32)
   Game.CreateCollectable(1295.05, -249.72, 44.08)
