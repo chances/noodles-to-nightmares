@@ -30,7 +30,7 @@ $player = Player.Create(0, 1130.71, 1285.37, 126.81)
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
 
-// Sunshine! ?? :D
+// Sunshine! 🌞 :D
 Weather.ForceNow(WeatherType.Sunny)
 
 // Unlock the whole world
@@ -50,23 +50,17 @@ initPickups()
 initGarages()
 
 // Setup spawn points
-Restart.AddHospital(1147.25, -597.0, 14.98, 260)
-Restart.AddHospital(-1269.61, 1573.89, 72.28, 0)
-Restart.AddHospital(-280.63, 1331.00, 112.38, 180)
-Restart.AddHospital(-1269.625, 1576.8125, 71.1875, 180.0)
-Restart.AddPolice(-148.00, 1285.68, 112.63, 90.0)
-Restart.AddHospital(532.9375, 1235.8125, 130.6875, 73.0)
-Restart.AddPolice(568.8125, 1226.3125, 130.6875, 73.0)
-Restart.AddHospital(1343.0625, 1462.375, 125.75, -90.0)
-Restart.AddPolice(1416.3125, 1655.1875, 126.8125, 0)
+{$INCLUDE utils/spawn_points.txt}
 
 // Prevent cars and peds from spawning in certain areas
 // QUESTION: _Which_ areas?
+/**
 Path.SwitchRoadsOff(1340.00, -200.00, 40.0, 1430.00, -300.00, 50.0)
 Path.SwitchRoadsOff(268.69, 14.26, 16.22, 335.26, -36.89, 16.22)
 Path.SwitchPedRoadsOff(846.00, -294.00, 5.00, 900.00, -310, 10.00)
 Path.SwitchRoadsOff(1604.375, 1593.8125, 85.5625, 1770.625, 1871.375, 185.5625)
 Path.SwitchRoadsOff(1138.1875, 1735.875, 85.5625, 1604.375, 1871.375, 185.5625)
+*/
 
 // NOTE: Assume player is alive and not arrested
 Char.Undress($playerChar, 'PLAYER')
@@ -103,9 +97,7 @@ while true
   // Try to start the next mission
   gosub @M_TRIG
 
-  // Monitor pickups and teleportation locations
-  monitorWangPickup()
-
+  // TODO: Monitor pickups and teleportation locations
   // Prompt the user to teleport
   if and
     $willPromptTeleport == True
@@ -118,11 +110,12 @@ while true
   //=========================
   // Check keyboard shortcuts
   //=========================
-  // FIXME: Doesn't work immediately. We found a race condition!😱
+  // FIXME: These shortcuts don't work immediately. We found a race condition!😱
+
   // B: Print the current player coordinates
   monitorShortcutKey_B()
   // P: Quickly open the save screen
-  monitorShortcutKey_P()
+  // FIXME: monitorShortcutKey_P()
   // T: Teleportation! 🧝‍♂️
   monitorShortcutKey_P_teleport()
 end
@@ -163,4 +156,4 @@ return
 //
 // See: https://tutorial.sannybuilder.com/functions
 
-{$INCLUDE utilities/functions.txt}
+{$INCLUDE utils/functions.txt}

@@ -1,0 +1,27 @@
+//=====================
+// Player Spawn Points
+//=====================
+// Hospital and police restart locations for all three islands, including Upstate Liberty.
+
+// PORTLAND (Island 1)
+Restart.AddHospital(1144.25, -596.875, 13.875, 90.0)
+Restart.AddPolice(1143.875, -675.1875, -100.0, 90.0)
+
+// STAUNTON ISLAND (Island 2)
+Restart.AddHospital(183.5, -17.75, 16.1875, 180.0)
+Restart.AddPolice(340.25, -1123.375, 25.0, 180.0)
+
+// SHORESIDE VALE (Island 3)
+Restart.AddHospital(-1253.0, -138.1875, 57.75, 90.0)
+Restart.AddPolice(-1259.5, -44.5, 57.75, 90.0)
+
+// UPSTATE LIBERTY
+Restart.AddHospital(1147.25, -597.0, 14.98, 260)
+Restart.AddHospital(-1269.61, 1573.89, 72.28, 0)
+Restart.AddHospital(-280.63, 1331.00, 112.38, 180)
+Restart.AddHospital(-1269.625, 1576.8125, 71.1875, 180.0)
+Restart.AddHospital(532.9375, 1235.8125, 130.6875, 73.0)
+Restart.AddHospital(1343.0625, 1462.375, 125.75, -90.0)
+Restart.AddPolice(-148.00, 1285.68, 112.63, 90.0)
+Restart.AddPolice(568.8125, 1226.3125, 130.6875, 73.0)
+Restart.AddPolice(1416.3125, 1655.1875, 126.8125, 0)
