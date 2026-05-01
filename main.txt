@@ -31,7 +31,9 @@ Streaming.LoadCollision(0)
 // QUESTION: Why not also `Streaming.LoadCollision(LevelName.Industrial)`?
 
 // Show the splash screen
+Camera.SetFadingColor(0, 0, 0)
 Camera.DoFade(0, Fade.Out)
+// FIXME: This splash is never shown before the camera fades back it...
 Hud.LoadSplash('SPLASH2')
 
 // Put the player at the front door of the ramen shop in Chinatown
@@ -59,7 +61,7 @@ Char.Dress($playerChar)
 
 // Setup mission state
 declare_mission_flag $onMission
-wait 500
+wait 50
 $onMission = False
 
 // Initialize all the things!
@@ -80,13 +82,14 @@ while not Streaming.IsCollisionInMemory(LevelName.Industrial)
   wait 250
 end
 
+// Set the clock to about 9:25p and let the player enjoy the splash art
+Clock.SetTimeOfDay(21, 25)
+wait 500
+
 // We're done! Show the game to the user
-Clock.SetTimeOfDay(12, 0)
-Camera.DoFade(750, Fade.In)
+Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
 Weather.Release
-
-// FIXME: The ramen shop's building model is not loaded...
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
