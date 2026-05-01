@@ -3,12 +3,10 @@
 //================================
 
 function initBlips()
-  $Ammunation = Blip.AddSpriteForCoord(-1374.01, 1531.16, 72.28, RadarSprite.Weapon)
-  $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
-  $Ammunation3 = Blip.AddSpriteForCoord(348.00, -716.00, 26.00, RadarSprite.Weapon)
-  $Ammunation4 = Blip.AddSpriteForCoord(1583.31, 1365.63, 134.81, RadarSprite.Weapon)
+  // TODO: $Ammunation = Blip.AddSpriteForCoord(-1374.01, 1531.16, 72.28, RadarSprite.Weapon)
+  // TODO: $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
   $SafeBlip = Blip.AddSpriteForCoord(625.8125, 1395.0625, 140.625, RadarSprite.Savehouse)
-  Blip.AddSpriteForCoord(1571.78, 1274.35, 121.83, RadarSprite.Salvatore, $SewerBlip)
+  // TODO: Blip.AddSpriteForCoord(1571.78, 1274.35, 121.83, RadarSprite.Salvatore, $SewerBlip)
 end
 
 function initCars()
@@ -65,6 +63,8 @@ function initHiddenPkgs()
   Game.CreateCollectable(1161.74, -72.59, 13.58)
   Game.CreateCollectable(2.00, -514.93, 26.12)
   Game.CreateCollectable(1.32, 1092.30, 150.76)
+
+  // NOTE: Assuming these are all upstate?
   Game.CreateCollectable(-316.38, 832.00, 167.13) // Behind the house on the Southern end of the Farms
   Game.CreateCollectable(-1040.89, -176.39, 33.74)
   Game.CreateCollectable(-861.91, 1327.76, 126.62)
@@ -154,12 +154,7 @@ function initPickups()
 end
 
 function initGarages()
-  $gen_car2 = Garage.Create(-110.75, 1357.0625, 111.3125, -99.0625, 1365.875, 119.1875, GarageType.Respray)
-  Garage.SetRotatingDoor($gen_car2)
-  $BombGarage = Garage.Create(536.375, 1188.875, 130.6875, 544.625, 1200.375, 134.6875, GarageType.BombShop1)
-  $SprayShopG = Garage.Create(1160.6875, 1216.5, 121.6875, 1174.4375, 1222.9375, 126.4375, GarageType.Respray)
-  Garage.SetRotatingDoor($gen_car4)
-  $BombGarage2 = Garage.Create(1785.8125, 1517.1875, 125.75, 1793.0, 1522.375, 129.4375, GarageType.BombShop3)
+  // TODO: Setup Portland, Staunton, and Shoreside Vale garages
 end
 
 function initSpawnParams()
