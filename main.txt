@@ -38,7 +38,7 @@ Hud.LoadSplash('SPLASH2')
 
 // Put the player at the front door of the ramen shop in Chinatown
 $player = Player.Create(0, 1039.66, -653.112, 14.015)
-Player.SetHeading($player, 45.0)
+Player.SetHeading($player, 315.0) // Facing north-east
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
 Player.SetNeverGetsTired($player, True)
@@ -65,14 +65,12 @@ wait 50
 $onMission = False
 
 // Initialize all the things!
-// FIXME: Something here dead-locks the game
-/*
 initCars()
 initBlips()
 initHiddenPkgs()
 initPickups()
-initGarages()
-*/
+// FIXME: This dead-locks and then crashes the game
+// initGarages()
 
 // Setup spawn points
 {$INCLUDE utils/spawn_points.txt}
