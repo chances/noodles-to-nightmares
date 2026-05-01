@@ -1,6 +1,6 @@
 {
   // See https://zed.dev/docs/configuring-zed#settings-files
-  "project_name": "GTA III Light Rail",
+  "project_name": "Noodles to Nightmares",
   "lsp": {
     "deno": {
       "settings": {
