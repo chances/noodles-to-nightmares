@@ -4,7 +4,7 @@
 
 ### Rosa Chang
 
-A23-year-old mixed woman of color working minimum wage at Punk Noodles in
+A 23-year-old mixed woman of color working minimum wage at Punk Noodles in
 Portland's Chinatown, is thrust into the world of organized crime. She is of
 Chinese and Spanish descent, but speaks very little Chinese. Her sense of self
 is reflected in the Portuguese/Spanish communities of Liberty City.
