@@ -10,10 +10,10 @@ unexpected aptitude for navigating the mob.
 
 ### Thesis
 
-Rosa is broke, exhausted, and invisible. She works the closing shift at a ramen
-shop in Portland's Chinatown for pocket change. When an opportunity presents
-itself, one that's dangerous but pays, she takes it. Her survival depends on
-becoming someone harder, faster, and more ruthless.
+Rosa is broke, exhausted, and invisible. She works the closing shift at Punk
+Noodles shop in Portland's Chinatown for pocket change. When an opportunity
+presents itself, one that's dangerous but pays, she takes it. Her survival
+depends on becoming someone harder, faster, and more ruthless.
 
 ### Emotional Journey
 
@@ -35,7 +35,7 @@ increasingly dangerous as her choices attract attention.
 
 ### Setup
 
-- **Location**: Noodle Paradise ramen shop (Chinatown, Portland)
+- **Location**: Punk Noodles (Chinatown, Portland)
 - **Context**: End of shift. It's late, Rosa's tired, and she needs to get home
   to her apartment in north Portland.
 - **Trigger**: Leaving the shop at night; player spawns out front
@@ -49,7 +49,7 @@ increasingly dangerous as her choices attract attention.
 
 ### Script Requirements
 
-- [ ] Spawn Rosa outside ramen shop at night
+- [ ] Spawn Rosa outside Punk Noodles at night
 - [ ] Marker/blip for safehouse location
 - [ ] HUD prompts for "find a car," "drive to safehouse," etc.
 - [ ] Vehicle entry detection and player positioning
@@ -91,11 +91,11 @@ increasingly dangerous as her choices attract attention.
 
 ### Setup
 
-- **Location**: Noodle Paradise (interior) → Chinatown street delivery route
+- **Location**: Punk Noodles (interior) → Chinatown street delivery route
 - **Context**: A few days after M0. Rosa returns to work. A mysterious "contact"
   approaches with a job: move some contraband from point A to point B. It pays
   $800—more than a week's tips.
-- **Trigger**: Entering the ramen shop interior after completing M0
+- **Trigger**: Entering the Punk Noodles interior after completing M0
 
 ### Gameplay Objectives
 
@@ -113,7 +113,7 @@ carefully, avoid high-speed chases, and think tactically about her route.
 
 ### Script Requirements
 
-- [ ] Interior dialogue at ramen shop (accept job cutscene)
+- [ ] Interior dialogue at Punk Noodles (accept job cutscene)
 - [ ] Waypoint marker for package pickup location
 - [ ] Package object creation (briefcase, duffel bag, etc.)
 - [ ] Car delivery logic (passenger or cargo mechanic)
@@ -265,9 +265,9 @@ she's not just a delivery driver.
 
 **Script File**: `missions/side_shopping.txt` (To be created)
 
-**Objective**: Rosa runs a simple errand—buy groceries or supplies for the ramen
-shop owner. It goes sideways when a street gang blocks the route or a homeless
-NPC steals her money.
+**Objective**: Rosa runs a simple errand—buy groceries or supplies for the Punk
+Noodles shop owner. It goes sideways when a street gang blocks the route or a
+homeless NPC steals her money.
 
 **Mechanics**:
 
@@ -305,7 +305,7 @@ relationships
 
 ### M0 → M1 (3–5 days)
 
-**Transition scene**: Rosa at the ramen shop, now a familiar routine. The
+**Transition scene**: Rosa at the Punk Noodles, now a familiar routine. The
 contact approaches casually, as if asking her to sweep the floor. Tension builds
 as the job is described. Rosa accepts without dramatic deliberation—it's
 survival.

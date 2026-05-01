@@ -4,7 +4,7 @@
 
 ### Rosa Chang
 
-A23-year-old mixed woman of color working minimum wage at a ramen shop in
+A23-year-old mixed woman of color working minimum wage at Punk Noodles in
 Portland's Chinatown, is thrust into the world of organized crime. She is of
 Chinese and Spanish descent, but speaks very little Chinese. Her sense of self
 is reflected in the Portuguese/Spanish communities of Liberty City.
@@ -52,7 +52,7 @@ tutorials, encounters)
 
 - **Location**: Portland / Chinatown
 - **Objective**: Rosa accepts a "simple" job from a mysterious contact at the
-  ramen shop; discovers it involves moving contraband
+  Punk Noodles; discovers it involves moving contraband
 - **Key Mechanic**: Stealth delivery (avoid police/gangs during transport)
 - **Outcome**: Sets Rosa on the path to organized crime
 
