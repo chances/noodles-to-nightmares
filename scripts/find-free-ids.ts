@@ -39,7 +39,15 @@ interface Gap {
 function parseIde(content: string, filePath: string): ObjectEntry[] {
   const entries: ObjectEntry[] = [];
   // Sections that contain object IDs we care about
-  const objectSections = new Set(["objs", "tobj", "anim", "tanm", "peds", "cars", "weap"]);
+  const objectSections = new Set([
+    "objs",
+    "tobj",
+    "anim",
+    "tanm",
+    "peds",
+    "cars",
+    "weap",
+  ]);
 
   let inSection = false;
 
@@ -104,10 +112,10 @@ function findGaps(sortedIds: number[]): Gap[] {
 // Output helpers
 // ---------------------------------------------------------------------------
 
-const BOLD  = "\x1b[1m";
+const BOLD = "\x1b[1m";
 const RESET = "\x1b[0m";
 const GREEN = "\x1b[32m";
-const CYAN  = "\x1b[36m";
+const CYAN = "\x1b[36m";
 const YELLOW = "\x1b[33m";
 
 function header(text: string) {
@@ -139,11 +147,13 @@ console.log(`${BOLD}Searching:${RESET} ${gta3Base}`);
 
 // Collect all *.ide files recursively under the base path
 const ideFiles: string[] = [];
-for await (const entry of walk(gta3Base, {
-  exts: ["ide"],
-  includeFiles: true,
-  includeDirs: false,
-})) {
+for await (
+  const entry of walk(gta3Base, {
+    exts: ["ide"],
+    includeFiles: true,
+    includeDirs: false,
+  })
+) {
   ideFiles.push(entry.path);
 }
 
@@ -211,18 +221,17 @@ if (gaps.length === 0) {
   // Sort largest gaps first for quick visibility
   const sorted = [...gaps].sort((a, b) => b.size - a.size);
   console.log(
-    `  ${"Start".padEnd(8)} ${"End".padEnd(8)} ${"Size".padEnd(8)}`
+    `  ${"Start".padEnd(8)} ${"End".padEnd(8)} ${"Size".padEnd(8)}`,
   );
   console.log("  " + "-".repeat(26));
   for (const g of sorted) {
-    const sizeLabel =
-      g.size >= 100
-        ? `${GREEN}${g.size}${RESET}`
-        : g.size >= 10
-        ? `${YELLOW}${g.size}${RESET}`
-        : String(g.size);
+    const sizeLabel = g.size >= 100
+      ? `${GREEN}${g.size}${RESET}`
+      : g.size >= 10
+      ? `${YELLOW}${g.size}${RESET}`
+      : String(g.size);
     console.log(
-      `  ${String(g.start).padEnd(8)} ${String(g.end).padEnd(8)} ${sizeLabel}`
+      `  ${String(g.start).padEnd(8)} ${String(g.end).padEnd(8)} ${sizeLabel}`,
     );
   }
 }
@@ -241,24 +250,30 @@ if (duplicates.length > 0) {
 
 // Recommended safe range
 header("=== Recommendation ===");
-const bestGap = gaps.filter((g) => g.size >= 10).sort((a, b) => b.size - a.size)[0];
+const bestGap =
+  gaps.filter((g) => g.size >= 10).sort((a, b) => b.size - a.size)[0];
 if (bestGap) {
   console.log(
-    `  Largest gap with ≥10 free slots: ${GREEN}${bestGap.start}–${bestGap.end}${RESET} (${bestGap.size} IDs)`
+    `  Largest gap with ≥10 free slots: ${GREEN}${bestGap.start}–${bestGap.end}${RESET} (${bestGap.size} IDs)`,
   );
 }
 console.log(
-  `  Safe to append after max ID:      ${GREEN}${maxId + 1}+${RESET}`
+  `  Safe to append after max ID:      ${GREEN}${maxId + 1}+${RESET}`,
 );
 // GTA3 default static limit is 5000 object model definitions (IDE OBJS lines).
 // IDs at or above 5000 will be ignored by the game unless the limit adjuster is installed.
 console.log(
-  `\n  ${YELLOW}Note:${RESET} GTA3's default object model limit is ${BOLD}5000${RESET} entries (IDs are not capped,`
+  `\n  ${YELLOW}Note:${RESET} GTA3's default object model limit is ${BOLD}5000${RESET} entries (IDs are not capped,`,
 );
 console.log(
-  `        but only 5000 IDE lines total are loaded). Avoid using ID ≥ ${BOLD}5000${RESET} without`
+  `        but only 5000 IDE lines total are loaded). Avoid using ID ≥ ${BOLD}5000${RESET} without`,
 );
 console.log(
-  `        the ${link("https://github.com/GTAmodding/III.VC.SA.LimitAdjuster", "GTA3 Limit Adjuster")}.`
+  `        the ${
+    link(
+      "https://github.com/GTAmodding/III.VC.SA.LimitAdjuster",
+      "GTA3 Limit Adjuster",
+    )
+  }.`,
 );
 console.log();
