@@ -3,27 +3,41 @@ DEFINE OBJECT SANNY BUILDER 4.1.0
 DEFINE OBJECT INDHELIX_BARRIER         // Object number -1
 DEFINE OBJECT LOD_LAND014              // Object number -2
 
-DEFINE MISSIONS 6
-DEFINE MISSION 0 AT @INIT
-DEFINE MISSION 1 AT @Car
-DEFINE MISSION 2 AT @Gun
-DEFINE MISSION 3 AT @Alley
-DEFINE MISSION 4 AT @Pest
-DEFINE MISSION 5 AT @Circuit
+DEFINE MISSIONS 1
+// Syntax: DEFINE MISSION {ID} 0 AT {LABEL} @mission
+DEFINE MISSION 0 AT @CarTut
+// DEFINE MISSION 1 AT @Car
+// DEFINE MISSION 2 AT @Gun
+// DEFINE MISSION 3 AT @Alley
+// DEFINE MISSION 4 AT @Pest
+// DEFINE MISSION 5 AT @Circuit
 
 {$USE CLEO}
+
+const START_MISSION_INDEX = 0
+const MAX_MISSION_INDEX = 0
+
+var
+  $player1: Player
+  $scplayer: Char
+  $missionIndex: int
+end
+
+// QUESTION: Why can't we just let the var block do its magic?
+// TODO: This block is an eye-sore. Why is alloc strictly required?
+// FIXME: Global state is a code-smell
+//================================
+//-------- Global State ----------
+//================================
 
 Alloc($TIMER, 4310)
 Alloc($Banshee, 4315)
 Alloc($SafeBlip, 4323)
+Alloc($Hideout, 4324)
 Alloc($never_busted, 4332)
 Alloc($GunBlip, 4316)
 Alloc($Destination, 4318)
 Alloc($AK, 4322)
-Alloc($SafeAndSound, 4320)
-Alloc($CarMissionDone, 4319)
-Alloc($OnCarMission, 4334)
-Alloc($OnGunMission, 4335)
 Alloc($never_wasted, 4333)
 Alloc($CarBlip, 4326)
 Alloc($DeathHelp, 4337)
@@ -79,89 +93,293 @@ Alloc($HEAL_RES6, 4377)
 Alloc($Canyonero, 4378)
 Alloc($BRIBE_RES7, 4379)
 Alloc($BRIBE_RES8, 4380)
+Alloc($BombGarage, 4381)
+Alloc($BombGarage2, 4382)
+Alloc($SprayShopG, 4383)
 Alloc($Packages, 4399)
 Alloc($myCar, 4400)
 
-//-------------MAIN---------------
+// FIXME: Global state is a code-smell
+$missionIndex = START_MISSION_INDEX
+$willPromptTeleport = True
+$IntroPassed = False
+$neverWasted = False
+$neverBusted = False
+$TIMER = 10000
+
+//================================
+//------------ MAIN --------------
+//================================
+
+:MAIN
 script_name 'MAIN'
+//
+Game.SetMaxWantedLevel(3)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+$player1 = Player.Create(0, 1130.71, 1285.37, 126.81)
+Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
+Player.SetHeading($player1, 180.0)
+$scplayer = Player.GetChar($player1)
+Camera.SetBehindPlayer
 
-function main(): int
-  Game.SetMaxWantedLevel(2)
-  set_deatharrest_state 0
-  Audio.SetMusicDoesFade(True)
-  Camera.SetFadingColor(0, 0, 0)
-  Camera.DoFade(0, Fade.Out)
-  Clock.SetTimeOfDay(15, 0)
-  Streaming.LoadCollision(LevelName.Suburban)
-  $player1 = Player.Create(0, 1130.71, 1285.37, 126.81)
-  Player.SetHeading($player1, 90.0)
-  $scplayer = Player.GetChar($player1)
-  Camera.SetBehindPlayer
-  $onmission = 0
-  Weather.ForceNow(WeatherType.Sunny)
-  Stat.SetProgressTotal(125)
-  Char.Undress($scplayer, 'PLAYER')
-  Char.Dress($scplayer)
-  wait 500
-  declare_mission_flag $onmission
-  
-  //
-  Path.SwitchRoadsOff(1340.00, -200.00, 40.0, 1430.00, -300.00, 50.0)
-  Path.SwitchRoadsOff(268.69, 14.26, 16.22, 335.26, -36.89, 16.22)
-  Path.SwitchPedRoadsOff(846.00, -294.00, 5.00, 900.00, -310, 10.00)
-  Path.SwitchRoadsOff(1604.375, 1593.8125, 85.5625, 1770.625, 1871.375, 185.5625)
-  Path.SwitchRoadsOff(1138.1875, 1735.875, 85.5625, 1604.375, 1871.375, 185.5625)
-  wait 500
+// Sunshine! ?? :D
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
 
-  initCars()
-  initBlips()
-  initHiddenPkgs()
+// Set player skin
+Char.Undress($scplayer, 'PLAYER')
+Char.Dress($scplayer)
+
+// Setup mission state
+declare_mission_flag $onMission
+wait 500
+$onMission = False
+
+// Initialize all the things!
+initCars()
+initBlips()
+initHiddenPkgs()
+initPickups()
+initGarages()
+
+// Setup spawn points
+Restart.AddHospital(1147.25, -597.0, 14.98, 260)
+Restart.AddHospital(-1269.61, 1573.89, 72.28, 0)
+Restart.AddHospital(-280.63, 1331.00, 112.38, 180)
+Restart.AddHospital(-1269.625, 1576.8125, 71.1875, 180.0)
+Restart.AddPolice(-148.00, 1285.68, 112.63, 90.0)
+Restart.AddHospital(532.9375, 1235.8125, 130.6875, 73.0)
+Restart.AddPolice(568.8125, 1226.3125, 130.6875, 73.0)
+Restart.AddHospital(1343.0625, 1462.375, 125.75, -90.0)
+Restart.AddPolice(1416.3125, 1655.1875, 126.8125, 0)
+
+// Prevent cars ans peds from spawning in certain areas
+// QUESTION: _Which_ areas?
+Path.SwitchRoadsOff(1340.00, -200.00, 40.0, 1430.00, -300.00, 50.0)
+Path.SwitchRoadsOff(268.69, 14.26, 16.22, 335.26, -36.89, 16.22)
+Path.SwitchPedRoadsOff(846.00, -294.00, 5.00, 900.00, -310, 10.00)
+Path.SwitchRoadsOff(1604.375, 1593.8125, 85.5625, 1770.625, 1871.375, 185.5625)
+Path.SwitchRoadsOff(1138.1875, 1735.875, 85.5625, 1604.375, 1871.375, 185.5625)
+
+// NOTE: Assume player is alive and not arrested
+Hud.LoadSplash('SPLASH3')
+// Load Upstate Liberty and put the player in downtown Gostburg
+Streaming.LoadCollision(LevelName.Suburban)
+// Wait for the collision stuff to load
+while not Streaming.IsCollisionInMemory(LevelName.Suburban)
+  wait 250
+end
+// Wait for the map to fade-in
+wait 1500
+
+// We're done! Show the game to the user
+World.ClearArea(1130.71, 1285.37, 126.81, 20.0, False)
+Camera.DoFade(1000, Fade.In)
+Player.SetControl($player1, True)
+Player.SetNeverGetsTired($player1, True)
+Weather.Release
+
+// Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
+while true
+  script_name 'Main'
+  wait 250 ms
+
+  // Try to start the next mission
+  gosub @M_TRIG
+
+  // Monitor pickups and teleportation locations
+  monitorWangPickup()
+
+  // Prompt the user to teleport
+  if and
+    $willPromptTeleport == True
+    Player.LocateAnyMeans3D($player1, 1130.71, 1285.37, 126.81, 1.0, 1.0, 1.0, True)
+  then
+    Text.PrintHelpString("Press the T Key to teleport.")
+    $willPromptTeleport = False
+  end
+
+  //=========================
+  // Check keyboard shortcuts
+  //=========================
+    // FIXME: Doesn't work immediately. We found a race condition!😱
+  // B: Print the current player coordinates
+  monitorShortcutKey_B()
+  // P: Quickly open the save screen
+  monitorShortcutKey_P()
+  // T: Teleportation! 🧝‍♂️
+  monitorShortcutKey_P_teleport()
 end
 
-function initCars()
-  wait 500
-  $CopCar = CarGenerator.Create(1140.24, -685.34, 14.56, 180.0, #POLICE, -1, -1, False, 25, 10, 0, 10000)
-  $AmbulanceCOM = CarGenerator.Create(220.79, -42.47, 15.95, 0, #AMBULAN, -1, -1, False, 15, 5, 0, 10000)
-  $AmbulanceIND = CarGenerator.Create(1130.20, -595.24, 14.49, 0, #AMBULAN, -1, -1, False, 15, 5, 0, 10000)
-  $AmbulanceRES = CarGenerator.Create(537.00, 1236.49, 131.77, 180, #AMBULAN, -1, -1, False, 15, 5, 0, 10000)
-  $AmbulanceRES2 = CarGenerator.Create(1332.70, 1494.50, 126.81, 270, #AMBULAN, -1, -1, False, 15, 5, 0, 10000)
-  $BansheeGen = CarGenerator.Create(1220.78, -128.20, 14.72, 260, #BANSHEE, 0, 0, False, 50, 30, 0, 10000)
-  $BobcatGen = CarGenerator.Create(874.06, -983.58, 5.12, 90.0, #BOBCAT, 46, 46, False, 10, 15, 0, 10000)
-  $CheetahGen = CarGenerator.Create(1243.45, -129.20, 14.63, 0, #CHEETAH, 25, 25, False, 15, 40, 0, 10000)
-  $KurumaGen = CarGenerator.Create(-1835.87, 1657.37, 96.44, 290, #KURUMA, 58, 1, False, 20, 25, 0, 10000)
-  $MafiaGen = CarGenerator.Create(1403.76, -175.07, 50.00, 90.0, #MAFIA, -1, -1, False, 25, 40, 0, 10000)
-  $StingerGen = CarGenerator.Create(1350.40, 1662.73, 131.81, 90, #STINGER, 40, 12, False, 40, 15, 0, 10000)
-  $SentinelGen = CarGenerator.Create(1326.36, 1662.73, 131.81, 90, #SENTINEL, 25, 25, False, 65, 45, 0, 10000)
-  $Canyonero = CarGenerator.Create(1349.29, 1662.28, 127.06, 110, #LANDSTAL, 3, 3, False, 25, 15, 0, 10000)
+function monitorShortcutKey_P_teleport()
+  // Where is the source? (1172.41, -104.52, 7.47)
+  if and
+    Pad.IsKeyPressed(KeyCode.T)
+    Player.LocateAnyMeans3D($player1, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
+  then
+    Player.SetCoordinates($player1, 1161.56, -115.92, 15.0)
+    Text.PrintString("Teleport Succeeded!", 3000)
+    Player.SetControl($player1, True)
+  end
+end
 
-  $gen_car6 = CarGenerator.Create(1337.75, 1671.81, 127.56, 180, #INFERNUS, -1, -1, False, 15, 30, 0, 10000)
-  $gen_car7 = CarGenerator.Create(478.84, 1278.70, 131.80, 180, #LANDSTAL, -1, -1, False, 45, 60, 0, 10000)
-  $gen_car8 = CarGenerator.Create(547.98, 1459.70, 136.94, 90, #LANDSTAL, -1, -1, False, 0, 0, 0, 10000)
+//================================
+//---------- MISSIONS ------------
+//================================
 
-  CarGenerator.Switch($CopCar, 0)
-  CarGenerator.Switch($AmbulanceIND, 0)
-  CarGenerator.Switch($AmbulanceCOM, 0)
-  CarGenerator.Switch($AmbulanceRES, 0)
-  CarGenerator.Switch($AmbulanceRES2, 0)
-  CarGenerator.Switch($BansheeGen, 0)
-  CarGenerator.Switch($BobcatGen, 0)
-  CarGenerator.Switch($CheetahGen, 0)
-  CarGenerator.Switch($KurumaGen, 0)
-  CarGenerator.Switch($MafiaGen, 0)
-  CarGenerator.Switch($StingerGen, 0)
-  CarGenerator.Switch($SentinelGen, 0)
-  CarGenerator.Switch($Canyonero, 0)
-end  
+//============================================================
+// Mission 0: Car Tutorial
+// Teach the player how to steal, drive, and store their cars
+//============================================================
+:CarTut
+script_name 'CarTut'
+wait 0
+
+$REWARD = 500
+
+Text.PrintString("How'd ~g~you ~w~get here?", 5000)
+wait 2500
+// Don't you ~r~dare ~w~die!
+Text.PrintSoon('NO_DIE', 5000, 0)
+
+while true
+  wait 0
+
+  // Check if player is wasted or busted
+  if not Player.IsPlaying($player1)
+  then
+    break
+  end
+end
+
+// Mission Passed!
+Audio.PlayMissionPassedTune(1)
+Player.AddScore($player1, $REWARD)
+Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
+
+terminate_this_script
+
+// FIXME: Everthing below..
+/*
+var
+  $m0_Pass: int
+end
+
+Text.PrintSoon("Jack a car, already...", 5000, 0)
+
+while true
+  wait 0
+
+  // SANITY: Fail early if the mission passed
+  if $m0_Pass == True
+  then
+    break
+  end
+
+  // Wait for the player to "steal" a car
+  if Char.IsInAnyCar($player1)
+  then
+    Text.ClearPrints()
+  else
+    wait 500
+    continue
+  end
+
+  // The player has stolen a car
+  Text.PrintString("You chose this piece of shit? Fine, drive it to your hideout.", 5000)
+  Blip.ChangeColor($SafeBlip, BlipColor.Magenta)
+
+  // Place a car marker for the hideout at the farmhouse
+  $Sphere = Sphere.Create(625.8125, 1395.0625, 140.625, 3.0)
+
+  // Flash the minimap
+  Hud.FlashObject(HudObject.Radar)
+  Text.PrintHelpString("The map shows you places of interest. Interesting to me? No, but you get the idea.")
+  wait 5000
+  Hud.FlashObject(0)
+
+  // Wait for the player to drive to the farmhouse
+  if Player.LocateAnyMeans3D(625.8125, 1395.0625, 140.625, 3.0, False)
+  then
+    Text.PrintString("This isn't your farm, so be careful. You don't want to spook the yokels...", 3500)
+
+    // Place a ped-sized marker and a yellow blip in the barn's attic
+    Blip.Remove($SafeBlip)
+    Sphere.Remove($Sphere)
+    wait 0
+    $Sphere = Sphere.Create(582.95, 1516.74, 145.00, 3.0, False)
+    $SafeBlip = Blip.AddForCoord(582.95, 1516.74, 145.00)
+    Blip.ChangeColor($Hideout, BlipColor.Yellow)
+
+    Text.PrintSoon("Get out and hide in the hay bales.", 5000, 0)
+  else
+    wait 500
+    continue
+  end
+
+  // TODO: Wait for the player to reach the hay-bale attic
+  // ...
+
+  // QUESTION: What's the win-condition?
+  // Spin-wait while we decide what to do next...
+  wait 2500
+end
+
+terminate_this_script
+
+*/
+
+// TODO: Mission 1
+
+// ------ Functions: fancy function declarations ------
 
 function initBlips()
   $Ammunation = Blip.AddSpriteForCoord(-1374.01, 1531.16, 72.28, RadarSprite.Weapon)
   $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
   $Ammunation3 = Blip.AddSpriteForCoord(348.00, -716.00, 26.00, RadarSprite.Weapon)
   $Ammunation4 = Blip.AddSpriteForCoord(1583.31, 1365.63, 134.81, RadarSprite.Weapon)
+  $SafeBlip = Blip.AddSpriteForCoord(625.8125, 1395.0625, 140.625, RadarSprite.Savehouse)
   Blip.AddSpriteForCoord(1571.78, 1274.35, 121.83, RadarSprite.Salvatore, $SewerBlip)
 end
 
-function initHiddenPkgs()  
+function initCars()
+  $CopCar = CarGenerator.Create(1140.24, -685.34, 14.56, 180.0, #POLICE, -1, -1, True, 25, 10, 0, 10000)
+  $AmbulanceCOM = CarGenerator.Create(220.79, -42.47, 15.95, 0, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
+  $AmbulanceIND = CarGenerator.Create(1130.20, -595.24, 14.49, 0, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
+  $AmbulanceRES = CarGenerator.Create(537.00, 1236.49, 131.77, 180, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
+  $AmbulanceRES2 = CarGenerator.Create(1332.70, 1494.50, 126.81, 270, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
+  $BansheeGen = CarGenerator.Create(1220.78, -128.20, 14.72, 260, #BANSHEE, 0, 0, True, 50, 30, 0, 10000)
+  $BobcatGen = CarGenerator.Create(874.06, -983.58, 5.12, 90.0, #BOBCAT, 46, 46, True, 10, 15, 0, 10000)
+  $CheetahGen = CarGenerator.Create(1243.45, -129.20, 14.63, 0, #CHEETAH, 25, 25, True, 15, 40, 0, 10000)
+  $KurumaGen = CarGenerator.Create(-1835.87, 1657.37, 96.44, 290, #KURUMA, 58, 1, True, 20, 25, 0, 10000)
+  $MafiaGen = CarGenerator.Create(1403.76, -175.07, 50.00, 90.0, #MAFIA, -1, -1, True, 25, 40, 0, 10000)
+  $StingerGen = CarGenerator.Create(1350.40, 1662.73, 131.81, 90, #STINGER, 40, 12, True, 40, 15, 0, 10000)
+  $SentinelGen = CarGenerator.Create(1326.36, 1662.73, 131.81, 90, #SENTINEL, 25, 25, True, 65, 45, 0, 10000)
+  $Canyonero = CarGenerator.Create(1349.29, 1662.28, 127.06, 110, #LANDSTAL, 3, 3, True, 25, 15, 0, 10000)
+  $gen_car3 = CarGenerator.Create(1198.5735, 1357.2367, 126.8093, 270, #LANDSTAL, -1, -1, False, 0, 0, 0, 10000)
+  $gen_car6 = CarGenerator.Create(1337.75, 1671.81, 127.56, 180, #INFERNUS, -1, -1, True, 15, 30, 0, 10000)
+  $gen_car7 = CarGenerator.Create(478.84, 1278.70, 131.80, 180, #LANDSTAL, -1, -1, True, 45, 60, 0, 10000)
+  $gen_car8 = CarGenerator.Create(547.98, 1459.70, 136.94, 90, #LANDSTAL, -1, -1, True, 0, 0, 0, 10000)
+
+  CarGenerator.Switch($CopCar, 101)
+  CarGenerator.Switch($AmbulanceIND, 101)
+  CarGenerator.Switch($AmbulanceCOM, 101)
+  CarGenerator.Switch($AmbulanceRES, 101)
+  CarGenerator.Switch($AmbulanceRES2, 0)
+  CarGenerator.Switch($BansheeGen, 101)
+  CarGenerator.Switch($BobcatGen, 101)
+  CarGenerator.Switch($CheetahGen, 101)
+  CarGenerator.Switch($KurumaGen, 101)
+  CarGenerator.Switch($MafiaGen, 101)
+  CarGenerator.Switch($StingerGen, 101)
+  CarGenerator.Switch($SentinelGen, 101)
+  CarGenerator.Switch($Canyonero, 101)
+  CarGenerator.Switch($gen_car3, 101)
+end
+
+function initHiddenPkgs()
   Game.SetCollectableTotal(70)
   Game.CreateCollectable(1272.20, -610.26, 29.45)
   Game.CreateCollectable(1179.21, -566.37, 27.32)
@@ -236,7 +454,7 @@ function initHiddenPkgs()
   Game.CreateCollectable(1604.16, 1311.58, 117.36) // In the sewers
 end
 
-function initPickups(): int
+function initPickups()
   $BRIBE_IND1 = Pickup.Create(#BRIBE, PickupType.OnStreet, 1125.60, -251.54, 17.66)
   $BRIBE_IND2 = Pickup.Create(#BRIBE, PickupType.OnStreet, 953.71, -423.23, 15.25)
   $BRIBE_IND3 = Pickup.Create(#BRIBE, PickupType.OnStreet, 820.21, -1076.76, 6.82)
@@ -271,12 +489,12 @@ end
 function initGarages()
   $gen_car2 = Garage.Create(-110.75, 1357.0625, 111.3125, -99.0625, 1365.875, 119.1875, GarageType.Respray)
   Garage.SetRotatingDoor($gen_car2)
-  $gen_car3 = Garage.Create(536.375, 1188.875, 130.6875, 544.625, 1200.375, 134.6875, GarageType.BombShop1)
-  $gen_car4 = Garage.Create(1160.6875, 1216.5, 121.6875, 1174.4375, 1222.9375, 126.4375, GarageType.Respray)
+  $BombGarage = Garage.Create(536.375, 1188.875, 130.6875, 544.625, 1200.375, 134.6875, GarageType.BombShop1)
+  $SprayShopG = Garage.Create(1160.6875, 1216.5, 121.6875, 1174.4375, 1222.9375, 126.4375, GarageType.Respray)
   Garage.SetRotatingDoor($gen_car4)
-  $gen_car5 = Garage.Create(1785.8125, 1517.1875, 125.75, 1793.0, 1522.375, 129.4375, GarageType.BombShop3)
+  $BombGarage2 = Garage.Create(1785.8125, 1517.1875, 125.75, 1793.0, 1522.375, 129.4375, GarageType.BombShop3)
 end
-  
+
 function initSpawnParams()
   Zone.SetPedInfo('UL_ZON0', DayOrNight.Day, 10, 0, 0, 0, 0, 0, 0, 0, 10)
   Zone.SetPedInfo('UL_ZON0', DayOrNight.Night, 7, 0, 0, 0, 0, 0, 0, 0, 5)
@@ -430,2540 +648,65 @@ function initSpawnParams()
   Zone.SetGroup('GTHOSP', DayOrNight.Night, 18)
 end
 
-/*
-function trySetupRestartPoints(): int
+function monitorWangPickup()
   wait 0
+  script_name 'Wang'
+
   if
-    not Player.IsPlaying($player1)
+    Pickup.HasBeenCollected($WangHealth)
   then
-    wait 500
-    return setupRestartPts()
+    Text.PrintHelpString("You found the office's first aid kit!")
   end
 end
 
-function setupRestartPts(): int
-  wait 0
+function monitorShortcutKey_P()
   if
-      Player.IsPlaying($player1) // Player is alive and not arrested
+    Pad.IsKeyPressed(KeyCode.P)
   then
+    Game.ActivateSaveMenu()
+
+    // QUESTION: Do we have to wait for anything? Or will control flow return here after the user saves their game?
+    // The user saved their game, so wait for the save procedure to finish
+    while not Game.HasSaveGameFinished()
+      wait 10
       if
-          // Ensure Upstate Liberty is loaded
-          Streaming.IsCollisionInMemory(LevelName.Suburban)
+        Game.HasSaveGameFinished()
       then
-          Hud.LoadSplash('SPLASH3')
-          Restart.AddHospital(1147.25, -597.0, 14.98, 260)
-          Restart.AddHospital(-1269.61, 1573.89, 72.28, 0)
-          Restart.AddHospital(-280.63, 1331.00, 112.38, 180)
-          Restart.AddHospital(-1269.625, 1576.8125, 71.1875, 180.0)
-          Restart.AddPolice(-148.00, 1285.68, 112.63, 90.0)
-          Restart.AddHospital(532.9375, 1235.8125, 130.6875, 73.0)
-          Restart.AddPolice(568.8125, 1226.3125, 130.6875, 73.0)
-          Restart.AddHospital(1343.0625, 1462.375, 125.75, -90.0)
-          Restart.AddPolice(1416.3125, 1655.1875, 126.8125, 0)
-          Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-          Mission.LoadAndLaunchInternal(0)
-          // start_new_script @Keys
-          monitorShortcutKey_P()
-          // start_new_script @Coord
-          monitorShortcut_B_printCoords()
-          // start_new_script @Wang
-          monitorWangPickup()
-          terminate_this_script
-      else
-          // Wait and then try to setup restart pts again
-          wait 50
-          return setupRestartPts()
-      end
-  else
-      return trySetupRestartPoints()
-  end
-end
-*/
-
-:Wang
-function monitorWangPickup(): int
-  while true
-    wait 0
-    script_name 'Wang'
-
-    if
-        Pickup.HasBeenCollected($WangHealth)
-    then
-        Text.PrintHelpString("You found the office's first aid kit!")
         break
-    else
-        continue
+      end
     end
   end
 end
 
-function monitorShortcutKey_P(): int
-  :Keys
-  script_name 'Keys'
-  
-  :Keys_10
-  while not Pad.IsKeyPressed(KeyCode.P)
-      wait 0
-      if
-          Pad.IsKeyPressed(KeyCode.P)
-      then
-          Game.ActivateSaveMenu()
-          break
-      else
-          continue
-      end
-  end
-  
-  :Keys_20
-  while not Game.HasSaveGameFinished()
-      wait 0
-      if
-          Game.HasSaveGameFinished()
-      then
-          break
-      else
-          continue
-      end
-  end
-  
-  :Keys_30
-  wait 500
-  goto @Keys_10
-end
-
-// FIXME: Refactor this into a fn, help the user when they die (the first time)
-:Wasted
-script_name 'Wasted'
-
-:Wasted_10
-wait 0
-if and
-  $never_wasted == 1
-  $never_busted == 1
-then
-    terminate_this_script
-else
-    goto @Wasted_42
-end
-
-:Wasted_42
-wait 0
-if
+function monitorShortcutKey_B()
+  if and
     Player.IsPlaying($player1)
-then
-    if
-       Pickup.HasBeenCollected($WastedInfo)
-    then
-        if
-            $onmission == 0
-        then
-            if
-                $DeathHelp == 0
-            then
-                goto @Wasted_134
-            else
-                goto @Wasted_573
-            end
-        else
-            goto @Wasted_111
-        end
-    else
-        goto @Wasted_111
-    end
-else
-    goto @Wasted_112
-end
-
-:Wasted_111
-goto @Wasted_10
-
-:Wasted_112
-wait 0
-if
-    not Player.IsPlaying($player1)
-then
-    start_new_script @Wasted
-    terminate_this_script
-else
-    goto @Wasted_42
-end
-
-:Wasted_134
-$DeathHelp = 1
-Player.SetControl($player1, False)
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-Camera.SetFixedPosition(1116.83, -590.72, 25.27, 0.0, 0.0, 0.0)
-Camera.PointAtPoint(1130.80, -590.75, 23.01, SwitchType.JumpCut)
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Text.PrintHelpString("When you die, you'll end up back here.")
-wait 3000
-Text.PrintHelpString("You'll lose a bit of cash, but at least you're still alive!")
-wait 3000
-Hud.FlashObject(HudObject.Health)
-Text.PrintHelpString("This is your health. Make sure to keep tabs on it.")
-Hud.FlashObject(0)
-wait 5000
-Camera.SetFixedPosition(1405.12, -390.75, 49.97, 0.0, 0.0, 0.0)
-Camera.PointAtPoint(1400.00, -390.75, 50.0, SwitchType.JumpCut)
-Text.PrintHelpString("if you spend some time looking around, you'll find health pickups like these. Cherish them, as they are few and far-between.")
-wait 5000
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-Camera.RestoreJumpcut
-Camera.DoFade(1500, Fade.In)
-wait 1500
-wait 1000
-Player.SetControl($player1, True)
-wait 3000
-goto @Wasted_573
-
-:Wasted_573
-wait 0
-if
-    Player.CanStartMission($player1)
-then
-    goto @Wasted_666
-else
-    Player.SetControl($player1, True)
-    wait 500
-    goto @Wasted_573
-end
-
-:Wasted_666
-terminate_this_script
-
-function monitorShortcut_B_printCoords()
-  while true
-    script_name 'Coord'
+    Pad.IsKeyPressed(KeyCode.B)
+  then
+    Char.GetCoordinates($scplayer, $x, $y, $z)
+    Char.GetHeading($player1, $h)
     wait 0
-    if and
-        Player.IsPlaying($player1)
-        Pad.IsKeyPressed(KeyCode.B)
-    then
-        Char.GetCoordinates($scplayer, $x, $y, $z)
-        wait 0
-        Text.PrintHelpFormatted("Current Coordinates: ~n~%.2f ~n~%.2f ~n~%.2f", float:$x, float:$y, float:$z)
-        wait 5000
-        
-        Text.ClearHelp()
-    else
-        continue
-    end
+    Text.PrintHelpFormatted("Current Coordinates: ~n~%.2f ~n~%.2f ~n~%.2f ~n~%.2f", float:$x, float:$y, float:$z, float:$h)
+    wait 5000
+
+    Text.ClearHelp()
   end
 end
 
-// FIXME: Refactor this into a fn, keep the game going after you finish all missions
-:Loop
-script_name 'Loop'
+/// Trigger the given mission index
+:M_TRIG
 
-:Loop_10
 wait 0
-if
-    Player.IsPlaying($player1)
-then
-    goto @Loop_20
-else
-    goto @Loop_666
-end
-
-:Loop_20
-while true
-    Player.IsPlaying($player1)
-    wait 250
-    goto @Loop_10
-end
-
-:Loop_666
-wait 0
-if
-    not Player.IsPlaying($player1)
-then
-    start_new_script @Loop
-    terminate_this_script
-else
-    goto @Loop_666
-end
-
-//-------Mission Scripts-------
-
-// FIXME: Refactor this into a fn, mission_teachDriving(): int
-:Vehicle
-script_name 'Vehicle'
-
-:Vehicle_10
-wait 0
-if
-    $CarMissionDone == 1
-then
-    terminate_this_script
-else
-    goto @Vehicle_42
-end
-
-:Vehicle_42
-wait 0
-if
+// TODO: Modify the trigger logic in @M_TRIG to our rules
+if and
   Player.IsPlaying($player1)
-goto_if_false @Vehicle_142
-if
-  $Intro_Passed == 1
-goto_if_false @Vehicle_212
-if
-  $onmission == 0
-goto_if_false @Vehicle_212
-if
-  $CarMissionDone == 0
-goto_if_false @Vehicle_10
-if
   Player.CanStartMission($player1)
-goto_if_false @Vehicle_212
-goto @Vehicle_165
-
-:Vehicle_142
-if
-  not Player.IsPlaying($player1)
-goto_if_false @Vehicle_212
-goto @Vehicle_10
-
-:Vehicle_165
-wait 0
-if
-    Player.LocateAnyMeans3D($player1, 1182.80, 1159.21, 121.53, 2.0, 2.0, 2.0, False)
+  $onMission == False
 then
-    Player.SetControl($player1, False)
-    Blip.Remove($Destination)
-    Sphere.Remove($Sphere)
-    Text.PrintBigString("Driving Mr. Mute", 5000, TextStyle.BottomRight)
-    Camera.DoFade(1500, Fade.Out)
-    wait 1500
-    Mission.LoadAndLaunchInternal(1)
-    terminate_this_script
-else
-    goto @Vehicle_212
+  $onMission = True
+  Mission.LoadAndLaunchInternal($missionIndex)
 end
 
-:Vehicle_212
-goto @Vehicle_10
+return
 
-// FIXME: Refactor this into a fn, function mission_teachPickups(): int
-:Pistol
-script_name 'Pistol'
-
-:Pistol_10
-wait 250
-if and
-  $OnGunMission == 0
-  $SightseeingTour == 1
-goto_if_false @Pistol_42
-terminate_this_script
-
-:Pistol_42
-if
-    $SightseeingTour == 0
-then
-    goto @Pistol_69
-else
-    goto @Pistol_10
-end
-
-:Pistol_69
-if
-  Player.CanStartMission($player1)
-goto_if_false @Pistol_139
-if
-  $onmission == 0
-goto_if_false @Pistol_139
-if
-  $SafeAndSound == 0
-goto_if_false @Pistol_139
-if
-    Player.LocateAnyMeans3D($player1, 544.49, 1591.82, 151.21, 3.0, 3.0, 1.0, False)
-then
-    Player.SetControl($player1, False)
-    Text.PrintBigString("Getting the Lay of the Land...", 5000, TextStyle.BottomRight)
-    Blip.Remove($Destination)
-    Sphere.Remove($Sphere)
-    Camera.DoFade(1500, Fade.Out)
-    wait 1500
-    Mission.LoadAndLaunchInternal(2)
-    $OnGunMission = 1
-else
-    goto @Pistol_139
-end
-
-:Pistol_78
-wait 0
-if
-    $OnGunMission == 1
-then
-    goto @Pistol_78
-else
-    terminate_this_script
-end
-
-:Pistol_139
-goto @Pistol_10
-
-// FIXME: Refactor this into a fn, function mission_pickupLouie(): int
-:Stairs
-script_name 'BakAlly'
-
-:Stairs_101
-wait 0
-if
-    Player.LocateAnyMeans3D($player1, 1425.60, 1596.70, 124.56, 1.0, 1.0, 1.0, False)
-then
-    if
-        Player.CanStartMission($player1)
-    then
-        if
-            $onmission == 0
-        then
-            Player.SetControl($player1, False)
-            Text.PrintBigString("Meddling in Her Affairs...", 5000, TextStyle.BottomRight)
-            Camera.DoFade(1500, Fade.Out)
-            wait 1500
-            Mission.LoadAndLaunchInternal(3)
-            goto @Stairs_666
-        else
-            goto @Stairs_102
-        end
-    else
-        goto @Stairs_102
-    end
-else
-    goto @Stairs_102
-end
-
-:Stairs_102
-goto @Stairs_101
-
-:Stairs_666
-terminate_this_script
-
-// FIXME: Refactor this into a fn, function mission_pestRemoval(): int
-:Affairs
-script_name 'Affairs'
-
-:Affairs_101
-wait 0
-if
-    Player.LocateAnyMeans3D($player1, 1525.30, 1112.63, 122.52, 1.0, 1.0, 1.0, False)
-then
-    if
-        Player.CanStartMission($player1)
-    then
-        if
-            $onmission == 0
-        then
-            Player.SetControl($player1, False)
-            Text.PrintBigString("Pest Removal Ain't Easy...", 5000, TextStyle.BottomRight)
-            Camera.DoFade(1500, Fade.Out)
-            wait 1500
-            Mission.LoadAndLaunchInternal(4)
-            goto @Affairs_666
-        else
-            goto @Affairs_102
-        end
-    else
-        goto @Affairs_102
-    end
-else
-    goto @Affairs_102
-end
-
-:Affairs_102
-goto @Affairs_101
-
-:Affairs_666
-terminate_this_script
-
-// FIXME: Refactor this into a fn, function mission_followCatToKenji(): int
-:Power
-script_name 'Power'
-
-:Power_101
-wait 0
-if
-    Player.LocateAnyMeans3D($player1, 883.82, 1315.72, 130.32, 1.0, 1.0, 1.0, True)
-then
-    if
-        Player.CanStartMission($player1)
-    then
-        if
-            $onmission == 0
-        then
-            Player.SetControl($player1, False)
-            Text.PrintBigString("Circuit Bending", 5000, TextStyle.BottomRight)
-            Camera.DoFade(1500, Fade.Out)
-            wait 1500
-            Mission.LoadAndLaunchInternal(5)
-            goto @Power_666
-        else
-            goto @Power_102
-        end
-    else
-        goto @Power_102
-    end
-else
-    goto @Power_102
-end
-
-:Power_102
-goto @Power_101
-
-:Power_666
-terminate_this_script
-
-//-------Save Scripts---------
-
-// FIXME: Refactor this into a fn, function save_barnHideout(): int
-:SaveP
-script_name 'SaveP'
-while true
-    wait 0
-
-    if and
-        not Camera.GetFadingStatus()
-        Player.IsPlaying($player1)
-        $onmission == false
-        Player.LocateAnyMeans3D($player1, 582.95, 1516.74, 145.00, 1.0, 2.0, 0.75, True)
-        Game.HasSaveGameFinished() // save menu not already requested
-    then
-        if
-            Player.LocateAnyMeans3D($player1, 582.95, 1516.74, 145.00, 1.0, 2.0, 0.75, True)
-        then
-            Game.ActivateSaveMenu() // request save menu
-
-            Player.SetCoordinates($player1, 586.00, 1486.95, 149.90)
-            Player.SetHeading($player1, 180)
-
-            wait 0 // show the menu
-        end
-    end
-end
-
-// FIXME: Refactor this into a fn, function teleport(): int
-:TPORT
-script_name 'Telport'
-
-:TPORT_101
-wait 0
-if
-    Player.LocateAnyMeans3D($player1, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
-then
-    Text.PrintHelpString("Press the T Key to teleport.")
-    goto @TPORT_102
-else
-    goto @TPORT_101
-end
-
-:TPORT_102
-wait 0
-if
-    Pad.IsKeyPressed(KeyCode.T)
-then
-    Player.SetCoordinates($player1, 1161.56, -115.92, 15.0)
-    Text.PrintString("Teleport Succeeded!", 3000)
-    Player.SetControl($player1, True)
-    goto @TPORT_103
-else
-    goto @TPORT_102
-end
-
-:TPORT_103
-goto @TPORT_101
-
-// FIXME: Refactor this into a fn, function highJumpForCash(): int
-:HJ
-set_deatharrest_state 0
-script_name 'HJ'
-$copcar_info = 0
-
-:HJ_21
-wait 0
-  not Player.IsPlaying($player1)
-goto_if_false @HJ_44
-goto @HJ_21
-
-:HJ_44
-  Game.AreAnyCarCheatsActivated
-goto_if_false @HJ_60
-goto @HJ_21
-
-:HJ_60
-  Player.IsInAnyCar($player1)
-goto_if_false @HJ_852
-$particle_target_x = Player.StoreCarIsInNoSave($player1)
-  not Car.IsBoat($particle_target_x)
-goto_if_false @HJ_838
-  Car.IsInAirProper($particle_target_x)
-goto_if_false @HJ_824
-$flag_info = 0
-$cam_z = 0
-$temp_var = 0
-$info_time_now = 0
-$flag_bottom = 0
-$medic_info = 0
-$info_time_start = 0
-$amb_info = 0
-$particle_target_y = 0
-$particle_target_z = 0
-$bribe_pickup = -100.0
-$wanted_level = 0
-$diablocar_info = 0
-$diablo_info = 0
-$car_x = 0
-$car_y = 0
-$car_z = 0
-$counter_RCDD = 0
-$rc_van = 0
-$timer_RCDD = 0
-$reward_RCDD = 0
-$cam_x = 0
-$cam_y = 0
-$info_time_lapsed = 0
-$armour_pickup_info = 0
-$health_pickup_info = 0
-$rc_x = 0
-$rc_z = 0
-$counter_4x4_pickups = 0
-$player_4x4 = 0
-$rc_y = 0
-$copcar2_info = 0
-$swatvan_info = 0
-$cop_info = 0
-$cop2_info = 0
-$flag_copcar_progress = 0
-$swat1_info = 0
-  Car.IsModel($particle_target_x, #DODO)
-goto_if_false @HJ_385
-goto @HJ_1997
-
-:HJ_385
-if or
-  Car.IsInAirProper($particle_target_x)
-  10 > $swat1_info
-goto_if_false @HJ_817
-$swat1_info += 1
-$wanted_level, $diablocar_info, $diablo_info = Car.GetCoordinates($particle_target_x)
-set_var_float_to_var_float $rc_y = $cam_z
-  $particle_target_y == 0
-goto_if_false @HJ_490
-$rc_y = Car.GetHeading($particle_target_x)
-set_var_float_to_var_float $car_x = $wanted_level
-set_var_float_to_var_float $car_y = $diablocar_info
-set_var_float_to_var_float $car_z = $diablo_info
-$particle_target_y = 1
-
-:HJ_490
-wait 0
-  Car.IsDead($particle_target_x)
-goto_if_false @HJ_513
-goto @HJ_21
-
-:HJ_513
-  not Player.IsPlaying($player1)
-goto_if_false @HJ_532
-goto @HJ_21
-
-:HJ_532
-  not Player.IsInAnyCar($player1)
-goto_if_false @HJ_551
-goto @HJ_21
-
-:HJ_551
-if and
-  not Car.IsUpright($particle_target_x)
-  $medic_info == 0
-goto_if_false @HJ_581
-$medic_info = 1
-
-:HJ_581
-if and
-  Car.IsUpright($particle_target_x)
-  $medic_info == 1
-goto_if_false @HJ_618
-$flag_bottom += 1
-$medic_info = 0
-
-:HJ_618
-$cam_z = Car.GetHeading($particle_target_x)
-set_var_float_to_var_float $rc_z = $cam_z
-sub_float_var_from_float_var $rc_z -= $rc_y
-  $rc_z > 180.0
-goto_if_false @HJ_688
-set_var_float_to_var_float $player_4x4 = $rc_z
-$rc_z = 360.0
-sub_float_var_from_float_var $rc_z -= $player_4x4
-goto @HJ_727
-
-:HJ_688
-  -180.0 > $rc_z
-goto_if_false @HJ_727
-set_var_float_to_var_float $player_4x4 = $rc_z
-$rc_z = 360.0
-add_float_var_to_float_var $rc_z += $player_4x4
-
-:HJ_727
-  0 > $rc_z
-goto_if_false @HJ_764
-set_var_float_to_var_float $player_4x4 = $rc_z
-$rc_z = 0
-sub_float_var_from_float_var $rc_z -= $player_4x4
-
-:HJ_764
-add_float_var_to_float_var $counter_4x4_pickups += $rc_z
-cset_var_int_to_var_float $flag_info =# $counter_4x4_pickups
-  is_float_var_greater_than_float_var $diablo_info > $bribe_pickup
-goto_if_false @HJ_803
-set_var_float_to_var_float $bribe_pickup = $diablo_info
-
-:HJ_803
-$diablo_info = 0
-goto @HJ_385
-
-:HJ_817
-goto @HJ_831
-
-:HJ_824
-goto @HJ_21
-
-:HJ_831
-goto @HJ_845
-
-:HJ_838
-goto @HJ_21
-
-:HJ_845
-goto @HJ_859
-
-:HJ_852
-goto @HJ_21
-
-:HJ_859
-  $particle_target_y == 1
-goto_if_false @HJ_1186
-$counter_RCDD, $rc_van, $rc_x = Car.GetCoordinates($particle_target_x)
-
-:HJ_887
-  90 > $info_time_now
-goto_if_false @HJ_983
-  Car.IsDead($particle_target_x)
-goto_if_false @HJ_927
-goto @HJ_21
-goto @HJ_946
-
-:HJ_927
-  not Car.IsInAir($particle_target_x)
-goto_if_false @HJ_946
-$info_time_start += 1
-
-:HJ_946
-wait 0
-  not Player.IsPlaying($player1)
-goto_if_false @HJ_969
-goto @HJ_21
-
-:HJ_969
-$info_time_now += 1
-goto @HJ_887
-
-:HJ_983
-$info_time_now = 0
-set_var_float_to_var_float $timer_RCDD = $car_x
-sub_float_var_from_float_var $timer_RCDD -= $counter_RCDD
-set_var_float_to_var_float $reward_RCDD = $car_y
-sub_float_var_from_float_var $reward_RCDD -= $rc_van
-mult_float_var_by_float_var $timer_RCDD *= $timer_RCDD
-mult_float_var_by_float_var $reward_RCDD *= $reward_RCDD
-set_var_float_to_var_float $cam_x = $timer_RCDD
-add_float_var_to_float_var $cam_x += $reward_RCDD
-$cam_y = Math.Sqrt($cam_x)
-Stat.RegisterJumpDistance($cam_y)
-cset_var_int_to_var_float $info_time_lapsed =# $cam_y
-sub_float_var_from_float_var $bribe_pickup -= $car_z
-Stat.RegisterJumpHeight($bribe_pickup)
-cset_var_int_to_var_float $particle_target_z =# $bribe_pickup
-cset_var_float_to_var_int $rc_x =# $info_time_lapsed
-sub_float_var_from_float_var $cam_y -= $rc_x
-set_var_float_to_var_float $rc_x = $cam_y
-$rc_x *= 100.0
-cset_var_int_to_var_float $armour_pickup_info =# $rc_x
-cset_var_float_to_var_int $rc_x =# $particle_target_z
-sub_float_var_from_float_var $bribe_pickup -= $rc_x
-set_var_float_to_var_float $rc_x = $bribe_pickup
-$rc_x *= 100.0
-cset_var_int_to_var_float $health_pickup_info =# $rc_x
-Stat.RegisterJumpFlips($flag_bottom)
-Stat.RegisterJumpSpins($flag_info)
-
-:HJ_1186
-  $particle_target_z > 4
-goto_if_false @HJ_1207
-$amb_info += 1
-
-:HJ_1207
-  $info_time_lapsed > 30
-goto_if_false @HJ_1228
-$amb_info += 1
-
-:HJ_1228
-  $flag_bottom > 0
-goto_if_false @HJ_1249
-$amb_info += 1
-
-:HJ_1249
-  $flag_info > 360
-goto_if_false @HJ_1271
-$amb_info += 1
-
-:HJ_1271
-  $info_time_start > 60
-goto_if_false @HJ_1292
-$temp_var = 1
-
-:HJ_1292
-  $amb_info > 0
-goto_if_false @HJ_1990
-set_var_int_to_var_int $swat2_info = $flag_bottom
-$swat2_info *= 180
-add_int_var_to_int_var $swat2_info += $flag_info
-set_var_int_to_var_int $flag_swat_progress = $info_time_lapsed
-$flag_swat_progress *= 6
-add_int_var_to_int_var $swat2_info += $flag_swat_progress
-set_var_int_to_var_int $flag_swat_progress = $particle_target_z
-$flag_swat_progress *= 45
-add_int_var_to_int_var $swat2_info += $flag_swat_progress
-  $temp_var == 1
-goto_if_false @HJ_1397
-$swat2_info *= 2
-
-:HJ_1397
-mult_int_var_by_int_var $swat2_info *= $amb_info
-$swat2_info /= 3
-Player.AddScore($player1, $swat2_info)
-if and
-  $amb_info == 1
-  $temp_var == 0
-goto_if_false @HJ_1467
-Text.PrintWithNumber('HJ_IS', $swat2_info, 2000, 1) // INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.Insane)
-
-:HJ_1467
-if and
-  $amb_info == 1
-  $temp_var == 1
-goto_if_false @HJ_1514
-Text.PrintWithNumber('HJ_PIS', $swat2_info, 2000, 1) // PERFECT INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.PerfectInsane)
-
-:HJ_1514
-if and
-  $amb_info == 2
-  $temp_var == 0
-goto_if_false @HJ_1561
-Text.PrintWithNumber('HJ_DIS', $swat2_info, 2000, 1) // DOUBLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.DoubleInsane)
-
-:HJ_1561
-if and
-  $amb_info == 2
-  $temp_var == 1
-goto_if_false @HJ_1608
-Text.PrintWithNumber('HJ_PDIS', $swat2_info, 2000, 1) // PERFECT DOUBLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.PerfectDoubleInsane)
-
-:HJ_1608
-if and
-  $amb_info == 3
-  $temp_var == 0
-goto_if_false @HJ_1655
-Text.PrintWithNumber('HJ_TIS', $swat2_info, 2000, 1) // TRIPLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.TripleInsane)
-
-:HJ_1655
-if and
-  $amb_info == 3
-  $temp_var == 1
-goto_if_false @HJ_1702
-Text.PrintWithNumber('HJ_PTIS', $swat2_info, 2000, 1) // PERFECT TRIPLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.PerfectTripleInsane)
-
-:HJ_1702
-if and
-  $amb_info == 4
-  $temp_var == 0
-goto_if_false @HJ_1749
-Text.PrintWithNumber('HJ_QIS', $swat2_info, 2000, 1) // QUADRUPLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.QuadrupleInsane)
-
-:HJ_1749
-if and
-  $amb_info == 4
-  $temp_var == 1
-goto_if_false @HJ_1796
-Text.PrintWithNumber('HJ_PQIS', $swat2_info, 3000, 1) // PERFECT QUADRUPLE INSANE STUNT BONUS: $~1~
-Stat.RegisterJumpStunt(StuntType.PerfectQuadrupleInsane)
-
-:HJ_1796
-  Game.AreMeasurementsInMeters
-goto_if_false @HJ_1899
-  $temp_var == 1
-goto_if_false @HJ_1859
-Text.PrintWith6Numbers('HJSTATW', $info_time_lapsed, $armour_pickup_info, $particle_target_z, $health_pickup_info, $flag_bottom, $flag_info, 5000, TextStyle.MiddleSmallerHigher) // Distance: ~1~.~1~m Height: ~1~.~1~m Flips: ~1~ Rotation: ~1~_ And what a great landing!
-goto @HJ_1892
-
-:HJ_1859
-Text.PrintWith6Numbers('HJSTAT', $info_time_lapsed, $armour_pickup_info, $particle_target_z, $health_pickup_info, $flag_bottom, $flag_info, 5000, TextStyle.MiddleSmallerHigher) // Distance: ~1~.~1~m Height: ~1~.~1~m Flips: ~1~ Rotation: ~1~_
-
-:HJ_1892
-goto @HJ_1990
-
-:HJ_1899
-$info_time_lapsed = Math.ConvertMetersToFeet($info_time_lapsed)
-$particle_target_z = Math.ConvertMetersToFeet($particle_target_z)
-  $temp_var == 1
-goto_if_false @HJ_1963
-Text.PrintWith4Numbers('HJSTAWF', $info_time_lapsed, $particle_target_z, $flag_bottom, $flag_info, 5000, TextStyle.MiddleSmallerHigher) // Distance: ~1~ft Height: ~1~ft Flips: ~1~ Rotation: ~1~_ And what a great landing!
-goto @HJ_1990
-
-:HJ_1963
-Text.PrintWith4Numbers('HJSTATF', $info_time_lapsed, $particle_target_z, $flag_bottom, $flag_info, 5000, TextStyle.MiddleSmallerHigher) // Distance: ~1~ft Height: ~1~ft Flips: ~1~ Rotation: ~1~_
-
-:HJ_1990
-goto @HJ_21
-
-:HJ_1997
-  Car.IsInAirProper($particle_target_x)
-goto_if_false @HJ_2129
-  $copcar2_info == 0
-goto_if_false @HJ_2042
-$swatvan_info = Clock.GetGameTimer()
-$flag_copcar_progress = 1
-$copcar2_info = 1
-
-:HJ_2042
-  Car.IsInWater($particle_target_x)
-goto_if_false @HJ_2061
-goto @HJ_2129
-
-:HJ_2061
-wait 0
-  Car.IsDead($particle_target_x)
-goto_if_false @HJ_2084
-goto @HJ_21
-
-:HJ_2084
-  not Player.IsPlaying($player1)
-goto_if_false @HJ_2103
-goto @HJ_21
-
-:HJ_2103
-  not Player.IsInAnyCar($player1)
-goto_if_false @HJ_2122
-goto @HJ_21
-
-:HJ_2122
-goto @HJ_1997
-
-:HJ_2129
-  $flag_copcar_progress == 1
-goto_if_false @HJ_2232
-$cop_info = Clock.GetGameTimer()
-set_var_int_to_var_int $cop2_info = $cop_info
-sub_int_var_from_int_var $cop2_info -= $swatvan_info
-$cop2_info /= 1000
-  $cop2_info > 1
-goto_if_false @HJ_2232
-  is_int_var_greater_than_int_var $cop2_info > $copcar_info
-goto_if_false @HJ_2209
-set_var_int_to_var_int $copcar_info = $cop2_info
-
-:HJ_2209
-Text.PrintWithNumberNow('DODO_FT', $cop2_info, 5000, 1) // You flew for ~1~ seconds!
-Stat.RegisterLongestDodoFlight($cop2_info)
-
-:HJ_2232
-goto @HJ_21
-terminate_this_script
-
-//-------------Mission 0---------------
-
-// FIXME: Refactor this into a fn, function initGlobals(): int
-:INIT
-script_name 'INIT'
-$OnCarMission = 0
-$OnGunMission = 0
-$CarMissionDone = 0
-$Intro_Passed = 0
-$never_wasted = 0
-$never_busted = 0
-$SafeAndSound = 0
-$SightseeingTour = 0
-$onmission = 1
-$TIMER = 10000
-
-:INIT_17
-Streaming.RequestModel(#BANSHEE)
-Streaming.RequestModel(#COLT45)
-Streaming.RequestModel(#KURUMA)
-Streaming.RequestModel(#SHOTGUN)
-Streaming.RequestModel(#STINGER)
-Streaming.RequestModel(#UZI)
-//Streaming.RequestModel(#SABRE)
-goto @INIT_44
-
-:INIT_44
-Streaming.LoadAllModelsNow
-wait 0
-if
-    Streaming.HasModelLoaded(#BANSHEE)
-then
-    $Stinger = Car.Create(#STINGER, 780.5, -840.1875, 14.375)
-    Car.SetHeading($Stinger, 0)
-    Car.ChangeColor($Stinger, 40, 12)
-    World.SwitchRubbish(True)
-    Camera.SetFadingColor(0, 0, 0)
-    wait 500
-    $Shitbox = Car.Create(#KURUMA, 1111.57, 1146.55, 120.32)
-    Car.ChangeColor($Shitbox, 58, 1)
-    //$Sabre = Car.Create(#SABRE, 767.92, -872.11, 14.75)
-    goto @INIT_77
-else
-    goto @INIT_44
-end
-
-:INIT_77
-World.ClearArea(1145.46, 1291.75, 126.25, 50.0, False)
-Player.SetControl($player1, True)
-wait 0
-$Banshee = Car.Create(#BANSHEE, 1145.48, 1291.81, 126.66)
-$BansheeBlip = Blip.AddForCar($Banshee)
-Blip.ChangeDisplay($BansheeBlip, BlipDisplay.Both)
-Car.SetHeading($Banshee, 0)
-Car.ChangeColor($Banshee, 0, 0)
-$Handgun = Pickup.CreateWithAmmo(#COLT45, PickupType.OnStreet, 125, 989.38, -965.64, 21.24)
-$Shotgun = Pickup.CreateWithAmmo(#SHOTGUN, PickupType.OnStreet, 40, 1148.47, -100.84, 7.47)
-$UziCOM = Pickup.CreateWithAmmo(#UZI, PickupType.OnStreet, 300, 426.21, -96.23, 16.20)
-$UziRES = Pickup.CreateWithAmmo(#UZI, PickupType.OnStreet, 300, 574.04, 1325.75, 136.02)
-$WastedInfo = Pickup.Create(#INFO, PickupType.Once, 1343.0625, 1462.375, 125.75)
-$BustedInfo = Pickup.Create(#INFO, PickupType.Once, 1416.12, 1655.70, 126.81)
-$SprayShopRES = Blip.AddSpriteForCoord(1165.84, 1219.70, 122.78, RadarSprite.Spray)
-Blip.Remove($SprayShopRES)
-$catalina = Blip.AddSpriteForContactPoint(883.82, 1315.72, 130.32, RadarSprite.Catalina)
-Blip.Remove($catalina)
-$asuka = Blip.AddSpriteForContactPoint(1425.60, 1596.70, 124.56, RadarSprite.Asuka)
-Blip.Remove($asuka)
-$kenji = Blip.AddSpriteForContactPoint(1525.30, 1112.63, 122.52, RadarSprite.Kenji)
-Blip.Remove($kenji)
-start_new_script @Wasted
-start_new_script @HJ
-
-:INIT_258
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Text.PrintHelpString("Get in the car.")
-wait 10000
-if
-    not Player.IsInCar($player1, $Banshee)
-then
-    Text.PrintHelpString("Get in the car, now.")
-    goto @INIT_338
-else
-    goto @INIT_296
-end
-
-:INIT_296
-wait 0
-if
-    Player.IsInCar($player1, $Banshee)
-then
-    Blip.Remove($BansheeBlip)
-    Audio.SetRadioChannel(RadioChannel.MsxFM, 0)
-    goto @INIT_369
-else
-    goto @INIT_572
-end
-
-:INIT_338
-wait 5000
-if
-    not Player.IsInCar($player1, $Banshee)
-then
-    goto @INIT_572
-else
-    Blip.Remove($BansheeBlip)
-    Audio.SetRadioChannel(RadioChannel.MsxFM, 0)
-    goto @INIT_369
-end
-
-:INIT_369
-wait 0
-if and
-    Player.IsInCar($player1, $Banshee)
-    Player.IsInArea3D($player1, 1150.00, 1280.37, 120.00, 1100.875, 1300.5, 130.00, False)
-then
-    goto @INIT_625
-else
-    goto @INIT_425
-end
-
-:INIT_425
-wait 250
-if
-  Player.IsInCar($player1, $Banshee)
-goto_if_false @INIT_258
-if
-  not Player.IsInArea3D($player1, 1150.00, 1280.37, 120.00, 1100.875, 1300.5, 130.00, False)
-goto_if_false @INIT_369
-Text.PrintString("Hey! We didn't tell you to drive away! Get back here!", 5000)
-wait 1500
-Car.SetCoordinates($Banshee, 1145.48, 1291.81, 126.66)
-goto @INIT_425
-
-:INIT_572
-$onmission = 0
-Mission.Fail
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-Car.Delete($Banshee)
-wait 0
-if
-    Player.IsInAnyCar($player1)
-then
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.WarpFromCarToCoord($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    goto @INIT_77
-else
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-    goto @INIT_77
-end
-
-:INIT_625
-Text.PrintBigString("Mission Passed!", 3000, TextStyle.MiddleSmaller)
-Audio.PlayMissionPassedTune(1)
-Player.SetControl($player1, False)
-wait 3000
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-$Intro_Passed = 1
-$onmission = 0
-Streaming.MarkModelAsNoLongerNeeded(#BANSHEE)
-wait 500
-CarGenerator.Switch($gen_car6, 101)
-CarGenerator.Switch($gen_car7, 101)
-CarGenerator.Switch($CopCar, 101)
-CarGenerator.Switch($AmbulanceIND, 101)
-CarGenerator.Switch($AmbulanceCOM, 101)
-CarGenerator.Switch($AmbulanceRES, 101)
-CarGenerator.Switch($AmbulanceRES2, 101)
-CarGenerator.Switch($BansheeGen, 101)
-CarGenerator.Switch($BobcatGen, 101)
-CarGenerator.Switch($CheetahGen, 101)
-CarGenerator.Switch($KurumaGen, 101)
-CarGenerator.Switch($MafiaGen, 101)
-CarGenerator.Switch($StingerGen, 101)
-CarGenerator.Switch($SentinelGen, 101)
-CarGenerator.Switch($Canyonero, 101)
-World.SetVisibilityOfClosestObjectOfType(1027.25, -933.75, 15.0, 50.0, #INDHELIX_BARRIER, False)
-World.SwapNearestBuildingModel(1027.25, -933.75, 15.0, 50.0, #INDHELIX_BARRIER, #LOD_LAND014)
-goto @INIT_764
-
-:INIT_764
-$Destination = Blip.AddForCoord(1182.80, 1159.21, 121.53)
-$Sphere = Sphere.Create(1182.80, 1159.21, 121.53, 3.0)
-wait 500
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Player.SetControl($player1, True)
-wait 0
-if
-    Player.IsInCar($player1, $Banshee)
-then
-    Text.PrintHelpString("Drive to Monica's Cigar Shop.")
-else
-    Text.PrintHelpString("Walk to Monica's Cigar Shop.")
-end
-wait 6000
-$CarDealerBlip = Blip.AddSpriteForContactPoint(1337.89, 1666.14, 127.06, RadarSprite.Joey)
-Text.PrintHelpString("You can visit Wang Cars in Gostburg if you need another ride!")
-wait 500
-start_new_script @Vehicle
-terminate_this_script
-
-//-------------Mission 1---------------
-
-// FIXME: Refactor this into the first mission fn
-:Car
-script_name 'Car'
-$onmission = 1
-$OnCarMission = 1
-gosub @Car_92
-
-:Car_50
-while Player.IsPlaying($player1)
-wait 0
-    if
-        not Player.IsPlaying($player1)
-    then
-        gosub @Car_1024
-        terminate_this_script
-    else
-        continue
-    end
-end
-
-:Car_92
-$TIMER = 30000
-wait 0
-Camera.DoFade(1500, Fade.In)
-wait 1500
-if
-    Player.IsInAnyCar($player1)
-then
-    goto @Car_329
-else
-    if
-        Player.IsOnFoot($player1)
-    then
-        Player.SetControl($player1, True)
-        wait 5000
-        Text.PrintBigString("You need a car for this gig!", 3000, TextStyle.MiddleSmallerHigher)
-        Blip.AddForCar($Banshee, $CarBlip)
-        Hud.DisplayTimer($TIMER)
-        wait 30000
-        if
-            not Player.IsInCar($player1, $Banshee)
-        then
-            Hud.ClearTimer($TIMER)
-            goto @Car_1090
-        else
-            goto @Car_329
-        end
-    end
-end
-
-:Car_329
-wait 0
-if
-    Player.IsInCar($player1, $Shitbox)
-then
-    Car.Delete($Banshee)
-    Car.Delete($Stinger)
-    Streaming.MarkModelAsNoLongerNeeded(#BANSHEE)
-    CarGenerator.Switch($BansheeGen, 101)
-    Streaming.MarkModelAsNoLongerNeeded(#STINGER)
-    CarGenerator.Switch($StingerGen, 101)
-    goto @Car_682
-else
-    if
-        Player.IsInCar($player1, $Banshee)
-    then
-        Car.Delete($Stinger)
-        Streaming.MarkModelAsNoLongerNeeded(#BANSHEE)
-        CarGenerator.Switch($BansheeGen, 101)
-        Streaming.MarkModelAsNoLongerNeeded(#STINGER)
-        CarGenerator.Switch($StingerGen, 101)
-        goto @Car_682
-    else
-        if
-            Player.IsInAnyCar($player1)
-        then
-            Car.Delete($Stinger)
-            Streaming.MarkModelAsNoLongerNeeded(#BANSHEE)
-            CarGenerator.Switch($BansheeGen, 101)
-            Streaming.MarkModelAsNoLongerNeeded(#STINGER)
-            CarGenerator.Switch($StingerGen, 101)
-            goto @Car_682
-        else
-            goto @Car_92
-        end
-    end
-end
-
-:Car_480
-wait 0
-if
-    Car.IsStillAlive($Shitbox)
-then
-    goto @Car_681
-else
-    goto @Car_481
-end
-
-:Car_481
-Text.PrintBig('WRECKED', 5000, TextStyle.MiddleSmaller)
-goto @Car_1024
-
-:Car_482
-Text.PrintBig('UPSIDE', 5000, TextStyle.MiddleSmaller)
-goto @Car_1024
-
-:Car_680
-wait 0
-if or
-    not Player.IsInCar($player1, $Banshee)
-    not Player.IsInCar($player1, $Stinger)
-    not Player.IsInCar($player1, $Shitbox)
-then
-    Hud.DisplayTimer($TIMER)
-    Text.PrintString("Get back in the car!", 5000)
-    wait 15000
-    if or
-        not Player.IsInCar($player1, $Banshee)
-        not Player.IsInCar($player1, $Stinger)
-        not Player.IsInCar($player1, $Shitbox)
-    then
-        Text.PrintString("What, do you think we're just screwing around here?! Get the fuck in!", 5000)
-        wait 15000
-        if or
-            not Player.IsInCar($player1, $Banshee)
-            not Player.IsInCar($player1, $Stinger)
-            not Player.IsInCar($player1, $Shitbox)
-        then
-            goto @Car_938
-        else
-            Hud.ClearTimer($TIMER)
-            goto @Car_811
-        end
-    else
-        Hud.ClearTimer($TIMER)
-        goto @Car_811
-    end
-else
-    Hud.ClearTimer($TIMER)
-    goto @Car_811
-end
-
-:Car_681
-Player.SetControl($player1, True)
-Text.PrintString("Get in the beater.", 3000)
-Blip.AddForCar($Shitbox, $CarBlip)
-Hud.DisplayTimer($TIMER)
-while not Player.IsInCar($player1, $Shitbox)
-wait 5000
-    if
-        Player.IsInCar($player1, $Shitbox)
-    then
-        Hud.ClearTimer($TIMER)
-        break
-    else
-        wait 5000
-        if
-            Player.IsInCar($player1, $Shitbox)
-        then
-            Hud.ClearTimer($TIMER)
-            break
-        else
-            wait 5000
-            if
-                Player.IsInCar($player1, $Shitbox)
-            then
-                Hud.ClearTimer($TIMER)
-                break
-            else
-                wait 5000
-                if
-                    Player.IsInCar($player1, $Shitbox)
-                then
-                    Hud.ClearTimer($TIMER)
-                    break
-                else
-                    wait 5000
-                    if
-                        Player.IsInCar($player1, $Shitbox)
-                    then
-                        Hud.ClearTimer($TIMER)
-                        break
-                    else
-                        wait 5000
-                        if
-                            Player.IsInCar($player1, $Shitbox)
-                        then
-                            Hud.ClearTimer($TIMER)
-                            break
-                        else
-                            goto @Car_938
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-:Car_682
-Hud.ClearTimer($TIMER)
-Blip.Remove($CarBlip)
-Sphere.Remove($Sphere)
-wait 500
-$Destination = Blip.AddForCoord(1344.36, 1379.46, 129.31)
-Blip.ChangeColor($Destination, BlipColor.Yellow)
-wait 0
-if
-    Player.IsOnFoot($player1)
-then
-    $TIMER = 10000
-    Text.PrintBigString("Get back in the car!", 3000, TextStyle.MiddleSmallerHigher)
-    Blip.AddForCar($Banshee, $CarBlip)
-    Hud.DisplayTimer($TIMER)
-    wait 10000
-    if
-        not Player.IsInCar($player1, $Banshee)
-    then
-        Hud.ClearTimer($TIMER)
-        goto @Car_1090
-    else
-        goto @Car_329
-    end
-else
-    $Sphere = Sphere.Create(1344.36, 1379.46, 129.31, 3.0)
-    Text.PrintString("Drive to the Court House.", 5000)
-end
-
-:Car_683
-wait 0
-if
-    not Car.IsHealthGreater($Shitbox, 900)
-then
-    goto @Car_684
-else
-    if
-        Car.IsUpsidedown($Shitbox)
-    then
-        goto @Car_482
-    else
-        if
-            not Car.IsStillAlive($Shitbox)
-        then
-            goto @Car_481
-        else
-            if
-                Player.LocateAnyMeans3D($player1, 1345.50, 1363.74, 126.67, 10.0, 10.0, 3.0, False)
-            then
-                Text.PrintString("Walk up the steps toward the door.", 5000)
-                goto @Car_811
-            else
-                goto @Car_683
-            end
-        end
-    end
-end
-
-:Car_684
-wait 0
-Text.PrintSoon('JM1_4', 5000, 2) // ~g~You're trashing the vehicle! Get it repaired!
-$SprayShopIND = Blip.AddSpriteForCoord(-110.75, 1357.06, 15.00, RadarSprite.Spray)
-
-:Car_685
-wait 0
-if
-    Car.IsDead($Shitbox)
-then
-    goto @Car_481
-else
-    if
-        Car.IsHealthGreater($Shitbox, 900)
-    then
-        Blip.Remove($SprayShopIND)
-        Text.PrintString("Drive to the Court House.", 5000)
-        goto @Car_683
-    else
-        wait 10000
-        Text.PrintSoon('JM1_4', 5000, 2) // ~g~You're trashing the vehicle! Get it repaired!
-        goto @Car_685
-    end
-end
-
-:Car_811
-while not Player.LocateOnFoot3D($player1, 1344.36, 1379.46, 129.31, 3.0, 3.0, 3.0, 0)
-    wait 0
-    if
-        Player.LocateOnFoot3D($player1, 1344.36, 1379.46, 129.31, 3.0, 3.0, 3.0, 0)
-    then
-        Player.SetControl($player1, False)
-        Blip.Remove($Destination)
-        Sphere.Remove($Sphere)
-        Text.PrintBigString("Mission Passed!", 3000, TextStyle.MiddleSmaller)
-        Audio.PlayMissionPassedTune(1)
-        Mission.Finish
-        $OnCarMission = 0
-        $onmission = 0
-        $CarMissionDone = 1
-        wait 5000
-        if
-            Player.IsPlaying($player1)
-        then
-            Player.SetControl($player1, True)
-            Player.SetNeverGetsTired($player1, True)
-            Text.PrintHelpString("You can now sprint for as long as your heart desires!")
-            wait 5000
-            if
-                Player.IsInAnyCar($player1)
-            then
-                Text.PrintHelpString("Drive to the Junkyard.")
-                $Destination = Blip.AddForCoord(544.49, 1591.82, 151.21)
-                $Sphere = Sphere.Create(544.49, 1591.82, 151.21, 3.0)
-                start_new_script @Pistol
-                terminate_this_script
-            else
-                Text.PrintHelpString("Walk to the Junkyard.")
-                $Destination = Blip.AddForCoord(544.49, 1591.82, 151.21)
-                $Sphere = Sphere.Create(544.49, 1591.82, 151.21, 3.0)
-                start_new_script @Pistol
-                terminate_this_script
-            end
-        else
-            goto @Car_1090
-        end
-    else
-        continue
-    end
-end
-
-:Car_938
-$onmission = 0
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-Blip.Remove($Destination)
-Blip.Remove($CarBlip)
-Sphere.Remove($Sphere)
-wait 500
-if
-    Player.IsInAnyCar($player1)
-then
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.WarpFromCarToCoord($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 1189.63, 1159.13, 121.53)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-else
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 1189.63, 1159.13, 121.53)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-end
-Car.Delete($Shitbox)
-Car.Delete($Stinger)
-wait 1000
-$Shitbox = Car.Create(#KURUMA, 1111.57, 1146.55, 120.32)
-Camera.DoFade(500, Fade.In)
-wait 500
-Player.SetControl($player1, True)
-$Destination = Blip.AddForCoord(1189.63, 1159.13, 121.53)
-$Sphere = Sphere.Create(1189.63, 1159.13, 121.53, 3.0)
-Text.PrintHelpString("Drive to Monica's Cigar Shop.")
-wait 500
-goto @Car_1100
-
-:Car_1024
-$onmission = 0
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-Blip.Remove($Destination)
-Blip.Remove($CarBlip)
-Sphere.Remove($Sphere)
-wait 500
-if
-    Player.IsInAnyCar($player1)
-then
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.WarpFromCarToCoord($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 1189.63, 1159.13, 121.53)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-else
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 800.875, 80.5, 12.0)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-end
-Car.Delete($Shitbox)
-Car.Delete($Stinger)
-wait 1000
-$Shitbox = Car.Create(#KURUMA, 1111.57, 1146.55, 120.32)
-Camera.DoFade(500, Fade.In)
-wait 500
-Player.SetControl($player1, True)
-$Destination = Blip.AddForCoord(1189.63, 1159.13, 121.53)
-$Sphere = Sphere.Create(1189.63, 1159.13, 121.53, 3.0)
-Text.PrintHelpString("Drive to Monica's Cigar Shop.")
-wait 500
-goto @Car_1100
-
-:Car_1090
-$onmission = 0
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-Blip.Remove($Destination)
-Blip.Remove($CarBlip)
-Sphere.Remove($Sphere)
-if
-    Player.IsInAnyCar($player1)
-then
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.WarpFromCarToCoord($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 800.875, 80.5, 12.0)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-else
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Player.SetCoordinates($player1, 1130.71, 1285.37, 126.81)
-    Car.Delete($Banshee)
-    wait 500
-    $Banshee = Car.Create(#BANSHEE, 800.875, 80.5, 12.0)
-    wait 0
-    Player.TurnToFaceCoord($player1, 1189.63, 1159.13, 121.53)
-end
-Car.Delete($Shitbox)
-Car.Delete($Stinger)
-wait 500
-$Shitbox = Car.Create(#KURUMA, 1111.57, 1146.55, 120.32)
-Camera.DoFade(500, Fade.In)
-wait 500
-Player.SetControl($player1, True)
-$Destination = Blip.AddForCoord(1189.63, 1159.13, 121.53)
-$Sphere = Sphere.Create(1189.63, 1159.13, 121.53, 3.0)
-
-:Car_1100
-start_new_script @Vehicle
-terminate_this_script
-
-//-------------Mission 2---------------
-
-// FIXME: Refactor this into the second mission fn
-:Gun
-script_name 'Gun'
-$onmission = 1
-$OnGunMission = 1
-gosub @Gun_20
-
-:Gun_10
-while Player.IsPlaying($player1)
-wait 0
-    if
-        not Player.IsPlaying($player1)
-    then
-        gosub @Gun_424
-        terminate_this_script
-    else
-        continue
-    end
-end
-
-:Gun_20
-Streaming.RequestModel(#COLT45)
-Streaming.LoadSpecialCharacter(1, 'MISTY')
-
-:Gun_29
-while not Streaming.HasModelLoaded(#COLT45)
-Streaming.LoadAllModelsNow
-wait 250
-    if and
-        Streaming.HasSpecialCharacterLoaded(1)
-        Streaming.HasModelLoaded(#COLT45)
-    then
-        break
-    else
-        continue
-    end
-end
-
-:Gun_59
-Camera.DoFade(500, Fade.In)
-wait 500
-$Pistol = Pickup.CreateWithAmmo(#COLT45, PickupType.OnStreet, 600, 630.11, 1614.53, 150.94)
-$GunBlip = Blip.AddForPickup($Pistol)
-Blip.ChangeColor($GunBlip, BlipColor.LightBlue)
-Text.PrintStringNow("Find a pistol.", 2000)
-Player.SetControl($player1, True)
-
-:Gun_159
-while not Pickup.HasBeenCollected($Pistol)
-wait 0
-    if
-        Pickup.HasBeenCollected($Pistol)
-    then
-        $PistolCollected = 1
-        Blip.Remove($GunBlip)
-        wait 500
-        $SafeBlip = Blip.AddSpriteForCoord(625.82, 1395.12, 140.66, RadarSprite.Savehouse)
-        Blip.ChangeColor($SafeBlip, BlipColor.Yellow)
-        $Sphere = Sphere.Create(625.82, 1395.12, 140.66, 3.0)
-        wait 500
-        Text.PrintString("Find a place to stay for the night.", 3000)
-        break
-    else
-        continue
-    end
-end
-
-:Gun_160
-while not Player.LocateAnyMeans3D($player1, 625.82, 1395.12, 140.66, 3.0, 3.0, 3.0, False)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 625.82, 1395.12, 140.66, 3.0, 3.0, 3.0, False)
-    then
-        Player.SetControl($player1, False)
-        Sphere.Remove($Sphere)
-        $SafeAndSound = 1
-        Sound.AddOneOffSound(625.82, 1395.12, 140.66, ScriptSound.SoundPartMissionComplete)
-        wait 2000
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        break
-    else
-        continue
-    end
-end
-
-:Gun_223
-wait 0
-if
-    Player.IsInAnyCar($player1)
-then
-    Player.WarpFromCarToCoord($player1, 586.13, 1486.97, 150.00)
-    Player.SetHeading($player1, 180.0)
-    Hud.SwitchWidescreen(True)
-    Camera.SetFixedPosition(681.96, 1467.21, 160.68, 0.0, 0.0, 0.0)
-    Camera.PointAtPoint(587.25, 1516.43, 146.00, SwitchType.JumpCut)
-    Camera.DoFade(1500, Fade.In)
-    wait 1500
-    Text.PrintHelpString("This farm will serve as a nice hideout.")
-    wait 6000
-    Text.PrintHelpString("For now, at least...")
-    wait 3000
-    Camera.SetFixedPosition(613.44, 1509.65, 190.00, 0.0, 0.0, 0.0)
-    Camera.PointAtPoint(586.96, 1517.37, 141.44, SwitchType.JumpCut)
-    Text.PrintHelpString("Walking into this barn will save the game.")
-    wait 6000
-    Text.PrintHelpString("Saving the game will fully restore your health, and time will advance by 6 hours.")
-    wait 6000
-    Camera.DoFade(1500, Fade.Out)
-    wait 1500
-    Hud.SwitchWidescreen(False)
-    CarGenerator.Switch($gen_car8, 101)
-    Camera.RestoreJumpcut()
-    Player.SetControl($player1, True)
-    wait 500
-    Camera.DoFade(1500, Fade.In)
-    wait 5000
-    $misty = Char.Create(PedType.CivFemale, #FEMALE01, 1377.37, 1255.67, 124.03)
-    Text.PrintHelpString("Go to the Video Store.")
-    $Destination = Blip.AddForCoord(1129.32, 1282.79, 127.09)
-    $Sphere = Sphere.Create(1129.32, 1282.79, 127.09, 1.0)
-    goto @Gun_325
-else
-    Player.SetCoordinates($player1, 586.13, 1486.97, 150.00)
-    Player.SetHeading($player1, 180.0)
-    Camera.SetFixedPosition(681.96, 1467.21, 160.68, 0.0, 0.0, 0.0)
-    Camera.PointAtPoint(587.25, 1516.43, 146.00, SwitchType.JumpCut)
-    Camera.DoFade(1500, Fade.In)
-    wait 1500
-    Text.PrintHelpString("This farm will serve nicely as a hideout.")
-    wait 6000
-    Text.PrintHelpString("For now...")
-    wait 3000
-    Camera.SetFixedPosition(613.44, 1509.65, 160.00, 0.0, 0.0, 0.0)
-    Camera.PointAtPoint(586.96, 1517.37, 141.44, SwitchType.JumpCut)
-    Text.PrintHelpString("Walking into this barn will allow you to save the game.")
-    wait 6000
-    Text.PrintHelpString("Saving the game will fully restore your health, and time will advance by 6 hours.")
-    wait 6000
-    Camera.DoFade(1500, Fade.Out)
-    wait 1500
-    Hud.SwitchWidescreen(False)
-    CarGenerator.Switch($gen_car8, 101)
-    Camera.RestoreJumpcut()
-    Player.SetControl($player1, True)
-    wait 500
-    Camera.DoFade(1500, Fade.In)
-    wait 1500
-    $misty = Char.Create(PedType.CivFemale, #FEMALE01, 1387.37, 1261.67, 123.87)
-    Char.SetObjWaitOnFoot($misty)
-    Text.PrintHelpString("Go to the Video Store.")
-    $Destination = Blip.AddForCoord(1129.32, 1282.79, 127.09)
-    $Sphere = Sphere.Create(1129.32, 1282.79, 127.09, 1.0)
-    start_new_script @SaveP
-    goto @Gun_325
-end
-
-:Gun_325
-$TIMER = 15000
-while not Player.LocateOnFoot3D($player1, 1129.32, 1282.79, 127.09, 1.0, 1.0, 0.75, False)
-wait 0
-    if
-        Player.LocateOnFoot3D($player1, 1129.32, 1282.79, 127.09, 1.0, 1.0, 0.75, False)
-    then
-        Blip.Remove($Destination)
-        Sphere.Remove($Sphere)
-        Player.SetControl($player1, False)
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        Hud.SwitchWidescreen(True)
-        Camera.SetFixedPosition(1137.60, 1313.23, 135.14, 0.0, 0.0, 0.0)
-        Camera.PointAtPoint(1129.32, 1282.79, 127.09, SwitchType.JumpCut)
-        wait 500
-        Camera.DoFade(500, Fade.In)
-        wait 500
-        Text.PrintString("The Store isn't open right now. Wait for one of the employees.", 5000)
-        wait 5000
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        Camera.SetFixedPosition(1384.60, 1243.00, 123.68, 0.0, 0.0, 0.0)
-        Camera.PointAtChar($misty, CameraMode.FollowPed, SwitchType.JumpCut)
-        wait 1000
-        Camera.DoFade(500, Fade.In)
-        wait 500
-        Char.SetRunning($misty, True)
-        Char.SetUsePednodeSeek($misty, True)
-        Char.SetObjGotoPlayerOnFoot($misty, $player1)
-        Text.PrintString("She's been raiding the liquor cabinet...", 3500)
-        wait 3500
-        Text.PrintString("Ouch! She can barely walk!", 3500)
-        wait 3500
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        Camera.RestoreJumpcut()
-        Hud.SwitchWidescreen(False)
-        Camera.DoFade(500, Fade.In)
-        wait 500
-        Player.SetControl($player1, True)
-        break
-    else
-        continue
-    end
-end
-
-:Gun_326
-$MistyBlip = Blip.AddForChar($misty)
-Blip.ChangeDisplay($MistyBlip, BlipDisplay.BlipOnly)
-Blip.ChangeColor($MistyBlip, BlipColor.Cyan)
-$Sphere = Sphere.Create(1384.60, 1243.00, 123.68, 3.0)
-Text.PrintString("Meet the girl at her apartment.", 3000)
-
-:Gun_327
-while not Player.LocateAnyMeans3D($player1, 1384.60, 1243.00, 123.68, 1.0, 1.0, 1.0, True)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 1384.60, 1243.00, 123.68, 1.0, 1.0, 1.0, True)
-    then
-        if
-            Player.IsInAnyCar($player1)
-        then
-            Player.StoreCarIsIn($player1, $myCar)
-            Blip.Remove($Destination)
-            Sphere.Remove($Sphere)
-            Player.SetControl($player1, False)
-            wait 500
-            Text.PrintString("Honk the horn.", 3000)
-            Player.SetControl($player1, True)
-            break
-        else
-            $TIMER = 15000
-            Text.PrintString("You need some wheels in order to drive her to work!", 3000)
-            wait 3000
-            Text.PrintString("Find a car.", 2000)
-            Hud.DisplayTimer($TIMER)
-            wait 5000
-            if not Player.IsInAnyCar($player1)
-            then
-                wait 5000
-                if not Player.IsInAnyCar($player1)
-                then
-                    wait 5000
-                    if not Player.IsInAnyCar($player1)
-                    then
-                        goto @Gun_424
-                    else
-                        Hud.ClearTimer($TIMER)
-                        goto @Gun_327
-                    end
-                else
-                    Hud.ClearTimer($TIMER)
-                    goto @Gun_327
-                end
-            else
-                Hud.ClearTimer($TIMER)
-                goto @Gun_327
-            end
-        end
-    else
-        goto @Gun_327
-    end
-end
-
-:Gun_328
-while not Pad.IsKeyPressed(KeyCode.LeftShift)
-wait 0
-    if
-        Pad.IsKeyPressed(KeyCode.LeftShift)
-    then
-        Player.SetControl($player1, False)
-        Blip.Remove($MistyBlip)
-        break
-    else
-        wait 3000
-        Text.PrintString("Honk the horn.", 3000)
-        continue
-    end
-end
-
-:Gun_329
-Audio.LoadMissionAudio('lib_d')
-Char.SetObjEnterCarAsPassenger($misty, $myCar)
-while not Char.IsInCar($misty, $myCar)
-wait 0
-    if
-        Char.IsInCar($misty, $myCar)
-    then
-        Blip.Remove($MistyBlip)
-        Audio.PlayMissionAudio()
-        Text.PrintString("Hi, I'm Misty!", 2000)
-        wait 2000
-        Player.SetControl($player1, True)
-        wait 0
-        Text.PrintHelpString("Take her to work.")
-        $Destination = Blip.AddForCoord(1130.71, 1285.37, 126.81)
-        Blip.ChangeColor($Destination, BlipColor.Yellow)
-        $Sphere = Sphere.Create(1130.71, 1285.37, 126.81, 3.0)
-        break
-    else
-        if
-            Char.IsDead($misty)
-        then
-            Blip.Remove($MistyBlip)
-            Text.PrintBigString("Misty's dead!", 3000, TextStyle.MiddleSmallerHigher)
-            goto @Gun_424
-        else
-            continue
-        end
-    end
-end
-
-:Gun_334
-while not Player.LocateAnyMeans3D($player1, 1130.71, 1285.37, 126.81, 1.0, 1.0, 0.75, False)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 1130.71, 1285.37, 126.81, 1.0, 1.0, 0.75, False)
-    then
-        Blip.Remove($Destination)
-        Sphere.Remove($Sphere)
-        Player.SetControl($player1, False)
-        Char.SetObjLeaveCar($misty, $myCar)
-        Char.SetRunning($misty, True)
-        Char.SetObjGotoCoordOnFoot($misty, 1132.57, 1253.00)
-        wait 6000
-        Char.RemoveElegantly($misty)
-        Player.SetControl($player1, True)
-        Text.PrintString("Get back to your hideout.", 5000)
-        $Destination = Blip.AddForCoord(568.14,  1478.37, 139.24)
-        Blip.ChangeColor($Destination, BlipColor.Yellow)
-        $Sphere = Sphere.Create(568.14,  1478.37, 139.24, 3.0)
-        goto @Gun_440
-    else
-        continue
-    end
-end
-
-:Gun_424
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-$OnCarMission = 0
-$onmission = 0
-$PistolCollected = 0
-$SafeAndSound = 0
-$SightseeingTour = 0
-Blip.Remove($Destination)
-Blip.Remove($GunBlip)
-Pickup.Remove($Pistol)
-Sphere.Remove($Sphere)
-wait 3000
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-if
-    Player.IsInAnyCar($player1)
-then
-    Player.WarpFromCarToCoord($player1, 586.13, 1486.97, 150.00)
-    Player.SetHeading($player1, 180.0)
-else
-    Player.SetCoordinates($player1, 586.13, 1486.97, 150.00)
-    Player.SetHeading($player1, 180.0)
-end
-Char.RemoveElegantly($misty)
-$Destination = Blip.AddForCoord(554.56, 1616.61, 150.60)
-$Sphere = Sphere.Create(554.56, 1616.61, 150.60, 1.0)
-wait 500
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Player.SetControl($player1, True)
-wait 1000
-terminate_all_scripts_with_this_name 'Pistol'
-start_new_script @Pistol
-terminate_this_script
-
-:Gun_440
-while not Player.LocateAnyMeans3D($player1, 568.14,  1478.37, 139.24, 1.0, 1.0, 1.0, False)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 568.14,  1478.37, 139.24, 1.0, 1.0, 1.0, False)
-    then
-        Blip.Remove($Destination)
-        Sphere.Remove($Sphere)
-        Player.SetControl($player1, False)
-        Player.AddScore($player1, 5000)
-        Text.PrintWithNumberBig('M_PASS', 1000, 3000, TextStyle.Middle) // MISSION PASSED! $~1~
-        Audio.PlayMissionPassedTune(1)
-        $onmission = 0
-        wait 5000
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        start_new_script @SaveP
-        Blip.Remove($Ammunation)
-        Blip.Remove($Ammunation2)
-        Blip.Remove($Ammunation3)
-        Blip.Remove($SprayShopRES)
-        Blip.Remove($SprayShopIND)
-        $LuigiBlip = Blip.AddSpriteForContactPoint(1425.60, 1596.70, 124.56, RadarSprite.Luigi)
-        Camera.DoFade(1500, Fade.In)
-        wait 1500
-        Player.SetControl($player1, True)
-        Text.PrintString("Go see Louie.", 5000)
-        break
-    else
-        continue
-    end
-end
-
-:Gun_6666
-start_new_script @Stairs
-terminate_this_script
-
-//-------------Mission 3---------------
-
-// FIXME: Refactor this into the third mission fn
-:Alley
-script_name 'Alley'
-$onmission = 1
-$OnBrawlMission = 1
-Alley_10()
-
-:Alley_05
-while Player.IsPlaying($player1)
-    wait 0
-    if
-        not Player.IsPlaying($player1)
-    then
-        Alley_6666()
-        terminate_this_script
-    else
-        continue
-    end
-end
-
-:Alley_10
-wait 0
-Streaming.LoadSpecialCharacter(1, 'LUIGI')
-Streaming.RequestModel(#CHEETAH)
-wait 500
-Streaming.LoadAllModelsNow()
-
-:Alley_20
-while not Streaming.HasSpecialCharacterLoaded(1)
-wait 0
-    if and
-        Streaming.HasModelLoaded(#CHEETAH)
-        Streaming.HasSpecialCharacterLoaded(1)
-    then
-        break
-    else
-        continue
-    end
-end
-
-:Alley_101
-Hud.SwitchWidescreen(True)
-wait 1000
-World.ClearArea(1430.00, 1600.00, 126.00, 30.00, True)
-Player.SetCoordinates($player1, 1425.00, 1602.75, 126.81)
-$luigi = Char.Create(PedType.Special, #SPECIAL01, 1435.64, 1602.75, 126.81)
-$myCar = Car.Create(#CHEETAH, 1405.33, 1600.44, 126.81)
-Car.SetHeading($myCar, 90.0)
-Camera.SetFixedPosition(1430.59, 1602.75, 126.81, 0.0, 0.0, 0.0)
-Camera.PointAtChar($luigi, CameraMode.Fixed, SwitchType.JumpCut)
-wait 500
-Char.TurnToFacePlayer($luigi, $player1)
-Player.TurnToFaceChar($player1, $luigi)
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Text.PrintString("I've never seen you around before. You're new here, ain't ya?", 5000)
-wait 5000
-Camera.PointAtChar($scplayer, CameraMode.Fixed, SwitchType.JumpCut)
-wait 5000
-Camera.PointAtChar($luigi, CameraMode.Fixed, SwitchType.JumpCut)
-Text.PrintString("Man of few words, eh? Alright then...", 4000)
-wait 4000
-Text.PrintString("Come with me! I'll show you around the place.", 5000)
-Char.SetObjGotoCoordOnFoot($luigi, 1405.33, 1600.44)
-Char.SetRunning($luigi, True)
-wait 4000
-Text.ClearPrints()
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-Camera.RestoreJumpcut()
-Hud.SwitchWidescreen(False)
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Char.SetObjEnterCarAsPassenger($luigi, $myCar)
-Player.SetControl($player1, True)
-
-:Alley_102
-while not Char.IsObjectivePassed($luigi)
-wait 0
-    if
-        Char.IsInCar($luigi, $myCar)
-    then
-        Blip.AddForCar($myCar, $CarBlip)
-        Player.SetControl($player1, True)
-        Text.PrintString("Get into the car so that Louie can show you around.", 5000)
-        break
-    else
-        wait 1000
-        continue
-    end
-end
-
-:Alley_103
-while not Player.IsInCar($player1, $myCar)
-wait 0
-    if
-        Player.IsInCar($player1, $myCar)
-    then
-        Text.PrintString("Drive to the Airport.", 5000)
-        Blip.Remove($CarBlip)
-        Blip.AddForCoord(1674.33, 1646.89, 135.85, $Destination)
-        Blip.ChangeColor($Destination, BlipColor.Yellow)
-        break
-    else
-        continue
-    end
-end
-
-:Alley_104
-while not Player.LocateAnyMeans3D($player1, 1674.33, 1646.89, 135.85, 3.0, 3.0, 3.0, True)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 1674.33, 1646.89, 135.85, 3.0, 3.0, 3.0, True)
-    then
-        Blip.Remove($Destination)
-        Player.SetControl($player1, False)
-        Sound.AddOneOffSound(1674.33, 1646.89, 135.85, ScriptSound.SoundPartMissionComplete)
-        Text.PrintString("Take Louie home.", 5000)
-        $SightseeingTour = 1
-        Blip.AddForCoord(1728.00, 947.54, 119.37, $Destination)
-        Blip.ChangeColor($Destination, BlipColor.Yellow)
-        Player.SetControl($player1, True)
-        break
-    else
-        if
-            not Player.IsInCar($player1, $myCar)
-        then
-            Text.PrintNow('IN_VEH', 5000, 1)
-        else
-            continue
-        end
-    end
-end
-
-:Alley_105
-while not Player.LocateAnyMeans3D($player1, 1728.00, 947.54, 119.37, 3.0, 3.0, 3.0, True)
-wait 0
-    if
-        Player.LocateAnyMeans3D($player1, 1728.00, 947.54, 119.37, 3.0, 3.0, 3.0, True)
-    then
-        Blip.Remove($Destination)
-        Player.SetControl($player1, False)
-        Hud.SwitchWidescreen(True)
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        Player.ClearWantedLevel($player1)
-        Camera.DoFade(1500, Fade.In)
-        wait 1500
-        Text.PrintString("It was nice to meet ya, kid. You seem pretty handy.", 5000)
-        wait 5000
-        Text.PrintString("Meet me back at my shop in Chinatown later. I might have some work for you.", 6000)
-        wait 6000
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        if
-            Streaming.HasModelLoaded(#UZI)
-        then
-            Char.GiveWeapon($luigi, WeaponType.Uzi, 5000)
-        else
-            Streaming.RequestModel(#UZI)
-            wait 500
-            Streaming.LoadAllModelsNow()
-            wait 0
-            Char.GiveWeapon($luigi, WeaponType.Uzi, 5000)
-        end
-        Hud.SwitchWidescreen(False)
-        Player.ClearWantedLevel($player1)
-        Camera.DoFade(1500, Fade.In)
-        wait 1500
-        Char.SetObjLeaveCar($luigi, $myCar)
-        Text.PrintBigString("Mission Passed!", 5000, TextStyle.Middle)
-        Audio.PlayMissionPassedTune(1)
-        Blip.Remove($LuigiBlip)
-        $onmission = 0
-        wait 2000
-        Player.SetControl($player1, True)
-        Char.SetObjDestroyCar($luigi, $myCar)
-        wait 1000
-        break
-    end
-end
-
-:Alley_6666
-wait 0
-if
-    Char.IsDead($luigi)
-then
-    $kenji = Blip.AddSpriteForContactPoint(1525.30, 1112.63, 122.52, RadarSprite.Kenji)
-    Text.PrintHelpString("A new Point of Contact is available.")
-    Char.MarkAsNoLongerNeeded($luigi)
-    Streaming.UnloadSpecialCharacter(1)
-    Streaming.MarkModelAsNoLongerNeeded(#CHEETAH)
-    start_new_script @Affairs
-    terminate_this_script
-else
-    goto @Alley_6666
-end
-
-:Alley_6667
-$onmission = 0
-Mission.Fail
-Player.SetControl($player1, False)
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-wait 3000
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-if
-    Char.IsInAnyCar($player1)
-then
-    Player.WarpFromCarToCoord($player1, 1425.00, 1602.75, 126.81)
-else
-    Player.SetCoordinates($player1, 1425.00, 1602.75, 126.81)
-end
-wait 500
-Car.Delete($myCar)
-wait 0
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Player.SetControl($player1, True)
-terminate_all_scripts_with_this_name 'Stairs'
-start_new_script @Stairs
-terminate_this_script
-
-//-------------Mission 4---------------
-
-// FIXME: Refactor this into the mission_pestRemoval fn
-:Pest
-script_name 'Pest'
-$onmission = 1
-
-:Pest_10
-wait 0
-Pickup.Create(#INFO, PickupType.Once, 1329.77, 1007.93, 122.54, $Pack1)
-Pickup.Create(#INFO, PickupType.Once, 1736.93, 1296.47, 127.40, $Pack9)
-Blip.AddForCoord(1329.77, 1007.93, 122.54, $Pack1B)
-Blip.AddForCoord(1736.93, 1296.47, 127.40, $Pack9B)
-wait 500
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Player.SetControl($player1, True)
-Text.PrintHelpString("Find the two Info Pickups marked on the map.")
-
-:Pest_20
-wait 0
-if
-    Pickup.HasBeenCollected($Pack1)
-then
-    Blip.Remove($Pack1B)
-    goto @Pest_30
-else
-    goto @Pest_20
-end
-
-:Pest_30
-wait 0
-if
-    Pickup.HasBeenCollected($Pack9)
-then
-    Blip.Remove($Pack9B)
-    goto @Pest_40
-else
-    goto @Pest_30
-end
-
-:Pest_40
-$onmission = 0
-Player.SetControl($player1, False)
-Audio.PlayMissionPassedTune(1)
-Player.AddScore($player1, 2000)
-Text.PrintWithNumberBig('M_PASS', 2000, 5000, TextStyle.Middle)
-wait 5000
-Camera.DoFade(1500, Fade.Out)
-wait 1500
-Blip.Remove($kenji)
-wait 500
-Camera.DoFade(1500, Fade.In)
-wait 1500
-Player.SetControl($player1, True)
-$catalina = Blip.AddSpriteForContactPoint(883.82, 1315.72, 130.32, RadarSprite.Catalina)
-Text.PrintString("Go see Catalina.", 5000)
-
-//1680.09, 1554.98, 126.81
-
-:Pest_120
-start_new_script @Power
-terminate_this_script
-
-//-------------Mission 5---------------
-
-// FIXME: Refactor this into the fifth mission fn
-:Circuit
-script_name 'Circuit'
-$onmission = 1
-
-:Circuit_10
-Streaming.RequestModel(#BOBCAT)
-Streaming.LoadSpecialCharacter(1, 'CAT')
-
-:Circuit_20
-while not Streaming.HasSpecialCharacterLoaded(1)
-wait 0
-    Streaming.LoadAllModelsNow()
-    wait 0
-    if
-        Streaming.HasSpecialCharacterLoaded(1)
-    then
-        break
-    else
-        continue
-    end
-end
-
-:Circuit_30
-wait 0
-if
-    Player.IsInAnyCar($player1)
-then
-    Player.StoreCarIsIn($player1, $myCar)
-else
-    Player.SetCoordinates($player1, 883.25, 1306.56, 130.22)
-end
-Car.Create(#BOBCAT, 875.80, 1298.70, 130.58, $myCar)
-Char.Create(PedType.Special, #SPECIAL01, 880.45, 1313.24, 130.22, $Kat)
-Char.SetBleeding($Kat, True)
-Camera.PointAtChar($Kat, CameraMode.Fixed, SwitchType.JumpCut)
-Camera.SetFixedPosition(883.82, 1315.72, 130.32, 0.0, 0.0, 0.0)
-Camera.DoFade(1500, Fade.In)
-
-:Circuit_40
-while Camera.GetFadingStatus()
-wait 0
-    if
-        Camera.GetFadingStatus()
-    then
-        break
-    else
-        continue
-    end
-end
-
-:Circuit_50
-Text.PrintString("Well then... You've been a busy man.", 5000)
-wait 5000
-Text.PrintString("I have a job for you. Come.", 5000)
-wait 5000
-Camera.DoFade(1500, Fade.Out)
-
-:Circuit_60
-while Camera.GetFadingStatus()
-wait 0
-    if
-        not Camera.GetFadingStatus()
-    then
-        Camera.RestoreJumpcut()
-        break
-    else
-        continue
-    end
-end
-
-:Circuit_70
-Camera.DoFade(1500, Fade.In)
-
-:Circuit_80
-while Camera.GetFadingStatus()
-wait 0
-    if
-        Camera.GetFadingStatus()
-    then
-        break
-    else
-        continue
-    end
-end
-
-:Circuit_90
-Blip.AddForChar($Kat, $KatBlip)
-Char.SetObjEnterCarAsDriver($Kat, $myCar)
-
-:Circuit_100
-wait 0
-if
-    Char.IsInCar($Kat, $myCar)
-then
-    Char.SetCantBeDraggedOut($Kat, True)
-    Car.LockDoors($myCar, CarLock.LockoutPlayerOnly)
-    Car.GotoCoordinates($myCar, 1525.30, 1112.63, 122.52)
-    Car.SetChangeLane($myCar, True)
-    Car.SetDrivingStyle($myCar, DrivingMode.PloughThrough)
-    Car.SetCruiseSpeed($myCar, 150)
-    Char.SetRunning($Kat, True)
-    Text.PrintString("Follow Kat.", 5000)
-    Player.SetControl($player1, True)
-    goto @Circuit_110
-else
-    wait 5000
-    if
-        not Char.IsInCar($Kat, $myCar)
-    then
-        goto @Circuit_105
-    else
-        goto @Circuit_100
-    end
-end
-
-:Circuit_105
-Char.WarpIntoCar($Kat, $myCar)
-goto @Circuit_100
-
-:Circuit_110
-while not Char.LocateInCar3D($Kat, 1525.30, 1120.63, 122.52, 5.0, 5.0, 3.0, False)
-wait 0
-    if
-        Char.LocateInCar3D($Kat, 1525.30, 1120.63, 122.52, 5.0, 5.0, 3.0, False)
-    then
-        Car.SetMission($myCar, CarMission.None)
-        Char.SetObjleaveCar($Kat, $myCar)
-        Char.SetObjGotoCoordOnFoot($Kat, 1525.25, 1112.62)
-        wait 5000
-        Char.SetObjGotoCoordOnFoot($Kat, 1525.25, 1107.14)
-        wait 5000
-        if
-            Char.LocateOnFoot2D($Kat, 1525.25, 1107.14, 0.5, 0.5, False)
-        then
-            goto @Circuit_120
-        end
-    else
-        if
-            not Char.LocateAnyMeansChar2D($Kat, $scplayer, 50.0, 50.0, False)
-        then
-            Text.PrintString("You're too far away! Stay close to her!", 5000)
-            wait 10000
-            if
-                not Char.LocateAnyMeansChar2D($Kat, $scplayer, 50.0, 50.0, False)
-            then
-                break
-            else
-                if or
-                    Car.IsDead($myCar)
-                    Char.IsDead($Kat)
-                then
-                    Text.PrintString("Oh shit, she's dead?!", 5000)
-                    goto @Circuit_115
-                else
-                    continue
-                end
-            end
-        else
-            continue
-        end
-    end
-end
-
-:Circuit_Fail
-$onmission = 0
-Mission.Fail
-Text.PrintBigString("Mission Failed!", 3000, TextStyle.Middle)
-wait 3000
-Char.RemoveElegantly($Kat)
-wait 0
-if
-    not Car.IsDead($myCar)
-then
-    Car.Explode($myCar)
-else
-    Camera.DoFade(500, Fade.Out)
-    wait 500
-    Car.Delete($myCar)
-    wait 0
-    Camera.DoFade(500, Fade.In)
-    wait 500
-end
-Car.MarkAsNoLongerNeeded($myCar)
-Streaming.MarkModelAsNoLongerNeeded(#BOBCAT)
-terminate_all_scripts_with_this_name 'Power'
-start_new_script @Power
-terminate_this_script
-
-:Circuit_Pass
-while not Player.LocateAnyMeans2D($player1, 1525.30, 1112.63, 5.0, 5.0, True)
-    wait 0
-    if
-        Player.LocateAnyMeans2D($player1, 1525.30, 1112.63, 5.0, 5.0, True)
-    then
-        Player.SetControl($player1, False)
-        Audio.PlayMissionPassedTune(1)
-        Player.AddScore($player1, 5000)
-        $onmission = 0
-        Camera.DoFade(1500, Fade.Out)
-        wait 1500
-        Char.RemoveElegantly($Kat)
-        Camera.DoFade(1500, Fade.In)
-        wait 1500
-        Player.SetControl($player1, True)
-        if
-            Car.IsStillAlive($myCar)
-        then
-            Car.LockDoors($myCar, CarLock.Unlocked)
-        end
-        Car.MarkAsNoLongerNeeded($myCar)
-        Streaming.MarkModelAsNoLongerNeeded(#BOBCAT)
-        start_new_script @Loop
-        terminate_this_script
-    else
-        continue
-    end
-end
+// What are you doing down here? ??
