@@ -14,8 +14,10 @@ $REWARD = 500
 
 Text.PrintString("How'd ~g~you ~w~get here?", 5000)
 wait 2500
-// Don't you ~r~dare ~w~die!
-Text.PrintSoon('NO_DIE', 5000, 0)
+Text.ClearPrints()
+Text.PrintHelpString("Don't you ~r~dare ~w~die!")
+wait 3500
+Text.ClearHelp()
 
 while true
   wait 0
@@ -40,7 +42,7 @@ var
   $m0_Pass: int
 end
 
-Text.PrintSoon("Jack a car, already...", 5000, 0)
+// FIXME: Text.PrintSoon("Jack a car, already...", 5000, 0)
 
 while true
   wait 0
@@ -86,7 +88,7 @@ while true
     $SafeBlip = Blip.AddForCoord(582.95, 1516.74, 145.00)
     Blip.ChangeColor($Hideout, BlipColor.Yellow)
 
-    Text.PrintSoon("Get out and hide in the hay bales.", 5000, 0)
+    // FIXME: Text.PrintSoon("Get out and hide in the hay bales.", 5000, 0)
   else
     wait 500
     continue
