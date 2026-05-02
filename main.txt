@@ -96,32 +96,26 @@ wait 750
 
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection
-$TeleportInfoPickup = Pickup.Create(1361, PickupType.OnStreet, 1030.0, -636.5, 14.5)
+$TeleportInfoPickup = Pickup.Create(#INFO, PickupType.OnStreet, 1030.0, -636.5, 14.5)
 Blip.AddForPickup($TeleportInfoPickup, $TeleportBlip)
 $teleportCollected = False
 
 // Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
+$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
 
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
 Weather.Release
 
-// FIXME: print_big_string {text} "The Carpool Shortcut" {time} 5000 {style} TextStyle.BrownBottomRight
-// FIXME: print_string_now {text} "TGIF, I really needed this rent money." {time} 5000
-
-// Show the default Portland blips
-wait 2500
-initRadarSprites()
-
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
   wait 250 ms
 
-  // Try to start the next mission
-  // FIXME: World fades in, then time ticks for ~1sec, and finally game crashes: access violation...
-  // FIXME: gosub @M_TRIG
+  // Try to keep the story going
+  // FIXME: https://docs.sannybuilder.com/troubleshooting/errors/0084
+  start_new_script @M_TRIG
 
   //=============================================
   // Monitor pickups and teleportation locations
@@ -163,28 +157,24 @@ end
 
 /// Trigger the given mission index
 :M_TRIG
+script_name 'M_TRIG'
 
-wait 0
-if and
-  Player.IsPlaying($player)
-  Player.CanStartMission($player)
-  $onMission == False
-  $missionIndex <= MAX_MISSION_INDEX
+if not Player.CanStartMission($player)
 then
-  $onMission = True
-  // FIXME: Why not? Mission.LoadAndLaunchInternal($missionIndex)
-
-  switch $missionIndex
-   case 0
-     // FIXME: start_new_script @Tutorial
-   case 1
-     Text.PrintHelpString("TODO: Future missions incoming.")
-   default
-     Text.PrintHelpString("There's nothing left! What gives?")
-  end
+  terminate_this_script
 end
 
-return
+// NOTE: Assume we can start a mission
+switch $missionIndex
+  case 0
+    start_new_script @Tutorial
+  case 1
+    Text.PrintHelpString("TODO: Future missions incoming.")
+  default
+    Text.PrintHelpString("There's nothing left! What gives?")
+end
+
+terminate_this_script
 
 //================================
 //--------- FUNCTIONS ------------

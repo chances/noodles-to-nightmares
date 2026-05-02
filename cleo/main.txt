@@ -1,0 +1,86 @@
+{$USE CLEO}
+
+0000: nop
+
+Game.SetMaxWantedLevel(1)
+set_deatharrest_state 0
+
+// Load Portland
+// NOTE: Must _also_ load  Industrial so the `Streaming.IsCollisionInMemory` check below succeeds
+Streaming.LoadCollision(0)
+
+// Show the splash screen
+Camera.SetFadingColor(0, 0, 0)
+Camera.DoFade(0, Fade.Out)
+//Hud.LoadSplash('SPLASH3')
+
+// Put the player at the front door of the ramen shop in Chinatown
+$player = Player.Create(0, 1039.66, -653.112, 14.015)
+Player.SetHeading($player, 315.0) // Facing north-east
+$playerChar = Player.GetChar($player)
+Camera.SetBehindPlayer
+Player.SetNeverGetsTired($player, True)
+Player.SetControl($player, False)
+
+// QUESTION: This removes the bridge barriers?
+World.SetVisibilityOfClosestObjectOfType(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, False)
+World.SwapNearestBuildingModel(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, #LOD_LAND014)
+
+// Sunshine! 🌞 :D
+Weather.ForceNow(WeatherType.Sunny)
+
+// Unlock the whole world
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+// Set player model
+Char.Undress($playerChar, 'PLAYER')
+Char.Dress($playerChar)
+
+// Wait for the scene to load
+request_model 326 // Dumpster
+$dumpster = Object.Create(326, 1150.44, -389.8, 26.627)
+request_model 838 // Trick Ramp
+
+while true
+  wait 0
+
+  if Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+// Set the clock to about 9:25p and let the player enjoy the splash art
+Clock.SetTimeOfDay(21, 25)
+wait 750
+
+// We're done! Show the game to the user
+Camera.DoFade(1000, Fade.In)
+Player.SetControl($player, True)
+Weather.Release
+// Let the fade finish
+wait 1250
+
+// Setup mission state
+$onMission = False
+
+// Main mission trigger loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
+while true
+  wait 0
+  if and
+    $onMission == False
+    Player.IsPlaying($player)
+    Player.CanStartMission($player)
+  then
+    $onMission = True
+
+    Text.PrintStringNow("Attempting to start mission...", {time} 2500)
+    wait 3000
+
+    // FIXME: Crash! No logs in scrlog.log ?
+    start_custom_script {scriptFileName} "CLEO/0_test.CLEO.cm"
+  end
+end

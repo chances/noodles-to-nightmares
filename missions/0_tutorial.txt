@@ -7,22 +7,25 @@
 :Tutorial
 script_name 'Tutor'
 
+// FIXME: Crash! Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BrownBottomRight)
+//Text.PrintStringNow("TGIF, I really needed this rent money.", {time} 5000)
+//wait 7500
+//Text.PrintFormatted("Get to the ~g~church ~w~on time!", {time} 3500, False)
+
+// Flash Rosa's apartment blip
+Hud.FlashObject(HudObject.Radar)
+initRadarSprites()
+// Stop flashing the minimap after 5secs
+wait 2500
+Hud.FlashObject(0)
+
 wait 2500
 // Text.PrintString("How'd ~g~you ~w~get here?", 5000)
 wait 2500
-/*
 Text.ClearPrints()
 Text.PrintHelpString("Don't you ~r~dare ~w~die!")
 wait 3500
 Text.ClearHelp()
-*/
-
-// Flash Rosa's apartment blip (already created in initBlips)
-Hud.FlashObject(HudObject.Radar)
-// FIXME: Text.PrintString("Get to the ~g~church ~w~on time!", 3500)
-// Stop flashing the minimap after 5secs
-wait 5000
-Hud.FlashObject(0)
 
 while true
   wait 0

@@ -1,0 +1,28 @@
+{$CLEO .cm}
+
+:MissionStart
+script_name "M_TEST"  
+  gosub @MissionBegin
+  if or
+    Player.IsDead($player)
+    Player.HasBeenArrested($player)
+  then
+    gosub @MissionFailed
+  end
+  gosub @MissionCleanup
+terminate_this_custom_script
+
+:MissionBegin
+  Text.PrintString("Winner, winner!", 3000)
+return
+ 
+:MissionFailed
+  Mission.Fail()
+  Text.PrintString("You loser...", 3000)
+return
+
+:MissionCleanup
+  // Clean up the contents of your mission so you can end it
+  $onMission = False
+  Mission.Finish()
+return
