@@ -307,17 +307,6 @@ end
 //------ Functions: Main Loop ----
 //================================
 
-function monitorWangPickup()
-  wait 0
-  script_name 'Wang'
-
-  if
-    Pickup.HasBeenCollected($WangHealth)
-  then
-    Text.PrintHelpString("You found the office's first aid kit!")
-  end
-end
-
 function monitorShortcutKey_P()
   if
     Pad.IsKeyPressed(KeyCode.P)
