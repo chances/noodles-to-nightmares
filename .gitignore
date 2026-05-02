@@ -1,5 +1,8 @@
 # Environment variables
 .env
 
+# Blender
+*.blend1
+
 # Artifacts
 main.scm
