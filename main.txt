@@ -64,7 +64,7 @@ wait 50
 $onMission = False
 
 // Initialize all the things!
-initCars()
+initParkedCars()
 initSpawnParams()
 initBlips()
 initHiddenPkgs()

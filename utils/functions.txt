@@ -17,7 +17,7 @@ function initRadarSprites()
   $Ammunation3 = Blip.AddSpriteForCoord(348.00, -716.00, 26.00, RadarSprite.Weapon)
 end
 
-function initCars()
+function initParkedCars()
   $CopCar = CarGenerator.Create(1140.24, -685.34, 14.56, 180.0, #POLICE, -1, -1, True, 25, 10, 0, 10000)
   $AmbulanceCOM = CarGenerator.Create(220.79, -42.47, 15.95, 0, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
   $AmbulanceIND = CarGenerator.Create(1130.20, -595.24, 14.49, 0, #AMBULAN, -1, -1, True, 15, 5, 0, 10000)
@@ -151,12 +151,6 @@ function initGarages()
 end
 
 function initSpawnParams()
-  Zone.SetPedInfo('UL_ZON0', DayOrNight.Day, 10, 0, 0, 0, 0, 0, 0, 0, 10)
-  Zone.SetPedInfo('UL_ZON0', DayOrNight.Night, 7, 0, 0, 0, 0, 0, 0, 0, 5)
-  Zone.SetCarInfo('UL_ZON0', DayOrNight.Day, 8, 0, 0, 0, 0, 0, 0, 0, 10, 400, 200, 0, 250, 0, 100)
-  Zone.SetCarInfo('UL_ZON0', DayOrNight.Night, 6, 0, 0, 0, 0, 0, 0, 0, 5, 550, 200, 0, 100, 0, 0)
-  Zone.SetGroup('UL_ZON0', DayOrNight.Day, 25)
-  Zone.SetGroup('UL_ZON0', DayOrNight.Night, 26)
   Zone.SetPedInfo('GT_ZON0', DayOrNight.Day, 12, 0, 0, 0, 0, 0, 0, 0, 20)
   Zone.SetPedInfo('GT_ZON0', DayOrNight.Night, 8, 0, 0, 0, 0, 0, 0, 0, 10)
   Zone.SetCarInfo('GT_ZON0', DayOrNight.Day, 10, 0, 0, 0, 0, 0, 0, 0, 20, 250, 350, 200, 150, 0, 0)
