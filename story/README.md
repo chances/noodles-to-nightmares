@@ -45,7 +45,7 @@ tutorials, encounters)
 - **Objective**: Rosa learns to drive home after a long shift, and how to park a
   car and what a safehouse is.
 - **Current State**: Framework exists in `0_tutorial.txt`. Rosa's first
-  safehouse is her apartment in north Portland.
+  safehouse is her apartment in north Portland (~(1188, -408, 24)~).
 - **Status**: To be completed
 
 ### Mission 1: The Shady Job

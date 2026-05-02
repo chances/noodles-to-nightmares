@@ -5,8 +5,7 @@
 function initBlips()
   // TODO: $Ammunation = Blip.AddSpriteForCoord(-1374.01, 1531.16, 72.28, RadarSprite.Weapon)
   // TODO: $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
-  $SafeBlip = Blip.AddSpriteForCoord(625.8125, 1395.0625, 140.625, RadarSprite.Savehouse)
-  // TODO: Blip.AddSpriteForCoord(1571.78, 1274.35, 121.83, RadarSprite.Salvatore, $SewerBlip)
+  // FIXME: Access violation! $SafeBlip = Blip.AddSpriteForCoord(1188, -408, 24, RadarSprite.Savehouse) // Rosa's apartment, NE Portland
 end
 
 function initCars()

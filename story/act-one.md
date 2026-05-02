@@ -37,7 +37,7 @@ increasingly dangerous as her choices attract attention.
 
 - **Location**: Punk Noodles (Chinatown, Portland)
 - **Context**: End of shift. It's late, Rosa's tired, and she needs to get home
-  to her apartment in north Portland.
+  to her apartment in north Portland (~(1188, -408, 24)~).
 - **Trigger**: Leaving the shop at night; player spawns out front
 
 ### Gameplay Objectives
@@ -420,7 +420,7 @@ end
 
 - [ ] Script framework complete (0_tutorial.txt)
 - [ ] Dialogue text finalized
-- [ ] Safehouse location confirmed (north Portland apartment)
+- [x] Safehouse location confirmed (north Portland apartment, ~(1188, -408, 24)~)
 - [ ] Vehicle spawn and entry mechanics
 - [ ] Parking zone detection
 - [ ] Mission passed sequence

@@ -27,13 +27,13 @@ Game.SetMaxWantedLevel(6)
 set_deatharrest_state 0
 
 // Load Portland
+// NOTE: Must _also_ load  Industrial so the `Streaming.IsCollisionInMemory` check below succeeds
 Streaming.LoadCollision(0)
-// QUESTION: Why not also `Streaming.LoadCollision(LevelName.Industrial)`?
+// FIXME: Streaming.LoadCollision(LevelName.Industrial)
 
 // Show the splash screen
 Camera.SetFadingColor(0, 0, 0)
 Camera.DoFade(0, Fade.Out)
-// FIXME: This splash is never shown before the camera fades back it...
 Hud.LoadSplash('SPLASH2')
 
 // Put the player at the front door of the ramen shop in Chinatown
@@ -66,7 +66,7 @@ $onMission = False
 
 // Initialize all the things!
 initCars()
-initBlips()
+// FIXME: initBlips()
 initHiddenPkgs()
 initPickups()
 initGarages()

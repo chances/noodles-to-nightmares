@@ -2,8 +2,11 @@ const START_MISSION_INDEX = 0
 const MAX_MISSION_INDEX = 0
 
 var
+  $SafeBlip: int
+  //
   $player: Player
   $playerChar: Char
+  $myCar: int
   $missionIndex: int
 end
 
@@ -15,9 +18,8 @@ end
 //================================
 
 Alloc($TIMER, 4310)
-Alloc($Banshee, 4315)
-Alloc($SafeBlip, 4323)
 Alloc($Hideout, 4324)
+Alloc($Banshee, 4315)
 Alloc($never_busted, 4332)
 Alloc($GunBlip, 4316)
 Alloc($Destination, 4318)
