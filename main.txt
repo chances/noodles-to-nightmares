@@ -23,7 +23,7 @@ DEFINE MISSION 0 AT @Tutorial
 :MAIN
 script_name 'MAIN'
 
-Game.SetMaxWantedLevel(6)
+Game.SetMaxWantedLevel(1)
 set_deatharrest_state 0
 
 // Load Portland
@@ -65,6 +65,7 @@ $onMission = False
 
 // Initialize all the things!
 initCars()
+initSpawnParams()
 initBlips()
 initHiddenPkgs()
 initPickups()
@@ -107,13 +108,12 @@ Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
 Weather.Release
 
-Text.PrintBigString("The Carpool Shortcut", 2500, TextStyle.BrownBottomRight)
-Text.PrintStringNow("TGIF, I really needed this rent money.", 2500)
+// FIXME: print_big_string {text} "The Carpool Shortcut" {time} 5000 {style} TextStyle.BrownBottomRight
+// FIXME: print_string_now {text} "TGIF, I really needed this rent money." {time} 5000
 
+// Show the default Portland blips
 wait 2500
 initRadarSprites()
-
-// FIXME: HUGE performance regression while the game is running; lag galore!
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
@@ -173,14 +173,14 @@ if and
 then
   $onMission = True
   // FIXME: Why not? Mission.LoadAndLaunchInternal($missionIndex)
-  
+
   switch $missionIndex
    case 0
      // FIXME: start_new_script @Tutorial
    case 1
-     Text.PrintHelpString("")
+     Text.PrintHelpString("TODO: Future missions incoming.")
    default
-     Text.PrintHelpString("There's nothing else to do... What gives?")
+     Text.PrintHelpString("There's nothing left! What gives?")
   end
 end
 
