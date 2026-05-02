@@ -3,6 +3,7 @@ const MAX_MISSION_INDEX = 0
 
 var
   $SafeBlip: int
+  $TeleportInfoPickup: int
   //
   $player: Player
   $playerChar: Char
@@ -83,7 +84,6 @@ Alloc($BombGarage, 4381)
 Alloc($BombGarage2, 4382)
 Alloc($SprayShopG, 4383)
 Alloc($Packages, 4399)
-Alloc($myCar, 4400)
 
 // FIXME: Global state is a code-smell
 $missionIndex = START_MISSION_INDEX

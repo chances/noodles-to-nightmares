@@ -75,44 +75,60 @@ initGarages()
 {$INCLUDE utils/spawn_points.txt}
 
 // Wait for the scene to load
-while not Streaming.IsCollisionInMemory(LevelName.Industrial)
-  wait 250
+while true
+  wait 0
+
+  if Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
 end
 
 // Set the clock to about 9:25p and let the player enjoy the splash art
 Clock.SetTimeOfDay(21, 25)
-wait 500
+wait 750
+
+// Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
+// Type 2: respawning pickup; reappears ~30s after collection
+$TeleportInfoPickup = Pickup.Create(1361, PickupType.OnStreet, 1030.0, -636.5, 14.5)
+$teleportCollected = False
+wait 0
 
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
 Weather.Release
 
+// FIXME: HUGE performance regression while the game is running; lag galore!
+
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
   wait 250 ms
 
   // Try to start the next mission
-  // FIXME: gosub @M_TRIG
+  // FIXME: gosub @M_TRIG The game hangs...
 
-  // TODO: Hud.LoadSplash('SPLASH1') (?)
-  // TODO: Hud.LoadSplash('SPLASH2')
-  // TODO: Hud.LoadSplash('SPLASH3')
+  //=============================================
+  // Monitor pickups and teleportation locations
+  //=============================================
 
-  // TODO: Monitor pickups and teleportation locations
-
-  // Prompt the user to teleport
+  // Prompt the user to teleport, but only while the info pickup is visible
   if and
-    $willPromptTeleport == True
-    Player.LocateAnyMeans3D($player, 1030.66, -636.612, 14.0141, 0.5, 0.5, 0.5, True)
+    Pickup.HasBeenCollected($TeleportInfoPickup)
+    $teleportCollected == False
   then
+    // FIXME: This prompt isn't shown to the player
     Text.PrintHelpString("Press the T Key to teleport.")
-    $willPromptTeleport = False
+    $teleportCollected = True
+    // TODO:  $teleportCollected = False after ~30s
   end
 
-  //=========================
+  //==========================
   // Check keyboard shortcuts
-  //=========================
+  //==========================
+
   // FIXME: These shortcuts don't work immediately. We found a race condition!😱
   //---------------------------------------
   // P: Quickly open the save screen

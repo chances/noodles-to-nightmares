@@ -330,6 +330,22 @@ end
   // Control falls off, causes undefined behavior
 ```
 
+### ❌ Don't: Assign Condition Opcodes Directly
+
+```sanny
+// Error 0013: Unknown directive
+$collected = Pickup.HasBeenCollected($myPickup)  // INVALID
+```
+
+### ✅ Do: Use an `if` Block for Condition Opcodes
+
+```sanny
+if Pickup.HasBeenCollected($myPickup)
+then
+  $collected = True
+end
+```
+
 ### ❌ Don't: Loop Without Wait
 
 ```sanny
