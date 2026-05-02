@@ -29,7 +29,6 @@ set_deatharrest_state 0
 // Load Portland
 // NOTE: Must _also_ load  Industrial so the `Streaming.IsCollisionInMemory` check below succeeds
 Streaming.LoadCollision(0)
-// FIXME: Streaming.LoadCollision(LevelName.Industrial)
 
 // Show the splash screen
 Camera.SetFadingColor(0, 0, 0)
@@ -66,7 +65,7 @@ $onMission = False
 
 // Initialize all the things!
 initCars()
-// FIXME: initBlips()
+initBlips()
 initHiddenPkgs()
 initPickups()
 initGarages()
@@ -75,6 +74,10 @@ initGarages()
 {$INCLUDE utils/spawn_points.txt}
 
 // Wait for the scene to load
+request_model 326 // Dumpster
+$dumpster = Object.Create(326, 1150.44, -389.8, 26.627)
+request_model 838 // Trick Ramp
+
 while true
   wait 0
 
@@ -93,13 +96,22 @@ wait 750
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection
 $TeleportInfoPickup = Pickup.Create(1361, PickupType.OnStreet, 1030.0, -636.5, 14.5)
+Blip.AddForPickup($TeleportInfoPickup, $TeleportBlip)
 $teleportCollected = False
-wait 0
+
+// Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
+$SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
 
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
 Weather.Release
+
+Text.PrintBigString("The Carpool Shortcut", 2500, TextStyle.BrownBottomRight)
+Text.PrintStringNow("TGIF, I really needed this rent money.", 2500)
+
+wait 2500
+initRadarSprites()
 
 // FIXME: HUGE performance regression while the game is running; lag galore!
 
@@ -108,7 +120,8 @@ while true
   wait 250 ms
 
   // Try to start the next mission
-  // FIXME: gosub @M_TRIG The game hangs...
+  // FIXME: World fades in, then time ticks for ~1sec, and finally game crashes: access violation...
+  // FIXME: gosub @M_TRIG
 
   //=============================================
   // Monitor pickups and teleportation locations
@@ -116,7 +129,7 @@ while true
 
   // Prompt the user to teleport, but only while the info pickup is visible
   if and
-    Pickup.HasBeenCollected($TeleportInfoPickup)
+    not Pickup.HasBeenCollected($TeleportInfoPickup)
     $teleportCollected == False
   then
     // FIXME: This prompt isn't shown to the player
@@ -152,14 +165,23 @@ end
 :M_TRIG
 
 wait 0
-// TODO: Modify the trigger logic to our rules
 if and
   Player.IsPlaying($player)
   Player.CanStartMission($player)
   $onMission == False
+  $missionIndex <= MAX_MISSION_INDEX
 then
   $onMission = True
-  Mission.LoadAndLaunchInternal($missionIndex)
+  // FIXME: Why not? Mission.LoadAndLaunchInternal($missionIndex)
+  
+  switch $missionIndex
+   case 0
+     // FIXME: start_new_script @Tutorial
+   case 1
+     Text.PrintHelpString("")
+   default
+     Text.PrintHelpString("There's nothing else to do... What gives?")
+  end
 end
 
 return

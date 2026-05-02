@@ -6,41 +6,35 @@
 //============================================================
 :Tutorial
 script_name 'Tutor'
-wait 0
 
-Text.PrintString("How'd ~g~you ~w~get here?", 5000)
 wait 2500
+// Text.PrintString("How'd ~g~you ~w~get here?", 5000)
+wait 2500
+/*
 Text.ClearPrints()
 Text.PrintHelpString("Don't you ~r~dare ~w~die!")
 wait 3500
 Text.ClearHelp()
-
-// Rosa's paycheck
-$REWARD = 250
+*/
 
 // Flash Rosa's apartment blip (already created in initBlips)
 Hud.FlashObject(HudObject.Radar)
-Text.PrintString("Get to the ~g~church ~w~on time!", 3500)
+// FIXME: Text.PrintString("Get to the ~g~church ~w~on time!", 3500)
 // Stop flashing the minimap after 5secs
 wait 5000
 Hud.FlashObject(0)
-Text.ClearHelp()
-
-var
-  $isDriving: int
-  $isDying: int
-end
-
-$isDriving = False
-$isDying = False
 
 while true
   wait 0
 
   // Wait for the player to get near the safehouse
+  // TODO: Teleport the player to their apartment
 
-  checkSafety()
+  // FIXME: checkSafety()
 end
+
+// Rosa's paycheck
+$REWARD = 250
 
 // Mission Passed!
 Audio.PlayMissionPassedTune(1)
@@ -48,31 +42,3 @@ Player.AddScore($player, $REWARD)
 Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
 
 terminate_this_script
-
-// TODO: Mission 1
-
-function checkSafety()
-  // FIXME: Remind the player to drive safe, _only_ if they enter a car
-  // NOTE: Thus far, Rosa's primary form of travel is on-foot.
-  if $isDriving == True
-  then
-    Text.PrintString("Drive safe.", 3000)
-    wait 3000
-    Text.ClearPrints()
-  end
-
-  // FIXME: Only remind the player to stay safe if they're getting hurt
-  // Remind the player not to die 😜
-  if $isDying == True
-  then
-    Text.PrintHelpString("Don't you ~r~dare ~w~die!")
-    wait 3500
-    Text.ClearHelp()
-  end
-
-  // Check if player is wasted or busted
-  if not Player.IsPlaying($player)
-  then
-    // TODO: Do the wasted/busted tutorial (fail the mission?), the resume Rosa's trip home
-  end
-end

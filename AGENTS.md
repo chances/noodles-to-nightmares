@@ -419,6 +419,7 @@ understand context before making changes.
 - [0417: LOAD_AND_LAUNCH_MISSION_INTERNAL](https://www.gtamodding.com/index.php?title=0417)
 - [Mission Script Overview](https://gtamods.com/wiki/Mission_script)
 - [SCM Language](https://gtamods.com/wiki/SCM_language)
+- [List of Opcodes](https://gtamods.com/wiki/SCM_language_III/VC_definitions)
 
 ### Sanny Builder Library
 

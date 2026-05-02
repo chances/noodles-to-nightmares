@@ -3,9 +3,18 @@
 //================================
 
 function initBlips()
-  // TODO: $Ammunation = Blip.AddSpriteForCoord(-1374.01, 1531.16, 72.28, RadarSprite.Weapon)
-  // TODO: $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
-  // FIXME: Access violation! $SafeBlip = Blip.AddSpriteForCoord(1188, -408, 24, RadarSprite.Savehouse) // Rosa's apartment, NE Portland
+  // Spawn a Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
+  $Bribe = Pickup.Create(1383, PickupType.OnStreetSlow, 1173, -398.5, 25.8)
+  // TODO: $HealthPickup = Pickup.Create(1362, PickupType.OnStreetSlow, x, y, z)
+  $SavePickup = Pickup.Create(1362, PickupType.Once, 1165.0, -398.5, 25.8)
+  
+  // NOTE: Do NOT setup sprite blips here. See `initRadarSprites()` below
+end
+
+function initRadarSprites()
+  //$Ammunation = Blip.AddSpriteForCoord(x, y, z, RadarSprite.Weapon)
+  $Ammunation2 = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
+  $Ammunation3 = Blip.AddSpriteForCoord(348.00, -716.00, 26.00, RadarSprite.Weapon)
 end
 
 function initCars()
@@ -135,17 +144,6 @@ function initPickups()
   $HEAL_IND2 = Pickup.Create(#HEALTH, PickupType.OnStreet, 1220.40, -248.26, 24.97)
   $HEAL_IND3 = Pickup.Create(#HEALTH, PickupType.OnStreet, 903.60, -599.16, 17.35)
   $HEAL_COM1 = Pickup.Create(#BODYARMOUR, PickupType.OnStreet, 202.61, -107.55, 20.17)
-  $HEAL_RES1 = Pickup.Create(#HEALTH, PickupType.OnStreet, -48.68, 1816.14, 144.27)
-  $HEAL_RES2 = Pickup.Create(#HEALTH, PickupType.OnStreet, -1274.06, 1347.99, 72.45)
-  $HEAL_RES3 = Pickup.Create(#HEALTH, PickupType.OnStreet, 308.89, 1239.35, 133.51)
-  $HEAL_RES4 = Pickup.Create(#BODYARMOUR, PickupType.OnStreet, 701.90, 1199.40, 133.52)
-  $HEAL_RES5 = Pickup.Create(#BODYARMOUR, PickupType.OnStreet, 1335.94, 1049.00, 125.15)
-  $HEAL_RES6 = Pickup.Create(#BODYARMOUR, PickupType.OnStreet, 101.44, 1092.31, 150.76) // Southern Farm
-  $HEAL_RES7 = Pickup.Create(#HEALTH, PickupType.OnStreet, 1531.87, 1483.00, 132.15)
-  $HEAL_RES8 = Pickup.Create(#HEALTH, PickupType.OnStreet, 1444.39, 961.96, 122.09)
-  $HEAL_RES9 = Pickup.Create(#HEALTH, PickupType.OnStreet, -342.58, 10009.20, 196.02) // Orange Cabin in Cedar Ridge
-  $HEAL_RES10 = Pickup.Create(#HEALTH, PickupType.OnStreet, 1779.02, 1338.62, 124.87)
-  $WangHealth = Pickup.Create(#HEALTH, PickupType.OnStreet, 1325.83, 1674.62, 131.81)
 end
 
 function initGarages()
@@ -348,5 +346,43 @@ function monitorShortcutKey_T_teleport()
     Player.SetCoordinates($player, 1161.56, -115.92, 15.0)
     Text.PrintString("Teleport succeeded!", 3000)
     Player.SetControl($player, True)
+  end
+end
+
+//================================
+//----- Functions: Missions ------
+//================================
+
+var
+  $isDriving: int
+  $isDying: int
+end
+
+$isDriving = False
+$isDying = False
+
+function checkSafety()
+  // FIXME: Remind the player to drive safe, _only_ if they enter a car
+  // NOTE: Thus far, Rosa's primary form of travel is on-foot.
+  if $isDriving == True
+  then
+    Text.PrintString("Drive safe.", 3000)
+    wait 3000
+    Text.ClearPrints()
+  end
+
+  // FIXME: Only remind the player to stay safe if they're getting hurt
+  // Remind the player not to die 😜
+  if $isDying == True
+  then
+    Text.PrintHelpString("Don't you ~r~dare ~w~die!")
+    wait 3500
+    Text.ClearHelp()
+  end
+
+  // Check if player is wasted or busted
+  if not Player.IsPlaying($player)
+  then
+    // TODO: Do the wasted/busted tutorial (fail the mission?), the resume Rosa's trip home
   end
 end
