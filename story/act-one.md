@@ -49,8 +49,8 @@ increasingly dangerous as her choices attract attention.
 
 ### Script Requirements
 
-- [ ] Spawn Rosa outside Punk Noodles at night
-- [ ] Marker/blip for safehouse location
+- [x] Spawn Rosa outside Punk Noodles at night
+- [x] Marker/blip for safehouse location
 - [ ] HUD prompts for "find a car," "drive to safehouse," etc.
 - [ ] Vehicle entry detection and player positioning
 - [ ] Safehouse zone detection (sphere or coordinate check)

@@ -41,7 +41,7 @@ tutorials, encounters)
 
 ### Mission 0: Car Tutorial
 
-- **Location**: Ramen shop in Portland's Chinatown (Spawns out front)
+- **Location**: Punk Noodles in Portland's Chinatown (Spawns out front)
 - **Objective**: Rosa learns to drive home after a long shift, and how to park a
   car and what a safehouse is.
 - **Current State**: Framework exists in `0_tutorial.txt`. Rosa's first
