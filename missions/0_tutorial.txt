@@ -88,6 +88,12 @@ Mission.Finish()
 $onMission = false
 $missionIndex = $missionIndex + 1
 
+//============
+// Transition
+//============
+// Add a blip to Punk Noodles
+$NoodlesBlip = Blip.AddSpriteForCoord(1031.13, -654.956, 14.0094, 1)
+
 // NOTE: 05DC for GTA III CLEO, in lieu of `terminate_this_custom_script` (San Andreas)
 05DC: terminate_custom_thread
 

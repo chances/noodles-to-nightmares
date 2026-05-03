@@ -6,9 +6,10 @@ var
   $playerChar: Char
   $myCar: Car
   $missionIndex: int
-  //==============//
-  $SafeBlip: int
-  $PunkNoodles: int
+  //====================//
+  $SafeBlip: Blip
+  $PunkNoodles: Pickup
+  $NoodlesBlip: Blip
   $ApartmentGarage: Garage
 end
 

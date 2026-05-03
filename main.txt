@@ -144,11 +144,10 @@ function tryTriggerMission()
     $missionIndex < MAX_MISSION_INDEX
     Player.CanStartMission($player)
   then
-    register_mission_given
-    
     $onMission = true
     switch $missionIndex
       case 0
+        register_mission_given
         0600: START_CUSTOM_THREAD "0_tutorial.cm"
       case 1
         Text.PrintHelpString("TODO: Future missions incoming.")
