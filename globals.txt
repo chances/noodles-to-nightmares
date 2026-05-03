@@ -8,7 +8,7 @@ var
   $missionIndex: int
   //==============//
   $SafeBlip: int
-  $TeleportInfoPickup: int
+  $PunkNoodles: int
   $ApartmentGarage: Garage
 end
 

@@ -80,15 +80,15 @@ while true
 end
 
 // Setup mission state
+set_total_number_of_missions MAX_MISSION_INDEX
 $onMission = false
-$missionIndex = -1
+$missionIndex = 0
 $myCar = 0
 
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection
-$TeleportInfoPickup = Pickup.Create(#INFO, PickupType.OnStreet, 1030.0, -636.5, 14.5)
-Blip.AddForPickup($TeleportInfoPickup, $TeleportBlip)
-$teleportCollected = False
+$PunkNoodles = Pickup.Create(#INFO, PickupType.OnStreet, 1030.0, -636.5, 14.5)
+Blip.AddForPickup($PunkNoodles, $NoodlesBlip)
 
 // Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
@@ -106,7 +106,7 @@ Weather.Release
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
-  wait 250 ms
+  wait 0
 
   // Try to keep the story going
   tryTriggerMission()
@@ -115,14 +115,16 @@ while true
   // Monitor pickups and teleportation locations
   //=============================================
 
-  // Prompt the user to teleport, but only while the info pickup is visible
-  if and
-    Pickup.HasBeenCollected($TeleportInfoPickup)
-    $teleportCollected == false
+  if
+    Pickup.HasBeenCollected($PunkNoodles)
   then
-    Text.PrintHelpString("Press the T Key to teleport.")
-    $teleportCollected = true
-    // TODO:  $teleportCollected = False after ~30s
+    Text.PrintHelpString("The shop is closed. Come back later to pick up a shift.")
+  end
+  
+  if
+    Pickup.HasBeenCollected($SafeBlip)
+  then
+    saveGame()
   end
 
   //==========================
@@ -133,9 +135,6 @@ while true
   //---------------------------------------
   // P: Quickly open the save screen
   monitorShortcutKey_P()
-  //---------------------------------------
-  // T: Teleportation! 🧝‍♂️
-  monitorShortcutKey_T_teleport()
 end
 
 /// Trigger the next mission, if any
@@ -145,15 +144,14 @@ function tryTriggerMission()
     $missionIndex < MAX_MISSION_INDEX
     Player.CanStartMission($player)
   then
+    register_mission_given
+    
     $onMission = true
-    $missionIndex = $missionIndex + 1
     switch $missionIndex
       case 0
         0600: START_CUSTOM_THREAD "0_tutorial.cm"
       case 1
         Text.PrintHelpString("TODO: Future missions incoming.")
-      default
-        return
     end
   end
 end
@@ -175,14 +173,14 @@ end
 //================================
 
 function monitorShortcutKey_P()
-  if
+  if or
     Pad.IsKeyPressed(KeyCode.P)
+    Pad.IsButtonPressed(PadId.Pad1, Button.Select)
   then
     Game.ActivateSaveMenu()
 
-    // QUESTION: Do we have to wait for anything? Or will control flow return here after the user saves their game?
     // The user saved their game, so wait for the save procedure to finish
-    while not Game.HasSaveGameFinished()
+    while true
       wait 10
       if
         Game.HasSaveGameFinished()
@@ -190,17 +188,5 @@ function monitorShortcutKey_P()
         break
       end
     end
-  end
-end
-
-function monitorShortcutKey_T_teleport()
-  // Where is the source? (1172.41, -104.52, 7.47)
-  if and
-    Pad.IsKeyPressed(KeyCode.T)
-    Player.LocateAnyMeans3D($player, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
-  then
-    Player.SetCoordinates($player, 1161.56, -115.92, 15.0)
-    Text.PrintString("Teleport succeeded!", 3000)
-    Player.SetControl($player, True)
   end
 end

@@ -1,4 +1,19 @@
 //================================
+//----- Functions: Missions ------
+//================================
+
+function saveGame() 
+  Game.ActivateSaveMenu()
+  while true
+    wait 0
+    if Game.HasSaveGameFinished()
+    then
+      break
+    end
+  end
+end
+
+//================================
 //------- Functions: Init --------
 //================================
 

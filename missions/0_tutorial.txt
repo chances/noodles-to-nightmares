@@ -4,6 +4,10 @@
 // Mission 0: Car Tutorial
 // Teach the player how to steal and drive cars
 //==============================================
+const REWARD = 250 // Rosa's paycheck
+
+$isDriving = false
+$isDying = false
 
 Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BottomRight)
 wait 7500
@@ -16,16 +20,17 @@ wait 3000
 // Flash Rosa's apartment blip
 Text.PrintHelpString("This map will guide you around town.")
 Hud.FlashObject(HudObject.Radar)
-// Stop flashing the minimap after 5secs
-wait 2500
+wait 3000
 Hud.FlashObject(0)
 wait 2500
 
-// NOTE: Thus far, Rosa's primary form of travel is on-foot.
-Text.PrintHelpString("Find the best way home.")
-
-$isDriving = false
-$isDying = false
+// Thus far, Rosa's primary form of travel is on-foot.
+checkSafety()
+if
+  $isDriving == false
+then  
+  Text.PrintHelpString("Find the best way home.")
+end
 
 while true
   wait 0
@@ -49,28 +54,29 @@ while true
   if Player.LocateAnyMeans2D($player, 1165.0, -398.5, 3.0, 3.0, true)
   then
     Camera.SetFixedPosition(1183.0, -384.4, 34.0, 0, 0, 0)
-    Camera.SetInterpolationParameters(5.0, {time} 1000)
-    Camera.PointAtPlayer($player, CameraMode.CheezyZoom, SwitchType.Interpolation)
+    Camera.SetInterpolationParameters(5.0, {time} 1250)
+    Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
 
     if $isDriving == false
     then
-      Text.PrintString("Ugh, that was a long walk.", 3000)
+      Text.PrintString("Ugh, that was a long walk.", 2500)
+      wait 2500
     end
-    wait 3500
-
-    saveGame()
-    Camera.RestoreJumpcut()
-
-    // Rosa's paycheck
-    $REWARD = 250
 
     // Mission Passed!
     Audio.PlayMissionPassedTune(1)
-    Player.AddScore($player, $REWARD)
-    Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
-    
+    // TODO: Label the mission with CLEO strings: register_mission_passed {key} [gxt_key]
+    Player.AddScore($player, REWARD)
+    Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)    
     wait 5500
-    Text.PrintString("TGIF, I really needed this rent money.", {time} 3250)
+
+    Camera.DoFade(750, Fade.Out)
+    wait 800
+    Camera.RestoreJumpcut()
+    Camera.DoFade(750, Fade.In)
+    wait 1000
+
+    Text.PrintString("TGIF, I really needed that rent money.", {time} 3250)
 
     break
   end
@@ -80,6 +86,7 @@ wait 7500
 
 Mission.Finish()
 $onMission = false
+$missionIndex = $missionIndex + 1
 
 // NOTE: 05DC for GTA III CLEO, in lieu of `terminate_this_custom_script` (San Andreas)
 05DC: terminate_custom_thread
@@ -96,7 +103,7 @@ function checkSafety()
   then
     $isDriving = true
     Text.PrintHelpString("Drive safe.")
-    Player.StoreCarIsInNoSave($player, $myCar)
+    Player.StoreCarIsIn($player, $myCar)
   end
 
   $health = 0
