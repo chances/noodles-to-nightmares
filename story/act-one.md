@@ -51,11 +51,11 @@ increasingly dangerous as her choices attract attention.
 
 - [x] Spawn Rosa outside Punk Noodles at night
 - [x] Marker/blip for safehouse location
-- [ ] HUD prompts for "find a car," "drive to safehouse," etc.
-- [ ] Vehicle entry detection and player positioning
-- [ ] Safehouse zone detection (sphere or coordinate check)
+- [x] HUD prompts for "find a car," "drive to safehouse," etc.
+- [x] Vehicle entry detection and player positioning
+- [x] Safehouse zone detection (sphere or coordinate check)
 - [ ] Vehicle garage mechanic (car parked = car stored)
-- [ ] Mission passed sequence + $500 reward
+- [x] Mission passed sequence and reward ($250; Rosa's paycheck)
 
 ### Story Text
 
@@ -114,7 +114,12 @@ carefully, avoid high-speed chases, and think tactically about her route.
 ### Script Requirements
 
 - [ ] Interior dialogue at Punk Noodles (accept job cutscene)
-- [ ] Waypoint marker for package pickup location
+- [ ] Waypoint marker for package pickup location at her apartment
+- [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
+    ```
+    $x, $y, $z = Player.GetCoordinates($player)
+    Sound.AddOneOffSound($x, $y, $z, ScriptSound.SoundTrainAnnouncement1)
+    ```
 - [ ] Package object creation (briefcase, duffel bag, etc.)
 - [ ] Car delivery logic (passenger or cargo mechanic)
 - [ ] Police wanted level tracking (avoid 4-star wanted)
@@ -201,6 +206,11 @@ she's not just a delivery driver.
 ### Script Requirements
 
 - [ ] Weapon acquisition (provided or purchased)
+- [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
+    ```
+    $x, $y, $z = Player.GetCoordinates($player)
+    Sound.AddOneOffSound($x, $y, $z, ScriptSound.SoundTrainAnnouncement1)
+    ```
 - [ ] Gang meeting point waypoint
 - [ ] Dialogue system for gang confrontation (tension buildup)
 - [ ] Combat trigger (when player draws weapon or dialogue fails)
@@ -208,7 +218,7 @@ she's not just a delivery driver.
 - [ ] Health & armor tracking
 - [ ] Chase/retreat logic (police response optional)
 - [ ] Safehouse return waypoint
-- [ ] Mission success dialogue and reward ($1,200)
+- [ ] Mission passed sequence and reward ($1,200)
 
 ### Story Text
 

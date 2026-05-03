@@ -12,6 +12,10 @@
   end
   ```
 
+### Mission Scripts
+
+- Do NOT use script_name, it crashes GTA 3 1.0 with III.VC.CLEO v2.1
+
 ## Blender
 
 - [How to Combine Objects](https://www.youtube.com/watch?v=Ek6W18dZFLI)

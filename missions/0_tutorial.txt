@@ -1,45 +1,114 @@
 {$CLEO .cm}
-// Do NOT use script_name, it crashes GTA 3 1.0 with III.VC.CLEO v2.1
 
-//============================================================
+//==============================================
 // Mission 0: Car Tutorial
-// Teach the player how to steal, drive, and store their cars
-//============================================================
+// Teach the player how to steal and drive cars
+//==============================================
 
-Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BrownBottomRight)
+Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BottomRight)
 wait 7500
+
+Text.PrintString("Fuck me, that shift was long. I reek of noodles.", {time} 3500)
+wait 3500
+Text.PrintString("The sooner I'm home in bed, the better.", {time} 3000)
+wait 3000
 
 // Flash Rosa's apartment blip
 Text.PrintHelpString("This map will guide you around town.")
 Hud.FlashObject(HudObject.Radar)
-initRadarSprites()
 // Stop flashing the minimap after 5secs
 wait 2500
 Hud.FlashObject(0)
-
 wait 2500
-Text.PrintString("TGIF, I really needed this rent money.", {time} 4000)
-wait 3500
+
+// NOTE: Thus far, Rosa's primary form of travel is on-foot.
+Text.PrintHelpString("Find the best way home.")
+
+$isDriving = false
+$isDying = false
 
 while true
   wait 0
-
-  // 1. Wait for the player to get near the safehouse
-  // 2. Teleport the player inside their apartment
-
+  
   checkSafety()
+  
+  // Failure if the player is wasted (drunk? hehe) or busted
+  if or
+    Player.IsDead($player)
+    Player.HasBeenArrested($player)
+  then
+    Text.PrintString("Ouch!", {time} 2500)
+    Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
+    wait 3000
+  
+    Mission.Fail()
+    break
+  end
+  
+  // Wait for the player to get to their safehouse
+  if Player.LocateAnyMeans2D($player, 1165.0, -398.5, 3.0, 3.0, true)
+  then
+    Camera.SetFixedPosition(1183.0, -384.4, 34.0, 0, 0, 0)
+    Camera.SetInterpolationParameters(5.0, {time} 1000)
+    Camera.PointAtPlayer($player, CameraMode.CheezyZoom, SwitchType.Interpolation)
+
+    if $isDriving == false
+    then
+      Text.PrintString("Ugh, that was a long walk.", 3000)
+    end
+    wait 3500
+
+    saveGame()
+    Camera.RestoreJumpcut()
+
+    // Rosa's paycheck
+    $REWARD = 250
+
+    // Mission Passed!
+    Audio.PlayMissionPassedTune(1)
+    Player.AddScore($player, $REWARD)
+    Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
+    
+    wait 5500
+    Text.PrintString("TGIF, I really needed this rent money.", {time} 3250)
+
+    break
+  end
 end
 
-// Rosa's paycheck
-$REWARD = 250
+wait 7500
 
-// Mission Passed!
-Audio.PlayMissionPassedTune(1)
-Player.AddScore($player, $REWARD)
-Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
+Mission.Finish()
+$onMission = false
 
 // NOTE: 05DC for GTA III CLEO, in lieu of `terminate_this_custom_script` (San Andreas)
 05DC: terminate_custom_thread
 
-// Functions
+//================================
+//----------- Functions ----------
+//================================
+
+function checkSafety()
+  if and  
+    Player.IsSittingInAnyCar($player)
+    Player.IsInAnyCar($player)
+    $isDriving == false
+  then
+    $isDriving = true
+    Text.PrintHelpString("Drive safe.")
+    Player.StoreCarIsInNoSave($player, $myCar)
+  end
+
+  $health = 0
+  Player.GetHealth($player, $health)
+  // Remind the player not to die 😜
+  if and
+    $health < 45
+    $isDying == false
+  then
+    $isDying = true
+    Text.PrintHelpString("Don't you ~r~dare ~w~die!")
+  end
+end
+
 {$INCLUDE ../utils/missions.txt}

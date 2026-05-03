@@ -118,7 +118,8 @@ function initPickups()
 end
 
 function initGarages()
-  // TODO: Setup Portland, Staunton, and Shoreside Vale garages
+  Garage.Create(1170, -414, 24, 1185, -418.6, 29, GarageType.Mission, $ApartmentGarage)
+  // TODO: Setup other Portland, Staunton, and Shoreside Vale garages
 end
 
 function initSpawnParams()

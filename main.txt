@@ -83,6 +83,7 @@ end
 // Setup mission state
 $onMission = false
 $missionIndex = -1
+$myCar = 0
 
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection
@@ -93,6 +94,7 @@ $teleportCollected = False
 // Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
 $SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
+Garage.ChangeType($ApartmentGarage, GarageType.HideoutOne)
 
 // Set the clock to about 9:25p and let the player enjoy the splash art
 Clock.SetTimeOfDay(21, 25)
