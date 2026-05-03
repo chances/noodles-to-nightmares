@@ -1,18 +1,16 @@
-{$USE CLEO}
+{$CLEO .cm}
+// Do NOT use script_name, it crashes GTA 3 1.0 with III.VC.CLEO v2.1
 
 //============================================================
 // Mission 0: Car Tutorial
 // Teach the player how to steal, drive, and store their cars
 //============================================================
-:Tutorial
-script_name 'Tutor'
 
-// FIXME: Crash! Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BrownBottomRight)
-//Text.PrintStringNow("TGIF, I really needed this rent money.", {time} 5000)
-//wait 7500
-//Text.PrintFormatted("Get to the ~g~church ~w~on time!", {time} 3500, False)
+Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BrownBottomRight)
+wait 7500
 
 // Flash Rosa's apartment blip
+Text.PrintHelpString("This map will guide you around town.")
 Hud.FlashObject(HudObject.Radar)
 initRadarSprites()
 // Stop flashing the minimap after 5secs
@@ -20,20 +18,16 @@ wait 2500
 Hud.FlashObject(0)
 
 wait 2500
-// Text.PrintString("How'd ~g~you ~w~get here?", 5000)
-wait 2500
-Text.ClearPrints()
-Text.PrintHelpString("Don't you ~r~dare ~w~die!")
+Text.PrintString("TGIF, I really needed this rent money.", {time} 4000)
 wait 3500
-Text.ClearHelp()
 
 while true
   wait 0
 
-  // Wait for the player to get near the safehouse
-  // TODO: Teleport the player to their apartment
+  // 1. Wait for the player to get near the safehouse
+  // 2. Teleport the player inside their apartment
 
-  // FIXME: checkSafety()
+  checkSafety()
 end
 
 // Rosa's paycheck
@@ -44,4 +38,8 @@ Audio.PlayMissionPassedTune(1)
 Player.AddScore($player, $REWARD)
 Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
 
-terminate_this_script
+// NOTE: 05DC for GTA III CLEO, in lieu of `terminate_this_custom_script` (San Andreas)
+05DC: terminate_custom_thread
+
+// Functions
+{$INCLUDE ../utils/missions.txt}

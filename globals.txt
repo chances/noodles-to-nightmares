@@ -1,5 +1,5 @@
 const START_MISSION_INDEX = 0
-const MAX_MISSION_INDEX = 0
+const MAX_MISSION_INDEX = 1
 
 var
   $SafeBlip: int
@@ -18,77 +18,25 @@ end
 //-------- Global State ----------
 //================================
 
-Alloc($TIMER, 4310)
-Alloc($Hideout, 4324)
 Alloc($Banshee, 4315)
-Alloc($never_busted, 4332)
-Alloc($GunBlip, 4316)
-Alloc($Destination, 4318)
-Alloc($AK, 4322)
-Alloc($never_wasted, 4333)
-Alloc($CarBlip, 4326)
-Alloc($DeathHelp, 4337)
-Alloc($Pistol, 4324)
-Alloc($PistolCollected, 4338)
-Alloc($BansheeBlip, 4317)
-Alloc($Intro_Passed, 4336)
-Alloc($Sphere, 4321)
-Alloc($Shitbox, 4327)
 Alloc($Stinger, 4325)
 Alloc($StingerGen, 4339)
 Alloc($BansheeGen, 4340)
 Alloc($AmbulanceIND, 4341)
 Alloc($AmbulanceCOM, 4328)
-Alloc($AmbulanceRES, 4329)
-Alloc($AmbulanceRES2, 4330)
 Alloc($CopCar, 4342)
-Alloc($CarDealerBlip, 4343)
 Alloc($BobcatGen, 4344)
 Alloc($Handgun, 4345)
-Alloc($UziCOM, 4346)
 Alloc($BRIBE_IND1, 4347)
 Alloc($BRIBE_IND2, 4348)
 Alloc($BRIBE_IND3, 4349)
 Alloc($BRIBE_COM1, 4350)
 Alloc($BRIBE_COM2, 4351)
-Alloc($BRIBE_RES7, 4352)
-Alloc($BRIBE_RES1, 4353)
-Alloc($BRIBE_RES2, 4354)
-Alloc($BRIBE_RES3, 4355)
 Alloc($MafiaGen, 4356)
 Alloc($CheetahGen, 4357)
-Alloc($Shotgun, 4358)
-Alloc($HandgunBlip, 4359)
-Alloc($SprayShopIND, 4360)
-Alloc($UziBlip, 4361)
-Alloc($WastedInfo, 4362)
-Alloc($Ammunation, 4363)
 Alloc($SentinelGen, 4364)
-Alloc($HEAL_COM1, 4365)
-Alloc($HEAL_IND1, 4366)
-Alloc($HEAL_IND2, 4367)
-Alloc($HEAL_IND3, 4368)
-Alloc($HEAL_RES1, 4369)
-Alloc($HEAL_RES2, 4370)
-Alloc($BRIBE_RES4, 4371)
-Alloc($BRIBE_RES5, 4372)
-Alloc($BRIBE_RES6, 4373)
-Alloc($HEAL_RES3, 4374)
-Alloc($HEAL_RES4, 4375)
-Alloc($HEAL_RES5, 4376)
-Alloc($HEAL_RES6, 4377)
-Alloc($Canyonero, 4378)
-Alloc($BRIBE_RES7, 4379)
-Alloc($BRIBE_RES8, 4380)
-Alloc($BombGarage, 4381)
-Alloc($BombGarage2, 4382)
-Alloc($SprayShopG, 4383)
-Alloc($Packages, 4399)
 
 // FIXME: Global state is a code-smell
 $missionIndex = START_MISSION_INDEX
 $willPromptTeleport = True
 $IntroPassed = False
-$neverWasted = False
-$neverBusted = False
-$TIMER = 10000

@@ -188,8 +188,8 @@ end
 ### Memory Allocation
 
 ```sanny
-Alloc($TIMER, 4310)
 Alloc($Banshee, 4315)
+Alloc($Stinger, 4325)
 ```
 
 - **Usage**: Allocate memory handles for object references (vehicles, peds,

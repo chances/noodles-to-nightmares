@@ -1,18 +1,12 @@
 DEFINE OBJECTS 3
 DEFINE OBJECT SANNY BUILDER 4.1.0
-DEFINE OBJECT INDHELIX_BARRIER         // Object number -1
-DEFINE OBJECT LOD_LAND014              // Object number -2
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
 
-DEFINE MISSIONS 1
-// Syntax: DEFINE MISSION {ID} 0 AT {LABEL} @mission
-DEFINE MISSION 0 AT @Tutorial
-// DEFINE MISSION 1 AT @Car
-// DEFINE MISSION 2 AT @Gun
-// DEFINE MISSION 3 AT @Alley
-// DEFINE MISSION 4 AT @Pest
-// DEFINE MISSION 5 AT @Circuit
+DEFINE MISSIONS 0
 
 {$USE CLEO}
+0000: nop
 
 {$INCLUDE globals.txt}
 
@@ -44,7 +38,7 @@ Player.SetNeverGetsTired($player, True)
 Player.SetControl($player, False)
 
 // QUESTION: This removes the bridge barriers?
-World.SetVisibilityOfClosestObjectOfType(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, False)
+World.SetVisibilityOfClosestObjectOfType(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, false)
 World.SwapNearestBuildingModel(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, #LOD_LAND014)
 
 // Sunshine! 🌞 :D
@@ -57,11 +51,6 @@ Stat.SetCommercialPassed
 // Set player model
 Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
-
-// Setup mission state
-declare_mission_flag $onMission
-wait 50
-$onMission = False
 
 // Initialize all the things!
 initParkedCars()
@@ -78,6 +67,7 @@ initGarages()
 request_model 326 // Dumpster
 $dumpster = Object.Create(326, 1150.44, -389.8, 26.627)
 request_model 838 // Trick Ramp
+load_all_models_now
 
 while true
   wait 0
@@ -90,9 +80,9 @@ while true
   end
 end
 
-// Set the clock to about 9:25p and let the player enjoy the splash art
-Clock.SetTimeOfDay(21, 25)
-wait 750
+// Setup mission state
+$onMission = false
+$missionIndex = -1
 
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection
@@ -104,6 +94,10 @@ $teleportCollected = False
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
 $SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
 
+// Set the clock to about 9:25p and let the player enjoy the splash art
+Clock.SetTimeOfDay(21, 25)
+wait 750
+
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, True)
@@ -114,8 +108,7 @@ while true
   wait 250 ms
 
   // Try to keep the story going
-  // FIXME: https://docs.sannybuilder.com/troubleshooting/errors/0084
-  start_new_script @M_TRIG
+  tryTriggerMission()
 
   //=============================================
   // Monitor pickups and teleportation locations
@@ -123,12 +116,11 @@ while true
 
   // Prompt the user to teleport, but only while the info pickup is visible
   if and
-    not Pickup.HasBeenCollected($TeleportInfoPickup)
-    $teleportCollected == False
+    Pickup.HasBeenCollected($TeleportInfoPickup)
+    $teleportCollected == false
   then
-    // FIXME: This prompt isn't shown to the player
     Text.PrintHelpString("Press the T Key to teleport.")
-    $teleportCollected = True
+    $teleportCollected = true
     // TODO:  $teleportCollected = False after ~30s
   end
 
@@ -145,36 +137,25 @@ while true
   monitorShortcutKey_T_teleport()
 end
 
-//================================
-//---------- MISSIONS ------------
-//================================
-
-{$INCLUDE missions/0_tutorial.txt}
-
-//================================
-//--------- SUBROUTINES ----------
-//================================
-
-/// Trigger the given mission index
-:M_TRIG
-script_name 'M_TRIG'
-
-if not Player.CanStartMission($player)
-then
-  terminate_this_script
+/// Trigger the next mission, if any
+function tryTriggerMission()
+  if and
+    $onMission == false
+    $missionIndex < MAX_MISSION_INDEX
+    Player.CanStartMission($player)
+  then
+    $onMission = true
+    $missionIndex = $missionIndex + 1
+    switch $missionIndex
+      case 0
+        0600: START_CUSTOM_THREAD "0_tutorial.cm"
+      case 1
+        Text.PrintHelpString("TODO: Future missions incoming.")
+      default
+        Text.PrintHelpString("There's nothing left! What gives?")
+    end
+  end
 end
-
-// NOTE: Assume we can start a mission
-switch $missionIndex
-  case 0
-    start_new_script @Tutorial
-  case 1
-    Text.PrintHelpString("TODO: Future missions incoming.")
-  default
-    Text.PrintHelpString("There's nothing left! What gives?")
-end
-
-terminate_this_script
 
 //================================
 //--------- FUNCTIONS ------------
@@ -187,3 +168,38 @@ terminate_this_script
 // See: https://tutorial.sannybuilder.com/functions
 
 {$INCLUDE utils/functions.txt}
+
+//================================
+//------ Functions: Main Loop ----
+//================================
+
+function monitorShortcutKey_P()
+  if
+    Pad.IsKeyPressed(KeyCode.P)
+  then
+    Game.ActivateSaveMenu()
+
+    // QUESTION: Do we have to wait for anything? Or will control flow return here after the user saves their game?
+    // The user saved their game, so wait for the save procedure to finish
+    while not Game.HasSaveGameFinished()
+      wait 10
+      if
+        Game.HasSaveGameFinished()
+      then
+        break
+      end
+    end
+  end
+end
+
+function monitorShortcutKey_T_teleport()
+  // Where is the source? (1172.41, -104.52, 7.47)
+  if and
+    Pad.IsKeyPressed(KeyCode.T)
+    Player.LocateAnyMeans3D($player, 1172.41, -104.52, 7.47, 1.0, 1.0, 1.0, True)
+  then
+    Player.SetCoordinates($player, 1161.56, -115.92, 15.0)
+    Text.PrintString("Teleport succeeded!", 3000)
+    Player.SetControl($player, True)
+  end
+end

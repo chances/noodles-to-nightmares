@@ -1,0 +1,38 @@
+//================================
+//----- Functions: Missions ------
+//================================
+
+var
+  $isDriving: int
+  $isDying: int
+end
+
+$isDriving = false
+$isDying = false
+
+function initRadarSprites()
+  $Ammunation = Blip.AddSpriteForCoord(554.79, 1327.83, 132.00, RadarSprite.Weapon)
+  $Ammunation2 = Blip.AddSpriteForCoord(348.00, -716.00, 26.00, RadarSprite.Weapon)
+end
+
+function checkSafety()
+  // FIXME: Remind the player to drive safe, _only_ if they enter a car
+  // NOTE: Thus far, Rosa's primary form of travel is on-foot.
+  if $isDriving == true
+  then
+    Text.PrintString("Drive safe.", 3000)
+  end
+
+  // FIXME: Only remind the player to stay safe if they're getting hurt
+  // Remind the player not to die 😜
+  if $isDying == true
+  then
+    Text.PrintHelpString("Don't you ~r~dare ~w~die!")
+  end
+
+  // Check if player is wasted or busted
+  if not Player.IsPlaying($player)
+  then
+    // TODO: Do the wasted/busted tutorial (fail the mission?), then resume Rosa's trip home
+  end
+end
