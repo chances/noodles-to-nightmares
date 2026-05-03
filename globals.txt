@@ -1,5 +1,5 @@
 const START_MISSION_INDEX = 0
-const MAX_MISSION_INDEX = 1
+const MAX_MISSION_INDEX = 2
 
 var
   $player: Player

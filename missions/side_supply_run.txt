@@ -1,0 +1,24 @@
+{$CLEO .cm}
+
+//====================================
+// Side Mission: Supply Run
+// Buy groceries for the Punk Noodles
+// Light exploration and NPC dialogue
+//====================================
+const REWARD = 250 // Payment and relationship boost
+
+$isDying = false
+
+Text.PrintBigString("Supply Run", {time} 5000, TextStyle.BottomRight)
+wait 7500
+
+// TODO: Implement side mission
+Text.PrintHelpString("This mission is under construction.")
+wait 2500
+
+Mission.Finish()
+$onMission = false
+
+05DC: terminate_custom_thread
+
+{$INCLUDE ../utils/missions.txt}

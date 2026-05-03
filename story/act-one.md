@@ -29,7 +29,7 @@ increasingly dangerous as her choices attract attention.
 
 ---
 
-## Mission 0: Car Tutorial (Framework Complete, Needs Expansion)
+## Mission 0: The Carpool Shortcut (Done)
 
 **Script File**: `missions/0_tutorial.txt`
 
@@ -37,7 +37,7 @@ increasingly dangerous as her choices attract attention.
 
 - **Location**: Punk Noodles (Chinatown, Portland)
 - **Context**: End of shift. It's late, Rosa's tired, and she needs to get home
-  to her apartment in north Portland (~(1188, -408, 24)~).
+  to her apartment in north Portland (~~(1188, -408, 24)~~).
 - **Trigger**: Leaving the shop at night; player spawns out front
 
 ### Gameplay Objectives
@@ -54,8 +54,8 @@ increasingly dangerous as her choices attract attention.
 - [x] HUD prompts for "find a car," "drive to safehouse," etc.
 - [x] Vehicle entry detection and player positioning
 - [x] Safehouse zone detection (sphere or coordinate check)
-- [ ] Vehicle garage mechanic (car parked = car stored)
-- [x] Mission passed sequence and reward ($250; Rosa's paycheck)
+- [ ] Vehicle garage mechanic, i.e. car parked = car stored
+- [x] Mission passed sequence and reward: $250; Rosa's paycheck
 
 ### Story Text
 
@@ -68,34 +68,32 @@ increasingly dangerous as her choices attract attention.
 
 ### Dialogue & NPCs
 
-- **Rosa (protagonist)** – Internal monologue; exhausted, matter-of-fact
-- **NPC (Optional)**: Ramen shop owner (brief encounter on exit, sends her off)
+Internal monologue: exhausted, matter-of-fact.
 
 ### Win/Fail Conditions
 
-- **Win**: Rosa drives to safehouse and parks car in designated zone
-- **Fail**: Rosa gets wasted or busted; mission restarts
+- **Win**: Rosa walks or drives to safehouse
+- **Fail**: Rosa gets wasted or busted: mission restarts
 
 ### Mechanical Teaching Points
 
-- Basic driving (steering, acceleration, braking)
-- Camera control
+- Basic driving
 - Safehouse concept (save games, vehicle storage)
 - Map navigation
 
 ---
 
-## Mission 1: The Shady Job
+## Mission 1: Easy Money (In Progress)
 
-**Script File**: `missions/1_shady_job.txt` (To be created)
+**Script File**: `missions/1_shady_job.txt`
 
 ### Setup
 
 - **Location**: Punk Noodles (interior) → Chinatown street delivery route
-- **Context**: A few days after M0. Rosa returns to work. A mysterious "contact"
-  approaches with a job: move some contraband from point A to point B. It pays
-  $800—more than a week's tips.
-- **Trigger**: Entering the Punk Noodles interior after completing M0
+- **Context**: A few days after mission 0, Rosa returns to work. A mysterious
+  "contact" approaches with a job: move some contraband from point A to point B.
+  It pays $800, more than a week's tips.
+- **Trigger**: Entering the Punk Noodles interior
 
 ### Gameplay Objectives
 
@@ -114,30 +112,28 @@ carefully, avoid high-speed chases, and think tactically about her route.
 ### Script Requirements
 
 - [ ] Interior dialogue at Punk Noodles (accept job cutscene)
-- [ ] Waypoint marker for package pickup location at her apartment
+- [ ] Waypoint marker for package pickup location outside her apartment
 - [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
-    ```
-    $x, $y, $z = Player.GetCoordinates($player)
-    Sound.AddOneOffSound($x, $y, $z, ScriptSound.SoundTrainAnnouncement1)
-    ```
-- [ ] Package object creation (briefcase, duffel bag, etc.)
-- [ ] Car delivery logic (passenger or cargo mechanic)
-- [ ] Police wanted level tracking (avoid 4-star wanted)
+  `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
+- [ ] Package object creation (e.g. briefcase, duffel bag, etc.)
+- [ ] Police wanted level tracking (avoid 2-star wanted)
 - [ ] Destination zone detection
 - [ ] Dialogue triggers for "danger near delivery point"
-- [ ] Failure states (busted, package damaged, wanted level too high)
+- [ ] Failure states:
+  - Busted or wasted,
+  - Package damaged (i.e. car takes too much damage), or
+  - Wanted level too high
 
 ### Story Text
 
-- **Contact intro**: "I hear you're good with a car. I got a job for someone
-  discreet."
-- **Job briefing**: "Pick up a package at the docks, deliver it to the warehouse
-  on the south side. Simple. And keep a low profile—cops don't like this kind of
-  business."
-- **In-vehicle**: (Radio plays; minimal intervention from contact)
-- **Near destination**: "You're almost there. Just don't screw this up."
-- **Success**: "Good work. Here's your cut. There might be more work. I'll be in
-  touch."
+- **Contact intro**: "I hear you're meek like a mouse. I need someone discreet.
+  It pays "
+- **Job briefing**: "Wait for our call. Pick up a package and deliver it.
+  Simple. And keep a low profile. We don't want the cops sniffin' around."
+- **The Call**: "Pick up the package at the docks, deliver it to the warehouse
+  on the south side. You don't have much time. Don't fuck this up."
+- **In-vehicle**: Minimal intervention from contact
+- **Success**: "Here's your cut. There may be more work soon. I'll be in touch."
 
 ### Dialogue & NPCs
 
@@ -148,32 +144,30 @@ carefully, avoid high-speed chases, and think tactically about her route.
 
 ### Win/Fail Conditions
 
-- **Win**: Deliver package without triggering 4+ wanted level; no car damage
-  threshold exceeded
+- **Win**: Deliver the package without triggering failure conditions
 - **Fail**:
   - Busted (mission restart)
   - Wasted (mission restart)
-  - Wanted level exceeds 4 stars (optional: mission fails if fleeing becomes
-    unmanageable)
-  - Package damaged beyond threshold (optional: mission fails with penalty)
+  - Time limit exceeded: 2 hours, i.e. two minutes in real life
+  - Wanted level exceeds 1 star
+  - Package damaged beyond threshold, i.e. car damage threshold **not** exceeded
 
 ### Mechanical Teaching Points
 
-- Wanted level mechanic (police don't come after you for everything)
-- Stealth driving (avoiding attention, traffic management)
+- Wanted level mechanic, police don't come after with a bribe
+- Stealth driving and avoiding attention
 - Multi-stage mission structure
-- Dialogue branching (minor choices)
 - Route planning on map
 
 ### Map Considerations
 
-- **Pickup**: Docks area or quiet alley (low civilian density)
+- **Pickup**: Quiet alley, low civilian density
 - **Delivery**: Industrial zone far from police stations
-- **Route**: 1–2 minutes of driving; ideally routes through varied terrain
+- **Route**: 1–2 minutes of driving, ideally routes through varied terrain
 
 ---
 
-## Mission 2: Proving Herself
+## Mission 2: Breaking In
 
 **Script File**: `missions/2_proving_herself.txt` (To be created)
 
@@ -205,20 +199,17 @@ she's not just a delivery driver.
 
 ### Script Requirements
 
-- [ ] Weapon acquisition (provided or purchased)
+- [ ] Weapon acquisition, provided or purchased
 - [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
-    ```
-    $x, $y, $z = Player.GetCoordinates($player)
-    Sound.AddOneOffSound($x, $y, $z, ScriptSound.SoundTrainAnnouncement1)
-    ```
+  `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
 - [ ] Gang meeting point waypoint
-- [ ] Dialogue system for gang confrontation (tension buildup)
-- [ ] Combat trigger (when player draws weapon or dialogue fails)
+- [ ] Dialogue system for gang confrontation, rising tension
+- [ ] Combat trigger: when player draws weapon or dialogue fails
 - [ ] Enemy spawning and AI behavior
 - [ ] Health & armor tracking
 - [ ] Chase/retreat logic (police response optional)
 - [ ] Safehouse return waypoint
-- [ ] Mission passed sequence and reward ($1,200)
+- [ ] Mission passed with $1,200 reward
 
 ### Story Text
 
@@ -269,13 +260,13 @@ she's not just a delivery driver.
 
 ---
 
-## Optional/Side Missions: Portland Island
+## Optional Side Missions: Portland
 
-### Side Mission: Shopping Spree Gone Wrong
+### Side Mission: Supply Run
 
 **Script File**: `missions/side_shopping.txt` (To be created)
 
-**Objective**: Rosa runs a simple errand—buy groceries or supplies for the Punk
+**Objective**: Rosa runs a simple errand: buy groceries for the Punk
 Noodles shop owner. It goes sideways when a street gang blocks the route or a
 homeless NPC steals her money.
 
@@ -291,7 +282,7 @@ homeless NPC steals her money.
 
 ---
 
-### Side Mission: Debt Collection (Optional)
+### Side Mission: The Squeeze
 
 **Script File**: `missions/side_debt_collect.txt` (To be created)
 
@@ -349,94 +340,20 @@ bigger opportunities.
 
 ---
 
-## Script Architecture & Patterns
-
-### General Mission Structure (Sanny Builder)
-
-Each mission follows this Sanny Builder pattern (per AGENTS.md):
-
-```
-:MissionName
-script_name 'M0Tutor'     // 7 chars max
-wait 0
-
-// Mission setup: spawn NPCs, objectives, UI text
-// ...
-
-// Main mission loop
-while true
-  wait 250 ms
-  
-  // Check win condition
-  if WIN_CONDITION then
-    break
-  end
-  
-  // Check fail condition
-  if FAIL_CONDITION then
-    // Cleanup, failure text
-    break
-  end
-  
-  // Update objectives, dialogue, etc.
-end
-
-// Cleanup, rewards, mission passed audio
-Audio.PlayMissionPassedTune(1)
-Player.AddScore($player, $REWARD)
-Text.PrintWithNumberBig('M_PASS', $REWARD, 5000, TextStyle.Middle)
-
-terminate_this_script
-```
-
-### Key Variables (Global)
-
-```sanny
-var
-  $player: Player
-  $playerChar: Char
-  $missionIndex: int
-  $onMission: int
-  
-  // M0
-  $m0Safehouse: Blip
-  $m0CarMarker: Sphere
-  
-  // M1
-  $m1Package: Object
-  $m1DeliveryZone: Sphere
-  $m1WantedLevelCheck: int
-  
-  // M2
-  $m2GangLeader: Char
-  $m2GangMembers: Char[5]
-  $m2CombatZone: Sphere
-end
-```
-
-### Common Routines
-
-- `InitBlips()` – Create map markers
-- `CheckWantedLevel()` – Monitor police attention
-- `MonitorObjective()` – Display current goal
-- `PlayAudio()` – Mission dialogue and effects
-- `CheckPlayerDeath()` – Fail condition
-
----
-
 ## Mission Completion Checklist
 
 ### Mission 0: Car Tutorial
 
 - [ ] Script framework complete (0_tutorial.txt)
 - [ ] Dialogue text finalized
-- [x] Safehouse location confirmed (north Portland apartment, ~(1188, -408, 24)~)
+- [x] Safehouse location confirmed (north Portland apartment, ~~(1188,
+      -408, 24)~~)
 - [ ] Vehicle spawn and entry mechanics
 - [ ] Parking zone detection
 - [ ] Mission passed sequence
 - [ ] Testing: player can steal, drive, and park without bugs
 
-### Mission 1: The Shady Job
+### Mission 1: Easy Money
 
 - [ ] Script created (1_shady_job.txt)
 - [ ] Pickup and delivery locations scouted
@@ -446,7 +363,7 @@ end
 - [ ] Dialogue written and integrated
 - [ ] Testing: delivery possible without excessive wanted level
 
-### Mission 2: Proving Herself
+### Mission 2: Breaking In
 
 - [ ] Script created (2_proving_herself.txt)
 - [ ] Gang territory location confirmed
@@ -499,8 +416,7 @@ end
 
 ## References
 
-- **Story Bible**: `.agents/plans/story.md`
 - **Sanny Builder Guidelines**: `AGENTS.md`
-- **Mission 0 Framework**: `missions/0_tutorial.txt`
+- **Mission Framework**: `missions/0_tutorial.txt`
 - **GTA3 Limits**:
   [Sanny Builder Docs](https://docs.sannybuilder.com/scm-documentation)

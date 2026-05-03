@@ -150,7 +150,9 @@ function tryTriggerMission()
         register_mission_given
         0600: START_CUSTOM_THREAD "0_tutorial.cm"
       case 1
-        Text.PrintHelpString("TODO: Future missions incoming.")
+        // TODO: Trigger: Entering the Punk Noodles interior
+        register_mission_given
+        0600: START_CUSTOM_THREAD "1_shady_job.cm"
     end
   end
 end

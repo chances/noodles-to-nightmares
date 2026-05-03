@@ -1,0 +1,25 @@
+{$CLEO .cm}
+
+//======================================
+// Mission 2: Breaking In
+// Rosa completes a job to earn respect
+// Test driving and combat encounter
+//======================================
+const REWARD = 1200 // Payment for proving herself
+
+$isDying = false
+
+Text.PrintBigString("Breaking In", {time} 5000, TextStyle.BottomRight)
+wait 7500
+
+// TODO: Implement mission
+Text.PrintHelpString("This mission is under construction.")
+wait 2500
+
+Mission.Finish()
+$onMission = false
+$missionIndex = $missionIndex + 1
+
+05DC: terminate_custom_thread
+
+{$INCLUDE ../utils/missions.txt}

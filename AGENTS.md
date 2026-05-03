@@ -4,12 +4,16 @@
 
 ### Overview
 
-- **Header Directives**: `DEFINE OBJECTS`, `DEFINE MISSIONS`, `{$USE CLEO}`
-- **Global Declarations**: Variables (`var` block) and memory allocation
-  (`Alloc()`)
+- **Global Declarations**: Variables: `var` block, see 
 - **Main Script**: Entry point that initializes game state and runs main loop
-- **Missions**: Separate script threads launched via `DEFINE MISSION`
-- **Functions**: Reusable code blocks called from main loop
+- **Missions**: Separate script threads launched via:
+    ```
+    register_mission_given
+    0600: START_CUSTOM_THREAD "0_tutorial.cm"
+    ```
+- **Functions**: See utils/functions.txt
+
+**API Reference**: [Library - Sanny Builder](https://library.sannybuilder.com/#/gta3/script)
 
 ### GTA3 Script Limits
 
@@ -28,57 +32,6 @@
 
 ## 2. Control Flow Rules
 
-### Labels
-
-- **Definition**: `:LabelName` (colon prefix)
-- **Reference**: `@LabelName` (at-sign prefix)
-- **Usage**: Marks locations for `goto`, `gosub`, or mission entry points
-
-```sanny
-:M_LOOP           // Label definition
-goto @M_TRIG      // Label reference
-```
-
-### Goto Patterns
-
-#### PREFER: Gosub Pattern for Returning Control Flow
-
-```sanny
-:M_LOOP
-while true
-  wait 250 ms
-  gosub @M_TRIG    // Call subroutine
-  // Control automatically returns here
-end
-
-:M_TRIG            // Subroutine
-  // Do something
-  return           // Return to caller
-```
-
-**Rule**: **PREFER `gosub` over `goto` when control-flow is intended to return
-back to the call-site.** Use `gosub` and `return` for cleaner, more maintainable
-code.
-
-#### Legacy: Goto Subroutine Pattern (Avoid)
-
-```sanny
-:M_LOOP
-while true
-  wait 250 ms
-  goto @M_TRIG      // Jump to subroutine
-:MiTrRET           // Return point (manual label management)
-  // Continue main logic
-end
-
-:M_TRIG            // Subroutine
-  // Do something
-  goto @MiTrRET    // Return to caller
-```
-
-**Legacy Rule** (if using `goto` for subroutines): Always provide an explicit
-return label and ensure proper flow when using `goto` for subroutines.
-
 ### Loop Constructs
 
 - `while true ... end` - Infinite loop (requires `wait` inside)
@@ -88,7 +41,7 @@ return label and ensure proper flow when using `goto` for subroutines.
 
 ```sanny
 while true
-  wait 250 ms  // REQUIRED - prevents infinite tight loop
+  wait 0
   // game logic
 end
 ```
@@ -96,76 +49,103 @@ end
 **Ref**:
 [Loops - Sanny Builder](https://docs.sannybuilder.com/language/control-flow)
 
-### Mission Launch Context
-
-**Critical Rule**: `Mission.LoadAndLaunchInternal()` must be called from
-**within** the main loop's `while true` block.
-
-```sanny
-:M_LOOP
-while true
-  wait 250 ms
-  goto @M_TRIG        // Jump here from inside loop
-
-:M_TRIG
-  if and
-    Player.IsPlaying($player)
-    Player.CanStartMission($player)
-    $onMission == False
-  then
-    Mission.LoadAndLaunchInternal($missionIndex)
-  end
-  goto @MiTrRET       // Return inside loop context
-
-:MiTrRET
-  // Continue loop
-end
-```
-
-**Why**: GTA3's mission system expects continuous main loop execution. Calling
-mission load outside loop context causes script state corruption and crashes.
-
 ---
 
 ## 3. Mission System Rules
 
-### Mission Definition
+### CLEO Mission Files
+
+- **Location**: `missions/` directory
+- **Format**: `.txt` CLEO files, one per mission
+- **Header**: `{$CLEO .cm}` directive required
+- **Naming**: `{index}_{name}.txt` (e.g., `0_tutorial.txt`, `1_robbery.txt`)
+
+### Mission Launch
 
 ```sanny
-DEFINE MISSIONS 1
-DEFINE MISSION 0 AT @Tutorial
+// In main.txt
+switch $missionIndex
+  case 0
+    register_mission_given
+    0600: START_CUSTOM_THREAD "0_tutorial.cm"
+end
 ```
 
-- **Syntax**: `DEFINE MISSION {index} AT @{label}`
-- **Index Range**: 0-119 (GTA3 max: 120 missions)
-- **Label**: Points to mission script entry point
-
-**Ref**:
-[0417: LOAD_AND_LAUNCH_MISSION_INTERNAL - GTAMods Wiki](https://www.gtamodding.com/index.php?title=0417)
+- **Opcode**: `0600: START_CUSTOM_THREAD "filename.cm"`
+- **Condition Check**: Verify specific mission's trigger before launch
+- **No Pre-Definition**: CLEO missions don't require `DEFINE MISSIONS` header
 
 ### Mission Script Structure
 
 ```sanny
-:Tutorial
-script_name 'Tutorial'
-wait 0
+{$CLEO .cm}
 
 // Mission logic here
 
-// When mission ends:
-terminate_this_script
+if <success_condition>
+then
+  Mission.Finish()
+else
+  Mission.Fail()
+end
+
+Mission.Finish()
+$onMission = false
+$missionIndex = $missionIndex + 1
+
+05DC: terminate_custom_thread
 ```
 
-- **Entry Point**: Label matching `DEFINE MISSION`
-- **Script Name**: 7-character max via `script_name`
-- **Termination**: `terminate_this_script` ends mission and returns control to
-  main
+- **Header**: `{$CLEO .cm}` at top
+- **Success**: Call `Mission.Finish()` then set `$onMission = false`
+- **Failure**: Call `Mission.Fail()` then set `$onMission = false`
+- **Termination**: `05DC: terminate_custom_thread` ends mission (GTA III CLEO)
+- **Utilities**: Use `{$INCLUDE ../utils/missions.txt}` for shared functions
 
-### Mission Requirements
+### Mission State Management
 
-- Missions **must** be defined at script header
-- Only defined missions can be launched with `Mission.LoadAndLaunchInternal()`
-- Changed mission code does not require game restart
+```sanny
+// In `tryTriggerMission` before launching mission
+if and
+  $missionPrecondition == true
+  // etc.
+then
+  register_mission_given
+  0600: START_CUSTOM_THREAD "0_tutorial.cm"
+end
+```
+
+#### Mission-Specific Event Loop
+
+```sanny
+while true
+  wait 0
+
+  // Failure conditions
+  if or
+    Player.IsDead($player)
+    Player.HasBeenArrested($player)
+    /// etc.
+  then
+    Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
+    wait 3000
+
+    Mission.Fail()
+    break
+  end
+
+  // 
+  if $winCondition == true
+  then
+    // Mission Passed!
+    Audio.PlayMissionPassedTune(1)
+    register_mission_passed 'NooM_0' // See `data/strings.txt`; Or, e.g. `NooM_5` for mission idx 5
+    Player.AddScore($player, REWARD)
+    Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
+    wait 5500
+  end
+end
+```
 
 ---
 

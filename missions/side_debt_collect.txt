@@ -1,0 +1,24 @@
+{$CLEO .cm}
+
+//============================================
+// Side Mission: The Squeeze
+// Collect a debt from a local business owner
+// Dialogue-driven intimidation + combat
+//============================================
+const REWARD = 200 // Payment for collecting debt
+
+$isDying = false
+
+Text.PrintBigString("The Squeeze", {time} 5000, TextStyle.BottomRight)
+wait 7500
+
+// TODO: Implement side mission
+Text.PrintHelpString("This mission is under construction.")
+wait 2500
+
+Mission.Finish()
+$onMission = false
+
+05DC: terminate_custom_thread
+
+{$INCLUDE ../utils/missions.txt}
