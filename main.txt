@@ -21,7 +21,6 @@ Game.SetMaxWantedLevel(1)
 set_deatharrest_state 0
 
 // Load Portland
-// NOTE: Must _also_ load  Industrial so the `Streaming.IsCollisionInMemory` check below succeeds
 Streaming.LoadCollision(0)
 
 // Show the splash screen
@@ -154,7 +153,7 @@ function tryTriggerMission()
       case 1
         Text.PrintHelpString("TODO: Future missions incoming.")
       default
-        Text.PrintHelpString("There's nothing left! What gives?")
+        return
     end
   end
 end
