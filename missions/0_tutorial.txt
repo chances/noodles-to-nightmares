@@ -28,15 +28,15 @@ wait 2500
 checkSafety()
 if
   $isDriving == false
-then  
+then
   Text.PrintHelpString("Find the best way home.")
 end
 
 while true
   wait 0
-  
+
   checkSafety()
-  
+
   // Failure if the player is wasted (drunk? hehe) or busted
   if or
     Player.IsDead($player)
@@ -45,11 +45,11 @@ while true
     Text.PrintString("Ouch!", {time} 2500)
     Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
     wait 3000
-  
+
     Mission.Fail()
     break
   end
-  
+
   // Wait for the player to get to their safehouse
   if Player.LocateAnyMeans2D($player, 1165.0, -398.5, 3.0, 3.0, true)
   then
@@ -67,7 +67,7 @@ while true
     Audio.PlayMissionPassedTune(1)
     // TODO: Label the mission with CLEO strings: register_mission_passed {key} [gxt_key]
     Player.AddScore($player, REWARD)
-    Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)    
+    Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
     wait 5500
 
     Camera.DoFade(750, Fade.Out)
@@ -96,7 +96,7 @@ $missionIndex = $missionIndex + 1
 //================================
 
 function checkSafety()
-  if and  
+  if and
     Player.IsSittingInAnyCar($player)
     Player.IsInAnyCar($player)
     $isDriving == false

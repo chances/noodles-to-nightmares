@@ -2,7 +2,8 @@
 
 ## Sanny Builder
 
-- Condition opcodes (e.g. `Pickup.HasBeenCollected`) cannot be assigned to a variable directly. Use an `if` block instead:
+- Condition opcodes (e.g. `Pickup.HasBeenCollected`) cannot be assigned to a
+  variable directly. Use an `if` block instead:
   ```
   // ❌ $collected = Pickup.HasBeenCollected($myPickup)
   // ✅

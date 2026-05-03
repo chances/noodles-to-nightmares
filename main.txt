@@ -120,7 +120,7 @@ while true
   then
     Text.PrintHelpString("The shop is closed. Come back later to pick up a shift.")
   end
-  
+
   if
     Pickup.HasBeenCollected($SafeBlip)
   then
