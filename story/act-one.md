@@ -267,7 +267,7 @@ she's not just a delivery driver.
 **Script File**: `missions/side_shopping.txt` (To be created)
 
 **Objective**: Rosa runs a simple errand: buy groceries for the Punk
-Noodles shop owner. It goes sideways when a street gang blocks the route or a
+Noodles owner, Lee Chong (character 87). It goes sideways when a street gang blocks the route or a
 homeless NPC steals her money.
 
 **Mechanics**:

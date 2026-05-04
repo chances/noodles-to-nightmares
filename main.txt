@@ -47,10 +47,6 @@ Weather.ForceNow(WeatherType.Sunny)
 Stat.SetIndustrialPassed
 Stat.SetCommercialPassed
 
-// Set player model
-Char.Undress($playerChar, 'PLAYER')
-Char.Dress($playerChar)
-
 // Initialize all the things!
 initParkedCars()
 initSpawnParams()
@@ -84,6 +80,16 @@ set_total_number_of_missions MAX_MISSION_INDEX
 $onMission = false
 $missionIndex = 0
 $myCar = 0
+
+// FIXME: "Welcome to Portland" is shown before this
+
+// Load our characters
+Streaming.LoadSpecialCharacter(1, 'ASUKA')
+Streaming.LoadSpecialCharacter(2, 'MARIA')
+// TODO: utils/characters.txt
+// FIXME: Char.Create(PedType.CivFemale, 83, 1039, -653, 14, $playerChar)
+Char.Undress($playerChar, 'PLAYER')
+Char.Dress($playerChar)
 
 // Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
 // Type 2: respawning pickup; reappears ~30s after collection

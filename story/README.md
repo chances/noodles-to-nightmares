@@ -17,6 +17,15 @@ City's entire mob scene.
 Survival-driven with dark humor and irreverence, aligning with base-game
 sensibilities.
 
+### Characters
+
+- Rosa Chang (83 `ASUKA` or 108 `MARIA`), our protagonist
+- Lee Chong (char ID 87, `LEE`), Owner of Punk Noodles
+- Sg. Detective Narc (char ID 95, `D_COP`) of the Liberty City Police Department
+- etc. (TBD)
+
+See [Ped Skins](https://wiki.gtaconnected.com/Resources/GTA3/PedSkins).
+
 ---
 
 ## Core Mission Structure

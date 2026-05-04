@@ -1,0 +1,13 @@
+{$CLEO .cs}
+nop
+
+Streaming.RequestModel(#MALE01)
+Streaming.LoadAllModelsNow()
+// FIXME: Player.SetModel($player1, #MALE01)
+Streaming.MarkModelAsNoLongerNeeded(#MALE01)
+
+// FIXME: Use the equivalent for GTA 3
+write_memory 0x005A81E0 {size} 1 {value} 0xC3 {vp} 1  {-- Prevents player model switch on event --}
+//write_memory 0x005A81E0 {size} 1 {value} 0x56 {vp} 1  {-- Restores default model behavior --}
+
+terminate_this_custom_script
