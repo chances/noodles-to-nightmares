@@ -9,11 +9,13 @@ const REWARD = 250 // Rosa's paycheck
 $isDriving = false
 $isDying = false
 
+wait 5000
+Text.PrintString("Fuck me, that shift was long. I reek of noodles.", {time} 3500)
+
+wait 4000
 Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BottomRight)
 wait 7500
 
-Text.PrintString("Fuck me, that shift was long. I reek of noodles.", {time} 3500)
-wait 3500
 Text.PrintString("The sooner I'm home in bed, the better.", {time} 3000)
 wait 3000
 
