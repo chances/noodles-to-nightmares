@@ -21,39 +21,47 @@ wait 4250
 Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
 wait 3750
 
-// Wait for the player to get to the payphone
+// Wait for the player to get near the payphone
 while true
   wait 0
 
   if
-    Player.LocateAnyMeans2D($player, 1168.33, -414.141, 5, 5, true)
+    Player.LocateAnyMeans2D($player, 1168.33, -414.141, 20, 20, false)
   then
+    // Ring the payphone
+    Sound.AddContinuous(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging, $payphoneSfx)
+    Streaming.RequestModel(1335)
+    Streaming.LoadAllModelsNow()
     break
   end
 end
 
-// Ring the payphone
-Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)
+// TODO: From here on forward, NO wanted level over one star!
+
 // Wait for the player to "answer" the phone
 while true
   wait 0
 
   if and
-    Player.LocateAnyMeans2D($player, 1168.33, -414.141, 5, 5, true)
+    Player.LocateAnyMeans2D($player, 1168.33, -414.841, 2, 2, true)
     Player.IsLiftingAPhone($player)
   then
     wait 250
+    Sound.Remove($payphoneSfx)
     // TODO: Use a cinematic camera?
     break
   end
 end
 
-Text.PrintString("Pick up the package at the docks, deliver it to the warehouse on the south side.", 4500)
+Text.PrintString("Pick up the package at the docks, deliver it to the projects on the north side.", 4500)
 wait 4750
 Text.PrintString("You don't have much time. Don't fuck this up.", 3000)
 wait 3250
 
-$package = Pickup.Create(#TRASH, PickupType.OnStreet, 1340.0, -695.0, 14.0)
+// TODO: Start a two minute countdown
+
+// Spawn the drugs pickup
+$package = Pickup.Create(1321, PickupType.OnStreet, 1316.96, -1088.5, 11.1705)
 $pickupBlip = Blip.AddForPickup($package)
 // Wait for the package to be picked up
 while true
@@ -61,27 +69,26 @@ while true
 
   if Pickup.HasBeenCollected($package)
   then
-    Pickup.Remove($package)
     Blip.Remove($pickupBlip)
+    Pickup.Remove($package)
     break
   end
 end
 
-// TODO: Verify candidate delivery location
-$deliveryBlip = Blip.AddForCoord(880.0, -880.0, 14.0)
-// Wait for the player to "deliver" the package
+// Wait for the player to "deliver" the package to the projects
+$deliveryBlip = Blip.AddForCoord(966.364, -133.515, 3.8)
 while true
   wait 0
 
   if
-    Player.LocateAnyMeans3D($player, 880.0, -880.0, 14.0, 3.0, 3.0, 3.0, true)
+    Player.LocateAnyMeans3D($player, 966.364, -133.515, 3.8, 2.5, 2.5, 2.5, true)
   then
     Blip.Remove($deliveryBlip)
     break
   end
 end
 
-// TODO: Refactor into a main mission loop
+// TODO: Refactor above from no-wanted-level to here into a main mission loop
 
 // The player successfully delivered the package, pass the mission
 Audio.PlayMissionPassedTune(1)
