@@ -17,7 +17,7 @@ nop
 :MAIN
 script_name 'MAIN'
 
-Game.SetMaxWantedLevel(1)
+Game.SetMaxWantedLevel(3)
 set_deatharrest_state 0
 
 // Load Portland
