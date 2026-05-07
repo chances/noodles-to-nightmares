@@ -1,9 +1,9 @@
 {$CLEO .cm}
 
-//==============================================
+//=============================================
 // Mission 0: Car Tutorial
-// Teach the player how to steal and drive cars
-//==============================================
+// Teach the player how to follow instructions
+//=============================================
 const REWARD = 250 // Rosa's paycheck
 
 $isDriving = false

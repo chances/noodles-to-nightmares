@@ -124,6 +124,11 @@ while true
   if
     Pickup.HasBeenCollected($PunkNoodles)
   then
+    if not $NoodlesBlip == 0
+    then
+      Blip.Remove($NoodlesBlip)
+      $NoodlesBlip = 0
+    end
     Text.PrintHelpString("The shop is closed. Come back later to pick up a shift.")
   end
 

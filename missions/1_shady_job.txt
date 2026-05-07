@@ -13,9 +13,86 @@ $isDying = false
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 wait 7500
 
-// TODO: Implement mission
-Text.PrintHelpString("This mission is under construction.")
-wait 2500
+// QUESTION: Who is speaking?
+Text.PrintString("I hear you're meek like a mouse. I need someone discreet.", 3500)
+wait 3750
+Text.PrintString("Wait for our call, pick up a package, and deliver it. Simple.", 4000)
+wait 4250
+Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
+wait 3750
+
+// Wait for the player to get to the payphone
+while true
+  wait 0
+
+  if
+    Player.LocateAnyMeans2D($player, 1168.33, -414.141, 5, 5, true)
+  then
+    break
+  end
+end
+
+// Ring the payphone
+Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)
+// Wait for the player to "answer" the phone
+while true
+  wait 0
+
+  if and
+    Player.LocateAnyMeans2D($player, 1168.33, -414.141, 5, 5, true)
+    Player.IsLiftingAPhone($player)
+  then
+    wait 250
+    // TODO: Use a cinematic camera?
+    break
+  end
+end
+
+Text.PrintString("Pick up the package at the docks, deliver it to the warehouse on the south side.", 4500)
+wait 4750
+Text.PrintString("You don't have much time. Don't fuck this up.", 3000)
+wait 3250
+
+$package = Pickup.Create(#TRASH, PickupType.OnStreet, 1340.0, -695.0, 14.0)
+$pickupBlip = Blip.AddForPickup($package)
+// Wait for the package to be picked up
+while true
+  wait 0
+
+  if Pickup.HasBeenCollected($package)
+  then
+    Pickup.Remove($package)
+    Blip.Remove($pickupBlip)
+    break
+  end
+end
+
+// TODO: Verify candidate delivery location
+$deliveryBlip = Blip.AddForCoord(880.0, -880.0, 14.0)
+// Wait for the player to "deliver" the package
+while true
+  wait 0
+
+  if
+    Player.LocateAnyMeans3D($player, 880.0, -880.0, 14.0, 3.0, 3.0, 3.0, true)
+  then
+    Blip.Remove($deliveryBlip)
+    break
+  end
+end
+
+// TODO: Refactor into a main mission loop
+
+// The player successfully delivered the package, pass the mission
+Audio.PlayMissionPassedTune(1)
+register_mission_passed 'NooM_1'
+Player.AddScore($player, REWARD)
+Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
+wait 5500
+
+// TODO: Send this text on the pager
+Text.PrintString("Here's your cut. There may be more work soon. I'll be in touch.", 4000)
+wait 4250
 
 Mission.Finish()
 $onMission = false
