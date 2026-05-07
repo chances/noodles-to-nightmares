@@ -54,6 +54,7 @@ initBlips()
 initHiddenPkgs()
 initPickups()
 initGarages()
+Audio.SetMusicDoesFade(false)
 
 // Setup spawn points
 {$INCLUDE utils/spawn_points.txt}

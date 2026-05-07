@@ -67,7 +67,7 @@ while true
 
     // Mission Passed!
     Audio.PlayMissionPassedTune(1)
-    // TODO: Label the mission with CLEO strings: register_mission_passed {key} [gxt_key]
+    register_mission_passed 'NooM_0'
     Player.AddScore($player, REWARD)
     Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
     wait 5500
