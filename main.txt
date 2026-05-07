@@ -6,7 +6,7 @@ DEFINE OBJECT LOD_LAND014
 DEFINE MISSIONS 0
 
 {$USE CLEO}
-0000: nop
+nop
 
 {$INCLUDE globals.txt}
 
@@ -59,11 +59,6 @@ initGarages()
 {$INCLUDE utils/spawn_points.txt}
 
 // Wait for the scene to load
-request_model 326 // Dumpster
-$dumpster = Object.Create(326, 1150.44, -389.8, 26.627)
-request_model 838 // Trick Ramp
-load_all_models_now
-
 while true
   wait 0
 
@@ -91,10 +86,8 @@ Streaming.LoadSpecialCharacter(2, 'MARIA')
 Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
 
-// Show an info icon pickup at the teleport spot (model 1361: blue "i" bubble)
-// Type 2: respawning pickup; reappears ~30s after collection
+// Show an info icon pickup at the teleport spot
 $PunkNoodles = Pickup.Create(#INFO, PickupType.OnStreet, 1030.0, -636.5, 14.5)
-Blip.AddForPickup($PunkNoodles, $NoodlesBlip)
 
 // Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
@@ -124,11 +117,6 @@ while true
   if
     Pickup.HasBeenCollected($PunkNoodles)
   then
-    if not $NoodlesBlip == 0
-    then
-      Blip.Remove($NoodlesBlip)
-      $NoodlesBlip = 0
-    end
     Text.PrintHelpString("The shop is closed. Come back later to pick up a shift.")
   end
 
@@ -193,7 +181,7 @@ function monitorShortcutKey_P()
 
     // The user saved their game, so wait for the save procedure to finish
     while true
-      wait 10
+      wait 0
       if
         Game.HasSaveGameFinished()
       then
