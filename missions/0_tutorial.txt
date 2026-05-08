@@ -40,7 +40,7 @@ while true
 
   checkSafety()
 
-  // Failure if the player is wasted (drunk? hehe) or busted
+  // Failure if the player is wasted or busted
   if or
     Player.IsDead($player)
     Player.HasBeenArrested($player)
