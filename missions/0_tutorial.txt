@@ -6,6 +6,7 @@
 //=============================================
 const REWARD = 250 // Rosa's paycheck
 
+$onMission = true
 $isDriving = false
 $isDying = false
 

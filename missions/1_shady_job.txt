@@ -8,6 +8,7 @@
 //==============================================
 const REWARD = 800 // Fee for the job
 
+$onMission = true
 $isDying = false
 
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)

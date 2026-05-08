@@ -144,15 +144,19 @@ function tryTriggerMission()
     $missionIndex < MAX_MISSION_INDEX
     Player.CanStartMission($player)
   then
-    $onMission = true
     switch $missionIndex
       case 0
         register_mission_given
         0600: START_CUSTOM_THREAD "0_tutorial.cm"
       case 1
-        // TODO: Trigger: Entering the Punk Noodles interior
-        register_mission_given
-        0600: START_CUSTOM_THREAD "1_shady_job.cm"
+        if Player.LocateStoppedOnFoot3D($player, 1031.13, -654.956, 14.0094, 2.5, 2.5, 2.5, true)
+        then
+          register_mission_given
+          0600: START_CUSTOM_THREAD "1_shady_job.cm"
+        end
+      default
+        Text.PrintHelpString("You're done with the game already?")
+        wait 2500
     end
   end
 end
@@ -176,6 +180,7 @@ end
 function monitorShortcutKey_P()
   if or
     Pad.IsKeyPressed(KeyCode.P)
+    // FIXME: This might conflict with the change camera shortcut
     Pad.IsButtonPressed(PadId.Pad1, Button.Select)
   then
     Game.ActivateSaveMenu()
