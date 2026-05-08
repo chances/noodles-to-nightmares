@@ -85,9 +85,6 @@ Streaming.LoadSpecialCharacter(2, 'MARIA')
 Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
 
-// Show an info icon pickup at the teleport spot
-$PunkNoodles = Pickup.Create(#INFO, PickupType.OnStreet, 1030.0, -636.5, 14.5)
-
 // Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
 $SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
@@ -112,12 +109,6 @@ while true
   //=============================================
   // Monitor pickups and teleportation locations
   //=============================================
-
-  if
-    Pickup.HasBeenCollected($PunkNoodles)
-  then
-    Text.PrintHelpString("The shop is closed. Come back later to pick up a shift.")
-  end
 
   if
     Pickup.HasBeenCollected($SafeBlip)
