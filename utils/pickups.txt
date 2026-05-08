@@ -1,0 +1,36 @@
+//=================================
+// Bribes, Health, Armor, and Ammo
+//=================================
+// Locations for all three islands.
+
+// Portland (Island 1)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 1061.875, -567.6875, 16.5625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 790.0, -560.6875, 27.0)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 1283.6875, -388.6875, 34.5625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 1440.1875, -891.0625, 11.75)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 1078.875, -912.5, 15.1875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 995.75, -438.75, 22.6875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 859.5625, -981.875, 10.5)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 922.1875, -848.0625, 14.875)
+
+// Staunton Island (Island 2)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 320.6875, -782.125, 28.75)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 351.0, -1176.5625, 16.6875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 108.25, -1398.6875, 21.75)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 419.6875, -1439.5625, 25.5625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 283.5625, -809.6875, 28.875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 181.25, -262.375, 15.875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -16.375, -458.5625, 18.5625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -150.5, -112.75, 16.125)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 357.5625, -898.5, 23.5)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, 412.1875, -1564.5625, 24.5)
+
+// Shoreside Vale (Island 3)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -1247.75, 136.0, 68.5)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -468.5625, -62.0, 3.75)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -1107.5, -77.1875, 46.0625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -618.6875, -722.5625, 18.875)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -1252.375, -641.5625, 11.0625)
+$tempPickup = Pickup.Create(#BRIBE, PickupType.OnStreetSlow, -853.375, -255.5625, 32.875)
+
+$tempPickup = 0

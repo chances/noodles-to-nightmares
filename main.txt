@@ -54,9 +54,12 @@ initBlips()
 initHiddenPkgs()
 initPickups()
 initGarages()
+
+// Play music when splash screens are shown
 Audio.SetMusicDoesFade(false)
 
-// Setup spawn points
+// Setup pickups and spawn points
+{$INCLUDE utils/pickups.txt}
 {$INCLUDE utils/spawn_points.txt}
 
 // Wait for the scene to load
