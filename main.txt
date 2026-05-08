@@ -58,9 +58,10 @@ initGarages()
 // Play music when splash screens are shown
 Audio.SetMusicDoesFade(false)
 
-// Setup pickups and spawn points
+// Setup pickups, spawn points, and hidden drugs
 {$INCLUDE utils/pickups.txt}
 {$INCLUDE utils/spawn_points.txt}
+{$INCLUDE utils/packages.txt}
 
 // Wait for the scene to load
 while true

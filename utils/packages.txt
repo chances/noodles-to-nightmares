@@ -1,0 +1,9 @@
+//=================================
+// Hidden Drug Stashes
+//=================================
+// Locations for all three islands.
+
+Game.SetCollectableTotal(25)
+
+// Portland (Island 1)
+Game.CreateCollectable(1315.39, -467.61, 54.60) // Inside Marco's Bistro
