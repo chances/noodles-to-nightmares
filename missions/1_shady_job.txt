@@ -10,6 +10,7 @@ const REWARD = 800 // Fee for the job
 
 $onMission = true
 $isDying = false
+$isWanted = false
 
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 wait 7500
@@ -17,10 +18,8 @@ wait 7500
 // QUESTION: Who is speaking?
 Text.PrintString("I hear you're meek like a mouse. I need someone discreet.", 3500)
 wait 3750
-Text.PrintString("Wait for our call, pick up a package, and deliver it. Simple.", 4000)
+Text.PrintString("I'll call you later at your payphone.", 4000)
 wait 4250
-Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
-wait 3750
 
 // Wait for the player to get near the payphone
 while true
@@ -31,8 +30,6 @@ while true
   then
     // Ring the payphone
     Sound.AddContinuous(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging, $payphoneSfx)
-    Streaming.RequestModel(1335)
-    Streaming.LoadAllModelsNow()
     break
   end
 end
@@ -56,6 +53,8 @@ end
 
 Text.PrintString("Pick up the package at the docks, deliver it to the projects on the north side.", 4500)
 wait 4750
+Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
+wait 3750
 Text.PrintString("You don't have much time. Don't fuck this up.", 3000)
 wait 3250
 
