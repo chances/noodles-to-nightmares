@@ -1,11 +1,15 @@
 const START_MISSION_INDEX = 0
 const MAX_MISSION_INDEX = 2
 
+set_total_number_of_missions MAX_MISSION_INDEX
+declare_mission_flag $onMission
+$onMission = false
+
 var
+  $missionIndex: int
   $player: Player
   $playerChar: Char
   $myCar: Car
-  $missionIndex: int
   //====================//
   $SafeBlip: Blip
   $PunkNoodles: Pickup
@@ -13,8 +17,6 @@ var
   $ApartmentGarage: Garage
 end
 
-// QUESTION: Why can't we just let the var block do its magic?
-// TODO: This block is an eye-sore. Why is alloc strictly required?
 // FIXME: Global state is a code-smell
 //================================
 //-------- Global State ----------
@@ -38,7 +40,5 @@ Alloc($MafiaGen, 4356)
 Alloc($CheetahGen, 4357)
 Alloc($SentinelGen, 4364)
 
-// FIXME: Global state is a code-smell
 $missionIndex = START_MISSION_INDEX
-$willPromptTeleport = True
-$IntroPassed = False
+$myCar = 0
