@@ -1,9 +1,14 @@
-const START_MISSION_INDEX = 0
-const MAX_MISSION_INDEX = 2
+{$INCLUDE constants.txt}
 
+// Setup Missions constants
 set_total_number_of_missions MAX_MISSION_INDEX
 declare_mission_flag $onMission
 $onMission = false
+
+// FIXME: Global state is a code-smell
+//================================
+//-------- Global State ----------
+//================================
 
 var
   $missionIndex: int
@@ -17,11 +22,12 @@ var
   $ApartmentGarage: Garage
 end
 
-// FIXME: Global state is a code-smell
-//================================
-//-------- Global State ----------
-//================================
+$missionIndex = START_MISSION_INDEX
+$myCar = 0
+//===============================//
+$NoodlesBlip = 0
 
+// FIXME: The game crashes when I remove these. Run a binary search and delete the dead allocations
 Alloc($Banshee, 4315)
 Alloc($Stinger, 4325)
 Alloc($StingerGen, 4339)
@@ -39,6 +45,3 @@ Alloc($BRIBE_COM2, 4351)
 Alloc($MafiaGen, 4356)
 Alloc($CheetahGen, 4357)
 Alloc($SentinelGen, 4364)
-
-$missionIndex = START_MISSION_INDEX
-$myCar = 0

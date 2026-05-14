@@ -1,0 +1,5 @@
+const START_MISSION_INDEX = 1
+const MAX_MISSION_INDEX = 2
+
+// Blips
+const PAYPHONE = 8 // RadarSprite.Diablo
