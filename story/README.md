@@ -21,7 +21,11 @@ sensibilities.
 
 - Rosa Chang (83 `ASUKA` or 108 `MARIA`), our protagonist
 - Lee Chong (char ID 87, `LEE`), Owner of Punk Noodles
-- Sg. Detective Narc (char ID 95, `D_COP`) of the Liberty City Police Department
+- Salvatore Leone (char ID 100, `SALVATORE`), the mysterious Handler for Rosa's
+  early criminal jobs.
+- Sg. Detective Narc (char ID 95, `D_COP`) of the Liberty City Police
+  Department. _Note: Dramatic Irony - The player knows this detective is
+  monitoring Rosa's criminal rise, but Rosa herself remains unaware._
 - etc. (TBD)
 
 See [Ped Skins](https://wiki.gtaconnected.com/Resources/GTA3/PedSkins).

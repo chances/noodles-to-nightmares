@@ -89,19 +89,19 @@ Internal monologue: exhausted, matter-of-fact.
 
 ### Setup
 
-- **Location**: Punk Noodles (interior) → Chinatown street delivery route
-- **Context**: A few days after mission 0, Rosa returns to work. A mysterious
-  "contact" approaches with a job: move some contraband from point A to point B.
-  It pays $800, more than a week's tips.
-- **Trigger**: Entering the Punk Noodles interior
+- Location: Punk Noodles (interior) → Chinatown street delivery route
+- Context: A few days after mission 0, Rosa returns to work. A mysterious
+  "Handler" (Salvatore Leone) approaches with a job: move some contraband from
+  point A to point B. It pays $800, more than a week's tips.
+- Trigger: Entering the Punk Noodles interior
 
 ### Gameplay Objectives
 
-1. **Accept the job** – Dialogue choice (optional stealth foreshadowing)
-2. **Retrieve contraband package** – Go to waypoint (alley, docks, or warehouse)
-3. **Transport package to destination** – Avoid police & gang attention
-4. **Deliver without damage** – Stealth-focused delivery (no combat)
-5. **Return to contact** – Confirm successful job
+1. **Accept the job**: Dialogue choice (optional stealth foreshadowing)
+2. **Retrieve contraband package**: Go to waypoint (alley, docks, or warehouse)
+3. **Transport package to destination**: Avoid police & gang attention
+4. **Deliver without damage**: Stealth-focused delivery (no combat)
+5. **Return to Handler**: Confirm successful job
 
 ### Story Context
 
@@ -114,7 +114,7 @@ carefully, avoid high-speed chases, and think tactically about her route.
 - [ ] Interior dialogue at Punk Noodles (accept job cutscene)
 - [ ] Waypoint marker for package pickup location outside her apartment
 - [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
-  `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
+      `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
 - [ ] Package object creation (e.g. briefcase, duffel bag, etc.)
 - [ ] Police wanted level tracking (avoid 2-star wanted)
 - [ ] Destination zone detection
@@ -132,7 +132,7 @@ carefully, avoid high-speed chases, and think tactically about her route.
   Simple. And keep a low profile. We don't want the cops sniffin' around."
 - **The Call**: "Pick up the package at the docks, deliver it to the warehouse
   on the south side. You don't have much time. Don't fuck this up."
-- **In-vehicle**: Minimal intervention from contact
+- **In-vehicle**: Minimal intervention from Handler
 - **Success**: "Here's your cut. There may be more work soon. I'll be in touch."
 
 ### Dialogue & NPCs
@@ -175,20 +175,20 @@ carefully, avoid high-speed chases, and think tactically about her route.
 
 - **Location**: Portland street intersection / gang territory
 - **Context**: Two weeks later. Rosa's made a few successful deliveries. Now the
-  contact wants her to prove she's serious—and that she can handle pressure. A
-  minor gang is encroaching on the contact's territory. Rosa is tasked with
+  Handler wants her to prove she's serious—and that she can handle pressure. A
+  minor gang is encroaching on the Handler's territory. Rosa is tasked with
   confronting them and "persuading" them to back off. It's her first violent
   encounter; she's armed but hasn't used the gun in anger before.
 - **Trigger**: Briefing at a neutral safehouse or street corner
 
 ### Gameplay Objectives
 
-1. **Get a weapon** – Visit an Ammu-Nation or receive one from contact
+1. **Get a weapon** – Visit an Ammu-Nation or receive one from Handler
 2. **Drive to gang meeting point** – Marked location in Portland
 3. **Confront gang members** – Dialogue standoff + intimidation
 4. **Combat encounter** – Light firefight (3–5 gang members, not overwhelming)
 5. **Escape/survive** – Chase sequence or retreat to safehouse
-6. **Report back** – Confirm success to contact
+6. **Report back** – Confirm success to Handler
 
 ### Story Context
 
@@ -201,7 +201,7 @@ she's not just a delivery driver.
 
 - [ ] Weapon acquisition, provided or purchased
 - [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
-  `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
+      `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
 - [ ] Gang meeting point waypoint
 - [ ] Dialogue system for gang confrontation, rising tension
 - [ ] Combat trigger: when player draws weapon or dialogue fails
@@ -236,7 +236,7 @@ she's not just a delivery driver.
 ### Win/Fail Conditions
 
 - **Win**: Eliminate or successfully chase off all gang members; return to
-  contact alive
+  Handler alive
 - **Fail**:
   - Rosa is wasted
   - Rosa is busted (5-star wanted; mission fails if apprehended)
@@ -266,9 +266,9 @@ she's not just a delivery driver.
 
 **Script File**: `missions/side_shopping.txt` (To be created)
 
-**Objective**: Rosa runs a simple errand: buy groceries for the Punk
-Noodles owner, Lee Chong (character 87). It goes sideways when a street gang blocks the route or a
-homeless NPC steals her money.
+**Objective**: Rosa runs a simple errand: buy groceries for the Punk Noodles
+owner, Lee Chong (character 87). It goes sideways when a street gang blocks the
+route or a homeless NPC steals her money.
 
 **Mechanics**:
 
@@ -302,17 +302,30 @@ relationships
 
 ---
 
+### Dramatic Turn: The Betrayal
+
+After the success of Mission 2, Salvatore invites Rosa to a private meeting at
+an industrial warehouse. During the meeting, it becomes clear that Salvatore
+intends to use Rosa as a fall-person for an upcoming mob hit, effectively
+eliminating her as a loose end. Rosa narrowly survives a setup attempt (A
+calculated execution order carried out by his own crew) leaving her wounded and
+realizing that Portland is no longer safe. She must escape to Staunton Island,
+where she has heard rumors of another organization willing to take in someone
+with her particular "talents."
+
+---
+
 ## Narrative Flow Between Missions
 
 ### M0 → M1 (3–5 days)
 
 **Transition scene**: Rosa at the Punk Noodles, now a familiar routine. The
-contact approaches casually, as if asking her to sweep the floor. Tension builds
+Handler approaches casually, as if asking her to sweep the floor. Tension builds
 as the job is described. Rosa accepts without dramatic deliberation—it's
 survival.
 
 **Environmental cues**: The shop grows slightly seedier; customers of
-questionable origin; contact appears regularly. Portland feels less like home,
+questionable origin; Handler appears regularly. Portland feels less like home,
 more like a trap closing.
 
 ### M1 → M2 (1–2 weeks)
@@ -321,7 +334,7 @@ more like a trap closing.
 job builds confidence and attracts attention. Other criminals begin to recognize
 her.
 
-**Transition dialogue**: The contact mentions that a crew is "testing" the
+**Transition dialogue**: The Handler mentions that a crew is "testing" the
 territory, and needs Rosa to reinforce control. This is framed as an
 opportunity, not a threat.
 
@@ -330,7 +343,7 @@ appear on walls. The safehouse becomes less a sanctuary and more a hideout.
 
 ### M2 → Act 2 (after M2 success)
 
-**Climax dialogue**: The contact reveals they work for a larger organization.
+**Climax dialogue**: The Handler reveals they work for a larger organization.
 "You've proven yourself in Portland. Now we've got bigger plans—but not here.
 There's work for you on Staunton Island. A real organization. Real money."
 
@@ -408,7 +421,7 @@ bigger opportunities.
 
 - M2 should _feel_ like a turning point; player should sense bigger things
   coming
-- Act 2 reveal: Rosa's contact works for a larger syndicate; Staunton Island is
+- Act 2 reveal: Rosa's Handler works for a larger syndicate; Staunton Island is
   their stronghold
 - Portland becomes "where she started" rather than "where she operates"
 

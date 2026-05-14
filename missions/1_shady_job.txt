@@ -6,20 +6,75 @@
 //
 // Teach the player how to steal and drive cars
 //==============================================
+{$INCLUDE ../constants.txt}
 const REWARD = 800 // Fee for the job
 
 $onMission = true
 $isDying = false
 $isWanted = false
 
+// Hide the safehouse blip
+// TODO: Ensure the blip is restored when the mission ends (pass/fail)!
+Blip.Remove($SafeBlip)
+
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 wait 7500
 
-// QUESTION: Who is speaking?
+// Start a cutscene with the "mysterious contact"
+Player.SetControl($player, false)
+Camera.DoFade(500, Fade.Out)
+wait 500
+
+// TODO: Add NPCs, e.g. the noodle man
+// TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
+
+// Handler
+// Salvatore Leone
+Streaming.RequestModel(SALVATORE)
+Streaming.LoadAllModelsNow()
+Char.Create(PedType.Criminal, SALVATORE, 1031.98, -660.83, 14.2, $sal)
+Char.SetPersonality($sal, PedStat.ToughGuy)
+Char.TurnToFacePlayer($sal, $player)
+Char.LookAtPlayerAlways($sal, $player)
+Char.SetAnimGroup($sal, AnimGroup.Man)
+// QUESTION: Trigger mission with this? Char.HasSpottedPlayer($sal, $player)
+
+// Use a cinematic camera for this convo
+// Move the camera, like one of the shop's security cameras for a spooky vibe
+// TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
+// FIXME: The camera freak out
+Camera.SetFixedPosition(1034.16, -646.5, 11.073, 0, 0, 0)
+Camera.SetInterpolationParameters(5.0, {time} 750)
+// Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
+Camera.SetGenerateCarsAround(false)
+Camera.DoFade(500, Fade.In)
+Sound.AddOneOffSound(1034.16, -646.5, 11.073, ScriptSound.SoundMarcoBistroS)
+wait 500
+
+// Sal
+// TODO: Char.SetSay()
 Text.PrintString("I hear you're meek like a mouse. I need someone discreet.", 3500)
 wait 3750
+
+// QUESTION: Is Rosa mute?
+Char.TurnToFaceChar($playerChar, $sal)
+wait 250
+Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)
+
+// Sal
+// TODO: Char.SetSay()
 Text.PrintString("I'll call you later at your payphone.", 4000)
-wait 4250
+wait 2250
+
+// Show a payphone waypoint blip
+Blip.AddSpriteForContactPoint(1168.33, -414.841, 22.8, PAYPHONE, $payphoneBlip)
+
+// End cutscene
+Char.StopLooking($sal)
+Char.SetObjFleeCharOnFootAlways($sal, $playerChar)
+Player.SetControl($player, true)
+Camera.SetInterpolationParameters(5.0, {time} 750)
+Camera.Restore()
 
 // Wait for the player to get near the payphone
 while true
@@ -29,7 +84,9 @@ while true
     Player.LocateAnyMeans2D($player, 1168.33, -414.141, 20, 20, false)
   then
     // Ring the payphone
-    Sound.AddContinuous(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging, $payphoneSfx)
+    Phone.Grab(1168.33, -414.141, $payphone)
+    Phone.TurnOn($payphone)
+    // FIXME: Sound.AddContinuous(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging, $payphoneSfx)
     break
   end
 end
@@ -41,12 +98,25 @@ while true
   wait 0
 
   if and
-    Player.LocateAnyMeans2D($player, 1168.33, -414.841, 2, 2, true)
-    Player.IsLiftingAPhone($player)
+    Player.LocateOnFoot2D($player, 1168.33, -414.841, 2, 2, true)
   then
-    wait 250
+    // Note: Player.IsLiftingAPhone($player) is true here
+    Blip.Remove($payphoneBlip)
+    
+    // Start a custom cutscene
+    Player.SetControl($player, false)
+    wait 375 // Player "picks up" the phone
+    // See https://gtamods.com/wiki/0372
+    Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)
     Sound.Remove($payphoneSfx)
-    // TODO: Use a cinematic camera?
+    
+    // Move the camera, over-the-shoulder above the street
+    // TODO: Extract this into a new function: animateCameraTo(1193.55, -409.2625, 0.89)
+    Camera.SetFixedPosition(1193.55, -409.2625, 0.89, 0, 0, 0)
+    Camera.SetInterpolationParameters(5.0, {time} 1250)
+    Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
+    Camera.SetGenerateCarsAround(true)
+    
     break
   end
 end
@@ -57,6 +127,13 @@ Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 
 wait 3750
 Text.PrintString("You don't have much time. Don't fuck this up.", 3000)
 wait 3250
+
+// End the cutscene
+Camera.DoFade(500, Fade.Out)
+Camera.RestoreJumpcut()
+Camera.SetGenerateCarsAround(false)
+wait 525
+Camera.DoFade(500, Fade.In)
 
 // TODO: Start a two minute countdown
 
