@@ -138,6 +138,14 @@ function tryTriggerMission()
         register_mission_given
         0600: START_CUSTOM_THREAD "0_tutorial.cm"
       case 1
+        // Transition: Add a contect blip to Punk Noodles
+        if $NoodlesBlip == 0
+        then
+          // Add a contect blip to Punk Noodles
+          Blip.AddSpriteForContactPoint(1031.13, -654.956, 14.0094, RadarSprite.Asuka, $NoodlesBlip)
+        end
+      
+        // Trigger: Start the mission inside Punk Noodles
         if Player.LocateStoppedOnFoot3D($player, 1031.13, -654.956, 14.0094, 2.5, 2.5, 2.5, true)
         then
           register_mission_given
