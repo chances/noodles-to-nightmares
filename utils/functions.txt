@@ -1,5 +1,5 @@
 //================================
-//----- Functions: Missions ------
+//------- Functions: Saves -------
 //================================
 
 function saveGame() 
@@ -10,6 +10,21 @@ function saveGame()
     then
       break
     end
+  end
+end
+
+/// Try to save the game if the user goes to their safehouse
+function trySaveGame()
+  $isSafehouseAvail = true 
+  if $SafeBlip == 0
+  then
+    $isSafehouseAvail = false
+  end
+  if and
+    Pickup.HasBeenCollected($SafeBlip)
+    $isSafehouseAvail == true
+  then
+    saveGame()
   end
 end
 

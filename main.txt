@@ -105,16 +105,27 @@ while true
 
   // Try to keep the story going
   tryTriggerMission()
+  
+  //=============================
+  // Chores to keep things clean
+  //=============================
+  
+  if $onMission == true
+  then
+    // De-clutter the UI
+    Text.ClearSmallPrints()
+    Text.ClearPrints()
+    
+    // Hide the safehouse blip while on a mission
+    Blip.Remove($SafeBlip)
+    $SafeBlip = 0
+  end
 
   //=============================================
   // Monitor pickups and teleportation locations
   //=============================================
 
-  if
-    Pickup.HasBeenCollected($SafeBlip)
-  then
-    saveGame()
-  end
+  trySaveGame()
 
   //==========================
   // Check keyboard shortcuts
@@ -155,6 +166,13 @@ function tryTriggerMission()
         Text.PrintHelpString("You're done with the game already?")
         wait 2500
     end
+    // Player is NOT on a mission; do some chores:
+    else
+      // Ensure the player's safehouse blip is shown
+      if $SafeBlip == 0
+      then
+        $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
+      end
   end
 end
 
