@@ -2,6 +2,16 @@
 //----- Functions: Missions ------
 //================================
 
+function invertHeading(heading: int): int
+  int opposite = heading + 180.0
+  if opposite >= 360.0
+  then
+    opposite -= 360.0
+  end
+  // Note: `return` is not supported in GTA 3
+  cleo_return opposite
+end
+
 function saveGame() 
   Game.ActivateSaveMenu()
   while true
