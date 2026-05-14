@@ -1,0 +1,9 @@
+[
+  {
+    // FIXME: This schema URL is wrong!
+    // "$schema": "https://zed.dev/schemas/tasks.json",
+    "label": "Format Documentation",
+    "command": "deno",
+    "args": ["fmt", "./**/*.md"]
+  }
+]

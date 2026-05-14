@@ -4,16 +4,17 @@
 
 ### Overview
 
-- **Global Declarations**: Variables: `var` block, see 
+- **Global Declarations**: Variables: `var` block, see
 - **Main Script**: Entry point that initializes game state and runs main loop
 - **Missions**: Separate script threads launched via:
-    ```
-    register_mission_given
-    0600: START_CUSTOM_THREAD "0_tutorial.cm"
-    ```
+  ```
+  register_mission_given
+  0600: START_CUSTOM_THREAD "0_tutorial.cm"
+  ```
 - **Functions**: See utils/functions.txt
 
-**API Reference**: [Library - Sanny Builder](https://library.sannybuilder.com/#/gta3/script)
+**API Reference**:
+[Library - Sanny Builder](https://library.sannybuilder.com/#/gta3/script)
 
 ### GTA3 Script Limits
 
