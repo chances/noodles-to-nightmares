@@ -6,7 +6,9 @@
     "jsr:@std/fs@^1.0.23": "1.0.23",
     "jsr:@std/internal@^1.0.12": "1.0.13",
     "jsr:@std/path@1": "1.1.4",
-    "jsr:@std/path@^1.1.4": "1.1.4"
+    "jsr:@std/path@^1.1.4": "1.1.4",
+    "npm:change-case@*": "5.4.4",
+    "npm:change-case@^5.4.4": "5.4.4"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -32,11 +34,17 @@
       ]
     }
   },
+  "npm": {
+    "change-case@5.4.4": {
+      "integrity": "sha512-HRQyTk2/YPEkt9TnUPbOpr64Uw3KOicFWPVBb+xiHvd6eBx/qPr9xqfBFDT8P2vWsvvz4jbEkfDe71W3VyNu2w=="
+    }
+  },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
       "jsr:@std/fs@^1.0.23",
-      "jsr:@std/path@^1.1.4"
+      "jsr:@std/path@^1.1.4",
+      "npm:change-case@^5.4.4"
     ]
   }
 }

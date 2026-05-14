@@ -1,7 +1,25 @@
+// "$schema": "https://zed.dev/schema/tasks.json"
 [
   {
-    // FIXME: This schema URL is wrong!
-    // "$schema": "https://zed.dev/schemas/tasks.json",
+    "label": "Build",
+    "command": "deno",
+    "args": ["task", "build"]
+  },
+  // See https://github.com/sannybuilder/dev/issues/391
+  // FIXME: 😕 This simply doesn't work...
+  {
+    "label": "Build Current Script",
+    "shell": "system",
+    "command": "sanny.exe",
+    "args": [
+      "--no-splash",
+      "--mode",
+      "gta3_sbl",
+      "--compile",
+      "$ZED_FILE"
+    ]
+  },
+  {
     "label": "Format Documentation",
     "command": "deno",
     "args": ["fmt", "./**/*.md"]
