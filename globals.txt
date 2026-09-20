@@ -15,6 +15,7 @@ var
   $player: Player
   $playerChar: Char
   $myCar: Car
+  $isCameraAvoidingObstacle: int
   //====================//
   $SafeBlip: Blip
   $PunkNoodles: Pickup
@@ -24,6 +25,7 @@ end
 
 $missionIndex = START_MISSION_INDEX
 $myCar = 0
+$isCameraAvoidingObstacle = false
 //===============================//
 $NoodlesBlip = 0
 

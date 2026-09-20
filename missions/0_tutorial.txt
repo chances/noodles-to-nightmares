@@ -57,7 +57,7 @@ while true
   if Player.LocateAnyMeans3D($player, 1165.0, -398.5, 26.25, 3.0, 3.0, 3.0, true)
   then
     Camera.SetFixedPosition(1183.0, -384.4, 34.0, 0, 0, 0)
-    Camera.SetInterpolationParameters(5.0, {time} 1250)
+    Camera.SetInterpolationParameters(0, {time} 1250)
     Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
 
     if $isDriving == false

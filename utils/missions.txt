@@ -2,13 +2,14 @@
 //----- Functions: Missions ------
 //================================
 
-function invertHeading(heading: int): int
-  int opposite = heading + 180.0
+function invertHeading(heading: float): float
+  float opposite = heading + 180.0
   if opposite >= 360.0
   then
     opposite -= 360.0
   end
-  // Note: `return` is not supported in GTA 3
+  // Note: `return` is not supported in GTA 3!
+  // See https://docs.sannybuilder.com/language/functions#return-from-function
   cleo_return opposite
 end
 
