@@ -30,4 +30,14 @@
 - Identify the 4 true quadrilateral corner vertices (`TL`, `TR`, `BR`, `BL`) and map them directly using homography (`cv2.getPerspectiveTransform` and `cv2.warpPerspective`).
 - Do not apply affine rotation after perspective transformation; post-warp rotation tilts the rectangular canvas and shears/clips corners.
 
+## Publishing & Corporate Attribution
+- **Imprint & Parent**: Coldstart Computer Entertainment, a d.b.a. subsidiary of Snow Developments (Snow Developments, LLC) — https://snowdevelopments.co.
+- **Strictly Out-of-Universe**: Attribution is restricted to external docs, build archives, release metadata, and splash/loading screens. No in-universe commercial or lore presence in Liberty City.
+- **Reference**: `docs/publishing.md`.
+
+## Badge Geometry & Proportions Matching
+- Never assume companion publisher/platform badges are 1:1 squares.
+- Always inspect the reference logo's exact pixel footprint, aspect ratio, and corner curvature (e.g. Rockstar Games tile on the splash screen is `45x41` px, aspect ratio `1.0976`, corner radius `7` px).
+- Match dimensions, radii, baseline alignment, and gutters (14-15 px) directly.
+
 

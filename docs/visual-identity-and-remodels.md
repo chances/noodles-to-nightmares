@@ -7,6 +7,7 @@
 - **Custom Interiors ("Style Breaks")**: Period-accurate technical budget (256x256 to 512x512 textures, low-poly geometry) with heightened art direction (dense clutter, custom vertex lighting/baked warmth).
 - **Protagonist**: Re-skinned vanilla ped (Asuka/Maria base) keeping 100% vanilla rigging and skeletal mesh integrity.
 - **UI / HUD**: 100% vanilla in-game HUD (Pricedown font, default meters, radar); custom graphic identity reserved for splash/title/loading screens.
+- **Publisher Attribution**: Out-of-universe title card badges include Coldstart Computer Entertainment (snowflake emblem tile) alongside Rockstar Games and Take-Two; zero in-universe commercial intrusion (see [`docs/publishing.md`](file:///c:/Users/enigm/Documents/GTA%203/Projects/Noodles%20to%20Nightmares/docs/publishing.md)).
 
 ---
 

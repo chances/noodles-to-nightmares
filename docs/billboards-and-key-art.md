@@ -22,6 +22,10 @@
 - **Style**: Canonical Stephen Bliss GTA III comic-strip key art (thick black ink contours, cel-shaded tones, halftone dot texture).
 - **Subject**: Rosa Chang (23, mixed Chinese-Spanish) in her Punk Noodles work uniform with an olive jacket, holding steaming takeout in one hand and a concealed sidearm in the other.
 - **Application**: Title screen, loading screens, and Act transition splash cards.
+- **Publisher & Attribution Badges**:
+  - Bottom-left: Take-Two Interactive (`T2`).
+  - Bottom-right: **Coldstart Computer Entertainment** (signature snowflake emblem on royal blue badge, subsidiary of Snow Developments, LLC) positioned immediately alongside **Rockstar Games** (`R*`).
+  - See full publishing specifications in [`docs/publishing.md`](file:///c:/Users/enigm/Documents/GTA%203/Projects/Noodles%20to%20Nightmares/docs/publishing.md).
 - **Visual**:
 
 ![Rosa Chang Key Art Splash](./rosa-title-splash.jpg)
