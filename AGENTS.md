@@ -265,6 +265,8 @@ without excessive polling.
 - `:M_TRIG` - Mission trigger subroutine
 - `:MiTrRET` - Mission trigger return point
 - Functions use camelCase: `monitorWangPickup()`
+- **File Naming**: Always use dashes (`-`), never underscores (`_`), for file names (kebab-case, e.g., `lighting-and-color.md`, `color-swatches.csv`).
+
 
 ---
 

@@ -45,7 +45,7 @@ tutorials, encounters)
 2. Stealth gameplay
 3. Investigation/reconnaissance
 4. Empire-building (faction/territory control)
-5. Combat, i.e. the lowest priority, but sometimes necceasry to protect life and
+5. Combat, i.e. the lowest priority, but sometimes necessary to protect life and
    limb
 
 ---
@@ -93,10 +93,10 @@ tutorials, encounters)
 ### Tutorial: "You've never handled a gun?!"
 
 - **Location**: Ammunation, Staunton Island
-- **Objective**: The mob has guns; Her mentor reccomended this (but it's not
+- **Objective**: The mob has guns; Her mentor recommended this (but it's not
   _required_); Learn how to aim and fire a pistol in the shooting range
 - **Key Mechanic**: Combat
-- **Outcome**: She can shoot to kill if necceary
+- **Outcome**: She can shoot to kill if necessary
 
 ### Mission 4: The Heist (Part 1)
 
