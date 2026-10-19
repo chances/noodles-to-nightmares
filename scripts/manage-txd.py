@@ -16,7 +16,7 @@ def make_chunk(chunk_id, data, rw_version=RW_VERSION_GTA3):
     header = struct.pack("<III", chunk_id, len(data), rw_version)
     return header + data
 
-def build_txd_from_image(image_path, texture_name="splash3", output_path="assets/splash3.txd", depth=8, target_size=(512, 256)):
+def build_txd_from_image(image_path, texture_name="splash3", output_path="data/txd/splash3.txd", depth=8, target_size=(512, 256)):
     img = Image.open(image_path).convert("RGB")
     
     if target_size:

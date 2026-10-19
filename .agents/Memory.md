@@ -53,10 +53,17 @@
 - **New Game & Save Load Screens**: Vanilla PC cycles through a 24-entry lookup array (`loadsc1`..`loadsc25`, `512x512 @ 8bpp`); `loadsc0` is never indexed. All `LOADSC0.TXD` through `LOADSC25.TXD`, `mainsc1..2.txd`, and `SPLASH1..3.TXD` (31 total) are generated via `scripts/build-splash-screens.py` and deployed with SHA-256 verification by `deno task install`.
 - **Asset Verification Discipline**: Never guess asset filenames or assume writes succeeded. When the user reports an asset did not update, extract/dump the active game texture directly to verify its visual content, and ensure deployment scripts validate cryptographic checksums.
 
-## Mod Installation & Game Runner
-- **ModLoader Runtime Patching**: Game assets (`.dff`, `.txd`, `.col`, `.ide`, `.ipl`) are patched dynamically at runtime via ModLoader (bundled in archive) rather than destructive manual overwrites of vanilla `gta3.img`. `data/maps/industne` was removed (contained unresolvable asset references) and will be replaced via an isolated ModLoader map override.
-- **Ariane ModLoader Staging**: Active in-development assets are staged in `C:\Users\enigm\Documents\GTA 3\Grand Theft Auto 3\modloader\Ariane\` (`models/gta3.img/`, `data/maps/ariane/`, `data/maps/ariane/cols/`) prior to final packaging into `dist/Drag-N-Drop.zip`.
-- **Mod Deployment Tooling**: `scripts/install.ts` supports bisection and filtering via `--bisect`, `--step=<N>`, `--only=<step>`, and `--skip=<step>`. Verified that `deno task install --skip=maps` loads cleanly without hangs.
+## Mod Installation, Packaging & Game Runner
+- **ModLoader Runtime Packaging**: All mod assets are packaged strictly into `dist/Drag-N-Drop.zip` under `modloader/Noodles/` (`data/main.scm`, `cleo/*.cm`, `models/gta3.img/`, `data/maps/`, `noodles_custom.txt`, `txd/`). Base ModLoader system files (`modloader/.data/`, `modloader.ini`) and video overrides (`movies/GTAtitles.mpg`) reside at the archive root.
+- **Installer Cleanup**: `scripts/install.ts` removes `[gta3]/modloader/Noodles` before unpacking `dist/Drag-N-Drop.zip` to prevent unmanifested or disabled assets from persisting in the game.
+- **Model Manifest Discipline**: `models/manifest.csv` (`name,folder,dff,txd,col,enabled`) controls which models are packaged into `models/gta3.img/`.
+- **Map & Collision Injection**:
+  - In GTA III, custom map object collisions must NOT be placed in `models/gta3.img` (causes streaming install/uninstall conflicts); they belong in `data/maps/noodles/col/` registered via `COLFILE 0` in `data/noodles_custom.txt`.
+  - The internal COLL model name in the 22-byte archive header must strictly match the IDE model name (e.g. `rosa_apartment`, not `rosa_apartment.col`).
+  - `build.ts` automatically synchronizes `data/noodles_custom.txt` against `models/manifest.csv`, commenting out disabled collision files before packaging.
+  - Any model instantiated in `custom.ipl` must be declared in `custom.ide` and present in `gta3.img`, otherwise the engine dereferences a null `pColModel` at `0x0047402D`.
+- **Frontend TXDs Location**: Frontend and boot textures reside in `data/txd/` (moved from legacy `assets/`) and package into `modloader/Noodles/txd/`.
+- **Step Bisection**: `scripts/build.ts` supports interactive bisection and filtering via `--bisect`, `--step=<N>`, `--only=<name>`, and `--skip=<name>`.
 - **UAC Bypass Runner**: When Windows sets `WINXPSP3` on `gta3.exe` in HKLM, launching directly throws OS error 740. Hardlink runner `gta3-game.exe` bypasses the exact-path registry flag with zero UAC prompts via `deno task run`.
 
 ## Blender Model & Collision Export Architecture

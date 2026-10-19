@@ -1,17 +1,12 @@
 /**
  * install.ts
  *
- * Installs the entire Noodles to Nightmares mod into the GTA III installation:
- * - Drag-N-Drop package (models/gta3.img, movies/GTAtitles.mpg, TXDs)
- * - Custom map placements (data/maps/industne/INDUSTNE.ipl)
- * - UI and splash screen textures (assets/*.txd -> txd/)
- * - Compiled scripts and missions (main.scm, cleo/*.cm, cleo_text/UL_TEXT.fxt)
- * - Game runner hardlink (gta3-game.exe)
+ * Installs the Noodles to Nightmares mod by extracting dist/Drag-N-Drop.zip
+ * over into the GTA III game directory, and ensuring the unflagged runner
+ * hardlink exists.
  */
 
 import { join } from "@std/path";
-import { ensureDir } from "@std/fs/ensure-dir";
-import { copy } from "@std/fs/copy";
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {
@@ -20,153 +15,50 @@ if (!gta3Base) {
 }
 
 const cwd = Deno.cwd();
+const dragDropZip = join(cwd, "dist", "Drag-N-Drop.zip");
 
-const args = Deno.args;
-const isBisect = args.includes("--bisect") || args.includes("-b");
-const onlyArg = args.find((a) => a.startsWith("--only="))?.slice(7)?.split(",");
-const skipArg = args.find((a) => a.startsWith("--skip="))?.slice(7)?.split(",");
-const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",").map(Number);
-
-function shouldRun(stepNum: number, stepName: string): boolean {
-  if (stepArg && !stepArg.includes(stepNum)) return false;
-  if (onlyArg && !onlyArg.includes(stepName)) return false;
-  if (skipArg && skipArg.includes(stepName)) return false;
-  if (isBisect) {
-    const res = prompt(`Install Step ${stepNum} (${stepName})? [Y/n]:`);
-    return res === null || res.trim().toLowerCase() !== "n";
+try {
+  const stat = await Deno.stat(dragDropZip);
+  if (!stat.isFile) {
+    throw new Error("Not a file");
   }
-  return true;
+} catch {
+  console.error(`Error: Drag-N-Drop archive not found at ${dragDropZip}. Run 'deno task build' first.`);
+  Deno.exit(1);
 }
 
-console.log(`Installing mod: ${gta3Base}`);
+console.log(`Installing mod from ${dragDropZip} into ${gta3Base}...`);
 
-async function sha256(filePath: string): Promise<string> {
-  const bytes = await Deno.readFile(filePath);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+// Clean existing modloader/Noodles directory before extraction
+const noodlesDestDir = join(gta3Base, "modloader", "Noodles");
+try {
+  await Deno.remove(noodlesDestDir, { recursive: true });
+  console.log("  [+] Cleaned existing modloader/Noodles directory");
+} catch {
+  // Ignored if directory doesn't exist
 }
 
-async function installAndVerifyFile(src: string, dest: string, label: string): Promise<void> {
-  await Deno.copyFile(src, dest);
-  const srcHash = await sha256(src);
-  const destHash = await sha256(dest);
-  if (srcHash !== destHash) {
-    throw new Error(`Hash mismatch for ${label}! Source: ${srcHash}, Dest: ${destHash}`);
-  }
-  console.log(`  [+] Installed & verified ${label} [sha256: ${srcHash.slice(0, 8)}]`);
+const cmd = new Deno.Command("tar", {
+  args: ["-xf", dragDropZip, "-C", gta3Base],
+});
+const { success, stderr } = await cmd.output();
+if (!success) {
+  console.error("[-] Failed to extract Drag-N-Drop.zip via tar:", new TextDecoder().decode(stderr));
+  Deno.exit(1);
 }
+console.log("  [+] Extracted Drag-N-Drop package assets into game directory");
 
-// 1. Extract dist/Drag-N-Drop.zip (gta3.img, movies, etc.)
-if (shouldRun(1, "drag-drop")) {
-  const dragDropZip = join(cwd, "dist", "Drag-N-Drop.zip");
+// Ensure unflagged runner hardlink exists (bypasses Windows UAC elevation)
+const gtaExe = join(gta3Base, "gta3.exe");
+const runnerExe = join(gta3Base, "gta3-game.exe");
+try {
+  await Deno.stat(runnerExe);
+} catch {
   try {
-    const stat = await Deno.stat(dragDropZip);
-    if (stat.isFile) {
-      console.log("  [+] Extracting dist/Drag-N-Drop.zip package...");
-      const cmd = new Deno.Command("tar", {
-        args: ["-xf", dragDropZip, "-C", gta3Base],
-      });
-      const { success } = await cmd.output();
-      if (success) {
-        console.log("  [+] Installed package assets");
-      } else {
-        console.warn("  [-] Failed to extract Drag-N-Drop.zip via tar");
-      }
-    }
-  } catch (e) {
-    console.warn("  [-] Drag-N-Drop.zip not found:", e);
-  }
-}
-
-// 2. Install map placement files (data/maps/)
-if (shouldRun(2, "maps")) {
-  const mapsSrc = join(cwd, "data", "maps");
-  const mapsDest = join(gta3Base, "data", "maps");
-  try {
-    const stat = await Deno.stat(mapsSrc);
-    if (stat.isDirectory) {
-      await ensureDir(mapsDest);
-      await copy(mapsSrc, mapsDest, { overwrite: true });
-      console.log("  [+] Installed data/maps/ placements (INDUSTNE & NOODLES)");
-    }
+    await Deno.link(gtaExe, runnerExe);
+    console.log("  [+] Created runner link gta3-game.exe (bypasses UAC)");
   } catch {
-    // Optional
-  }
-}
-
-// 3. Install TXD files from assets/ to txd/ (LOADSC0.TXD, splash3.txd, etc.)
-if (shouldRun(3, "txd")) {
-  const assetsDir = join(cwd, "assets");
-  const txdDestDir = join(gta3Base, "txd");
-  await ensureDir(txdDestDir);
-
-  for await (const entry of Deno.readDir(assetsDir)) {
-    if (entry.isFile && entry.name.toLowerCase().endsWith(".txd")) {
-      await installAndVerifyFile(
-        join(assetsDir, entry.name),
-        join(txdDestDir, entry.name),
-        `txd/${entry.name}`,
-      );
-    }
-  }
-}
-
-// 4. Install main.scm to data/
-if (shouldRun(4, "main")) {
-  const mainScm = join(cwd, "main.scm");
-  const dataDir = join(gta3Base, "data");
-  await ensureDir(dataDir);
-  try {
-    await installAndVerifyFile(mainScm, join(dataDir, "main.scm"), "data/main.scm");
-  } catch {
-    // main.scm may not be built yet
-  }
-}
-
-// 5. Install compiled missions to cleo/
-if (shouldRun(5, "missions")) {
-  const missionsSrcDir = join(cwd, "missions");
-  const cleoDestDir = join(gta3Base, "cleo");
-  await ensureDir(cleoDestDir);
-
-  for await (const entry of Deno.readDir(missionsSrcDir)) {
-    if (entry.isFile && entry.name.endsWith(".cm")) {
-      await installAndVerifyFile(
-        join(missionsSrcDir, entry.name),
-        join(cleoDestDir, entry.name),
-        `cleo/${entry.name}`,
-      );
-    }
-  }
-}
-
-// 6. Install text strings (UL_TEXT.fxt) if present
-if (shouldRun(6, "text")) {
-  const fxtSrc = join(cwd, "UL_TEXT.fxt");
-  const cleoTextDir = join(gta3Base, "cleo", "cleo_text");
-  await ensureDir(cleoTextDir);
-  try {
-    await installAndVerifyFile(fxtSrc, join(cleoTextDir, "UL_TEXT.fxt"), "cleo/cleo_text/UL_TEXT.fxt");
-  } catch {
-    // Optional
-  }
-}
-
-// 7. Ensure unflagged runner hardlink exists (bypasses Windows UAC elevation)
-if (shouldRun(7, "runner")) {
-  const gtaExe = join(gta3Base, "gta3.exe");
-  const runnerExe = join(gta3Base, "gta3-game.exe");
-  try {
-    await Deno.stat(runnerExe);
-  } catch {
-    try {
-      await Deno.link(gtaExe, runnerExe);
-      console.log("  [+] Created runner link gta3-game.exe (bypasses UAC)");
-    } catch {
-      // Ignore if link unsupported
-    }
+    // Ignore if link unsupported
   }
 }
 

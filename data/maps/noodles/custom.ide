@@ -1,5 +1,5 @@
 objs
-3153, supasave_open, supasave_open, 1, 160.0, 0
+# 3153, supasave_open, supasave_open, 1, 160.0, 0
 3154, rosa_apartment, rosa_apartment, 1, 300.0, 0
-3155, dinerind_open, inddiner, 1, 300.0, 0
+# 3155, dinerind, newbuildind, 1, 300.0, 0
 end
