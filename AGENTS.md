@@ -266,6 +266,8 @@ without excessive polling.
 - `:MiTrRET` - Mission trigger return point
 - Functions use camelCase: `monitorWangPickup()`
 - **File Naming**: Always use dashes (`-`), never underscores (`_`), for file names (kebab-case, e.g., `lighting-and-color.md`, `color-swatches.csv`).
+- **Scripts Location**: All project utilities, image unwrap helpers, and automation scripts belong in `./scripts/` (e.g. `scripts/unwrap-billboard.py`), never left in conversation scratch.
+- **Texture Rectification**: When unwrapping perspective mockups into flat game textures, map 4 exact corner pins directly via homography (`cv2.getPerspectiveTransform`) matching Photoshop's Perspective Crop Tool. Never apply post-warp affine rotation.
 
 
 ---

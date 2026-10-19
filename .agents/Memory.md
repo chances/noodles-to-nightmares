@@ -13,3 +13,21 @@
 - Protagonist Rosa Chang is a retextured vanilla ped (Asuka/Maria).
 - UI: Vanilla HUD; custom splash/title/loading screens.
 - Lighting & Baking: `Prelit` vertex colors for broad light fills; Cycles diffuse bakes into `.txd` for complex emission/shadows. Reference: `docs/lighting-and-color.md`, `docs/color-swatches.csv`, `docs/color-swatches.html`.
+
+## Billboard & In-Universe Ad Design
+- Commercial parody ads must look authentic, clean, and professional—not like cartoonish scams.
+- Avoid greasy salesman caricatures; use relatable everyday working-class customers or bold money graphics.
+- High-contrast primary palettes, heavy readable sans-serif typography, and clear calls to action (e.g. phone/kiosk).
+- Satire lives in the absurd terms, rates (e.g. "400% APR"), and fine-print disclaimers.
+
+## Scripts & Utility Tooling
+- All automation, diagnostic, texture unwrapping, and data scripts belong in `./scripts/` (e.g. `scripts/unwrap-billboard.py`).
+- Always use kebab-case for script filenames (`script-name.py`).
+- Never run inline multi-line Python scripts via `python -c`; save them to `./scripts/` and invoke the file.
+
+## Texture Perspective Rectification
+- When unwrapping perspective mockups (billboards, signs) into flat game textures, match Photoshop's Perspective Crop Tool.
+- Identify the 4 true quadrilateral corner vertices (`TL`, `TR`, `BR`, `BL`) and map them directly using homography (`cv2.getPerspectiveTransform` and `cv2.warpPerspective`).
+- Do not apply affine rotation after perspective transformation; post-warp rotation tilts the rectangular canvas and shears/clips corners.
+
+
