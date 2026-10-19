@@ -55,8 +55,23 @@
 
 ## Mod Installation & Game Runner
 - **ModLoader Runtime Patching**: Game assets (`.dff`, `.txd`, `.col`, `.ide`, `.ipl`) are patched dynamically at runtime via ModLoader (bundled in archive) rather than destructive manual overwrites of vanilla `gta3.img`. `data/maps/industne` was removed (contained unresolvable asset references) and will be replaced via an isolated ModLoader map override.
+- **Ariane ModLoader Staging**: Active in-development assets are staged in `C:\Users\enigm\Documents\GTA 3\Grand Theft Auto 3\modloader\Ariane\` (`models/gta3.img/`, `data/maps/ariane/`, `data/maps/ariane/cols/`) prior to final packaging into `dist/Drag-N-Drop.zip`.
 - **Mod Deployment Tooling**: `scripts/install.ts` supports bisection and filtering via `--bisect`, `--step=<N>`, `--only=<step>`, and `--skip=<step>`. Verified that `deno task install --skip=maps` loads cleanly without hangs.
 - **UAC Bypass Runner**: When Windows sets `WINXPSP3` on `gta3.exe` in HKLM, launching directly throws OS error 740. Hardlink runner `gta3-game.exe` bypasses the exact-path registry flag with zero UAC prompts via `deno task run`.
 
+## Blender Model & Collision Export Architecture
+- **Root Collection Naming**: Root collections named `*.dff` and `*.col` in `.blend` files define the output models.
+- **DFF Export Visibility Filter**: For `*.dff` collections, *only* subitems enabled in renders (`not obj.hide_render`) are exported. Objects with `hide_render == True` are construction helpers / curve guides and must be excluded (`dff.type = 'NON'`).
+- **COL Export Full Scope**: For `*.col` collections, all mesh elements are exported normally (`obj.dff.type = 'COL'`, collision v1), ignoring Blender visibility flags.
+- **Export Script**: Automated via `python scripts/export-blend-models.py <blend-file> [out-dir]`.
+- **No World Position Compensation**: Never shift IPL or world map placement coordinates (`custom.ipl`, `.pos`) to compensate for local frame offset or unapplied mesh transforms. Model origins and root frame hierarchies must be fixed in the model itself.
+
+## RenderWare GTA III Compatibility Constraints
+- **Pipeline Plugin (`0x253F2F3`)**: In DragonFF, `obj.dff.pipeline` must be set to `NONE`. Never export with GTA SA building pipeline (`0x53F20098`), which causes GTA III to fail to bind render pipelines.
+- **Night Vertex Colors (`0x253F2F9`)**: Must be disabled (`night_cols = False`). GTA III does not support SA night vertex colors plugin.
+- **Collision Plugin (`0x253F2FA`)**: Must not be embedded in DFF (`export_coll = False`). GTA III map objects require external `.col` files.
+- **Version**: Export version must strictly target GTA III PC (`0x33002` / v3.3.0.2).
+
 ## Host Disk Constraints
 - **Drive C: Free Space**: Drive `C:` has critically low free disk space (~110 MB free). Never write large temporary archive duplicates or run operations that balloon storage on `C:\`.
+
