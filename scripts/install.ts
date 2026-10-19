@@ -38,7 +38,7 @@ async function installAndVerifyFile(src: string, dest: string, label: string): P
   if (srcHash !== destHash) {
     throw new Error(`Hash mismatch for ${label}! Source: ${srcHash}, Dest: ${destHash}`);
   }
-  console.log(`  [+] Installed & verified ${label} [sha256: ${srcHash.slice(0, 8)}...]`);
+  console.log(`  [+] Installed & verified ${label} [sha256: ${srcHash.slice(0, 8)}]`);
 }
 
 // 1. Extract dist/Drag-N-Drop.zip (gta3.img, movies, etc.)
