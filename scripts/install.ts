@@ -21,6 +21,23 @@ if (!gta3Base) {
 
 const cwd = Deno.cwd();
 
+const args = Deno.args;
+const isBisect = args.includes("--bisect") || args.includes("-b");
+const onlyArg = args.find((a) => a.startsWith("--only="))?.slice(7)?.split(",");
+const skipArg = args.find((a) => a.startsWith("--skip="))?.slice(7)?.split(",");
+const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",").map(Number);
+
+function shouldRun(stepNum: number, stepName: string): boolean {
+  if (stepArg && !stepArg.includes(stepNum)) return false;
+  if (onlyArg && !onlyArg.includes(stepName)) return false;
+  if (skipArg && skipArg.includes(stepName)) return false;
+  if (isBisect) {
+    const res = prompt(`Install Step ${stepNum} (${stepName})? [Y/n]:`);
+    return res === null || res.trim().toLowerCase() !== "n";
+  }
+  return true;
+}
+
 console.log(`Installing mod: ${gta3Base}`);
 
 async function sha256(filePath: string): Promise<string> {
@@ -42,100 +59,114 @@ async function installAndVerifyFile(src: string, dest: string, label: string): P
 }
 
 // 1. Extract dist/Drag-N-Drop.zip (gta3.img, movies, etc.)
-const dragDropZip = join(cwd, "dist", "Drag-N-Drop.zip");
-try {
-  const stat = await Deno.stat(dragDropZip);
-  if (stat.isFile) {
-    console.log("  [+] Extracting dist/Drag-N-Drop.zip package...");
-    const cmd = new Deno.Command("tar", {
-      args: ["-xf", dragDropZip, "-C", gta3Base],
-    });
-    const { success } = await cmd.output();
-    if (success) {
-      console.log("  [+] Installed models/gta3.img and package assets");
-    } else {
-      console.warn("  [-] Failed to extract Drag-N-Drop.zip via tar");
+if (shouldRun(1, "drag-drop")) {
+  const dragDropZip = join(cwd, "dist", "Drag-N-Drop.zip");
+  try {
+    const stat = await Deno.stat(dragDropZip);
+    if (stat.isFile) {
+      console.log("  [+] Extracting dist/Drag-N-Drop.zip package...");
+      const cmd = new Deno.Command("tar", {
+        args: ["-xf", dragDropZip, "-C", gta3Base],
+      });
+      const { success } = await cmd.output();
+      if (success) {
+        console.log("  [+] Installed package assets");
+      } else {
+        console.warn("  [-] Failed to extract Drag-N-Drop.zip via tar");
+      }
     }
+  } catch (e) {
+    console.warn("  [-] Drag-N-Drop.zip not found:", e);
   }
-} catch (e) {
-  console.warn("  [-] Drag-N-Drop.zip not found:", e);
 }
 
 // 2. Install map placement files (data/maps/)
-const mapsSrc = join(cwd, "data", "maps");
-const mapsDest = join(gta3Base, "data", "maps");
-try {
-  const stat = await Deno.stat(mapsSrc);
-  if (stat.isDirectory) {
-    await ensureDir(mapsDest);
-    await copy(mapsSrc, mapsDest, { overwrite: true });
-    console.log("  [+] Installed data/maps/ placements (INDUSTNE.ipl)");
+if (shouldRun(2, "maps")) {
+  const mapsSrc = join(cwd, "data", "maps");
+  const mapsDest = join(gta3Base, "data", "maps");
+  try {
+    const stat = await Deno.stat(mapsSrc);
+    if (stat.isDirectory) {
+      await ensureDir(mapsDest);
+      await copy(mapsSrc, mapsDest, { overwrite: true });
+      console.log("  [+] Installed data/maps/ placements (INDUSTNE & NOODLES)");
+    }
+  } catch {
+    // Optional
   }
-} catch {
-  // Optional
 }
 
 // 3. Install TXD files from assets/ to txd/ (LOADSC0.TXD, splash3.txd, etc.)
-const assetsDir = join(cwd, "assets");
-const txdDestDir = join(gta3Base, "txd");
-await ensureDir(txdDestDir);
+if (shouldRun(3, "txd")) {
+  const assetsDir = join(cwd, "assets");
+  const txdDestDir = join(gta3Base, "txd");
+  await ensureDir(txdDestDir);
 
-for await (const entry of Deno.readDir(assetsDir)) {
-  if (entry.isFile && entry.name.toLowerCase().endsWith(".txd")) {
-    await installAndVerifyFile(
-      join(assetsDir, entry.name),
-      join(txdDestDir, entry.name),
-      `txd/${entry.name}`,
-    );
+  for await (const entry of Deno.readDir(assetsDir)) {
+    if (entry.isFile && entry.name.toLowerCase().endsWith(".txd")) {
+      await installAndVerifyFile(
+        join(assetsDir, entry.name),
+        join(txdDestDir, entry.name),
+        `txd/${entry.name}`,
+      );
+    }
   }
 }
 
 // 4. Install main.scm to data/
-const mainScm = join(cwd, "main.scm");
-const dataDir = join(gta3Base, "data");
-await ensureDir(dataDir);
-try {
-  await installAndVerifyFile(mainScm, join(dataDir, "main.scm"), "data/main.scm");
-} catch {
-  // main.scm may not be built yet
+if (shouldRun(4, "main")) {
+  const mainScm = join(cwd, "main.scm");
+  const dataDir = join(gta3Base, "data");
+  await ensureDir(dataDir);
+  try {
+    await installAndVerifyFile(mainScm, join(dataDir, "main.scm"), "data/main.scm");
+  } catch {
+    // main.scm may not be built yet
+  }
 }
 
 // 5. Install compiled missions to cleo/
-const missionsSrcDir = join(cwd, "missions");
-const cleoDestDir = join(gta3Base, "cleo");
-await ensureDir(cleoDestDir);
+if (shouldRun(5, "missions")) {
+  const missionsSrcDir = join(cwd, "missions");
+  const cleoDestDir = join(gta3Base, "cleo");
+  await ensureDir(cleoDestDir);
 
-for await (const entry of Deno.readDir(missionsSrcDir)) {
-  if (entry.isFile && entry.name.endsWith(".cm")) {
-    await installAndVerifyFile(
-      join(missionsSrcDir, entry.name),
-      join(cleoDestDir, entry.name),
-      `cleo/${entry.name}`,
-    );
+  for await (const entry of Deno.readDir(missionsSrcDir)) {
+    if (entry.isFile && entry.name.endsWith(".cm")) {
+      await installAndVerifyFile(
+        join(missionsSrcDir, entry.name),
+        join(cleoDestDir, entry.name),
+        `cleo/${entry.name}`,
+      );
+    }
   }
 }
 
 // 6. Install text strings (UL_TEXT.fxt) if present
-const fxtSrc = join(cwd, "UL_TEXT.fxt");
-const cleoTextDir = join(cleoDestDir, "cleo_text");
-await ensureDir(cleoTextDir);
-try {
-  await installAndVerifyFile(fxtSrc, join(cleoTextDir, "UL_TEXT.fxt"), "cleo/cleo_text/UL_TEXT.fxt");
-} catch {
-  // Optional
+if (shouldRun(6, "text")) {
+  const fxtSrc = join(cwd, "UL_TEXT.fxt");
+  const cleoTextDir = join(gta3Base, "cleo", "cleo_text");
+  await ensureDir(cleoTextDir);
+  try {
+    await installAndVerifyFile(fxtSrc, join(cleoTextDir, "UL_TEXT.fxt"), "cleo/cleo_text/UL_TEXT.fxt");
+  } catch {
+    // Optional
+  }
 }
 
 // 7. Ensure unflagged runner hardlink exists (bypasses Windows UAC elevation)
-const gtaExe = join(gta3Base, "gta3.exe");
-const runnerExe = join(gta3Base, "gta3-game.exe");
-try {
-  await Deno.stat(runnerExe);
-} catch {
+if (shouldRun(7, "runner")) {
+  const gtaExe = join(gta3Base, "gta3.exe");
+  const runnerExe = join(gta3Base, "gta3-game.exe");
   try {
-    await Deno.link(gtaExe, runnerExe);
-    console.log("  [+] Created runner link gta3-game.exe (bypasses UAC)");
+    await Deno.stat(runnerExe);
   } catch {
-    // Ignore if link unsupported
+    try {
+      await Deno.link(gtaExe, runnerExe);
+      console.log("  [+] Created runner link gta3-game.exe (bypasses UAC)");
+    } catch {
+      // Ignore if link unsupported
+    }
   }
 }
 

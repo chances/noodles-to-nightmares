@@ -54,7 +54,8 @@
 - **Asset Verification Discipline**: Never guess asset filenames or assume writes succeeded. When the user reports an asset did not update, extract/dump the active game texture directly to verify its visual content, and ensure deployment scripts validate cryptographic checksums.
 
 ## Mod Installation & Game Runner
-- **Full Mod Deployment**: `scripts/install.ts` extracts `dist/Drag-N-Drop.zip` (models/gta3.img, movies), installs map placements (`data/maps/industne/INDUSTNE.ipl`), textures (`assets/*.txd`), scripts (`main.scm`, `cleo/*.cm`), and strings (`UL_TEXT.fxt`).
+- **ModLoader Runtime Patching**: Game assets (`.dff`, `.txd`, `.col`, `.ide`, `.ipl`) are patched dynamically at runtime via ModLoader (bundled in archive) rather than destructive manual overwrites of vanilla `gta3.img`. `data/maps/industne` was removed (contained unresolvable asset references) and will be replaced via an isolated ModLoader map override.
+- **Mod Deployment Tooling**: `scripts/install.ts` supports bisection and filtering via `--bisect`, `--step=<N>`, `--only=<step>`, and `--skip=<step>`. Verified that `deno task install --skip=maps` loads cleanly without hangs.
 - **UAC Bypass Runner**: When Windows sets `WINXPSP3` on `gta3.exe` in HKLM, launching directly throws OS error 740. Hardlink runner `gta3-game.exe` bypasses the exact-path registry flag with zero UAC prompts via `deno task run`.
 
 ## Host Disk Constraints
