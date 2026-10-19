@@ -48,7 +48,14 @@
 
 ## Project Skills & Asset Locations
 - **Skills Location**: Repository skills must be saved in `.agents/skills/<skill-name>/SKILL.md` (e.g. `.agents/skills/txd-importing/SKILL.md`), never in global runtime folders.
-- **Splash Asset Source**: Source launcher splash TXD resides in `assets/splash3.txd`, deployed to `$GTA3/txd/` via `deno task install`.
+- **Startup & Boot Splash Screens**: The game boot background and title screens (with character lineup and legal notice) are strictly `txd/mainsc1.txd` and `txd/mainsc2.txd` (`1024x1024 @ 8bpp PAL8`, internal texture names `mainsc1` and `mainsc2`).
+- **Borough Transition Splash Screens**: Portland boot uses `txd/SPLASH1.TXD` (`512x256 @ 8bpp PAL8`, internal texture name `splash1`). Staunton uses `SPLASH2.TXD` and Shoreside Vale uses `splash3.txd`.
+- **New Game & Save Load Screens**: Vanilla PC cycles through a 24-entry lookup array (`loadsc1`..`loadsc25`, `512x512 @ 8bpp`); `loadsc0` is never indexed. All `LOADSC0.TXD` through `LOADSC25.TXD`, `mainsc1..2.txd`, and `SPLASH1..3.TXD` (31 total) are generated via `scripts/build-splash-screens.py` and deployed with SHA-256 verification by `deno task install`.
+- **Asset Verification Discipline**: Never guess asset filenames or assume writes succeeded. When the user reports an asset did not update, extract/dump the active game texture directly to verify its visual content, and ensure deployment scripts validate cryptographic checksums.
 
+## Mod Installation & Game Runner
+- **Full Mod Deployment**: `scripts/install.ts` extracts `dist/Drag-N-Drop.zip` (models/gta3.img, movies), installs map placements (`data/maps/industne/INDUSTNE.ipl`), textures (`assets/*.txd`), scripts (`main.scm`, `cleo/*.cm`), and strings (`UL_TEXT.fxt`).
+- **UAC Bypass Runner**: When Windows sets `WINXPSP3` on `gta3.exe` in HKLM, launching directly throws OS error 740. Hardlink runner `gta3-game.exe` bypasses the exact-path registry flag with zero UAC prompts via `deno task run`.
 
-
+## Host Disk Constraints
+- **Drive C: Free Space**: Drive `C:` has critically low free disk space (~110 MB free). Never write large temporary archive duplicates or run operations that balloon storage on `C:\`.

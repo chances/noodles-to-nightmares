@@ -1,0 +1,4 @@
+LOADSC[0-9].txd
+LOADSC[0-9][0-9].txd
+SPLASH[0-9].txd
+mainsc[0-9].txd
