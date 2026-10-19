@@ -40,4 +40,15 @@
 - Always inspect the reference logo's exact pixel footprint, aspect ratio, and corner curvature (e.g. Rockstar Games tile on the splash screen is `45x41` px, aspect ratio `1.0976`, corner radius `7` px).
 - Match dimensions, radii, baseline alignment, and gutters (14-15 px) directly.
 
+## File Tool Discipline & Surgical Edits
+- **Strictly Use Built-in Tools**: Use `view_file` for reading and `replace_file_content` for surgical chunk edits. Never overwrite whole files.
+- **No Terminal File Gymnastics**: NEVER use PowerShell pipelines (`Select-String`, `Get-Content`), shell redirection, or inline Python/Node scripts (`python -c "import shutil..."`) to read, search, copy, or modify files.
+- **Git Restrictions**: Never inspect or manipulate `git stash` without explicit instruction.
+- **Dedicated Scripts**: Tooling belongs in formal scripts under `./scripts/` (e.g. `scripts/install.ts`, `scripts/manage-txd.py`), invoked directly.
+
+## Project Skills & Asset Locations
+- **Skills Location**: Repository skills must be saved in `.agents/skills/<skill-name>/SKILL.md` (e.g. `.agents/skills/txd-importing/SKILL.md`), never in global runtime folders.
+- **Splash Asset Source**: Source launcher splash TXD resides in `assets/splash3.txd`, deployed to `$GTA3/txd/` via `deno task install`.
+
+
 

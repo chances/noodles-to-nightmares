@@ -2,7 +2,7 @@
   "tasks": {
     "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts",
     "build": "deno run --allow-read --allow-run scripts/build.ts",
-    "install": "deno run --env-file=.env --allow-env --allow-read scripts/install.ts"
+    "install": "deno run --env-file=.env --allow-env --allow-read --allow-write scripts/install.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
