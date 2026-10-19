@@ -25,7 +25,8 @@ const args = Deno.args;
 const isBisect = args.includes("--bisect") || args.includes("-b");
 const onlyArg = args.find((a) => a.startsWith("--only="))?.slice(7)?.split(",");
 const skipArg = args.find((a) => a.startsWith("--skip="))?.slice(7)?.split(",");
-const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",").map(Number);
+const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",")
+  .map(Number);
 
 function shouldRun(stepNum: number, stepName: string): boolean {
   if (stepArg && !stepArg.includes(stepNum)) return false;
@@ -147,13 +148,23 @@ if (shouldRun(2, "missions")) {
   console.log("  [+] Packaged modloader/Noodles/cleo/*.cm");
 }
 
-// Step 3: Models
+// Step 3: Models (Compiles manifested models from Blender via export-blend-models.py and packages overrides)
 if (shouldRun(3, "models")) {
-  console.log("Step 3 (models): Packaging manifested model overrides...");
+  console.log(
+    "Step 3 (models): Compiling and packaging manifested model overrides...",
+  );
   const modelsDir = join(cwd, "models");
   const manifestPath = join(modelsDir, "manifest.csv");
+  const exportScript = join(cwd, "scripts", "export-blend-models.py");
+  const pythonExe = Deno.env.get("PYTHON") || "python";
   const imgStagingDir = join(noodlesStagingDir, "models", "gta3.img");
-  const colStagingDir = join(noodlesStagingDir, "data", "maps", "noodles", "col");
+  const colStagingDir = join(
+    noodlesStagingDir,
+    "data",
+    "maps",
+    "noodles",
+    "col",
+  );
   await ensureDir(imgStagingDir);
   await ensureDir(colStagingDir);
 
@@ -171,13 +182,61 @@ if (shouldRun(3, "models")) {
     if (entry.enabled?.toLowerCase() !== "true") continue;
 
     const folderPath = join(modelsDir, entry.folder);
+
+    // 1. Compile models from Blender document if present
+    try {
+      for await (const dirEntry of Deno.readDir(folderPath)) {
+        if (dirEntry.isFile && dirEntry.name.endsWith(".blend")) {
+          const blendPath = join(folderPath, dirEntry.name);
+          console.log(
+            `  [*] Compiling model from Blender: ${dirEntry.name}...`,
+          );
+          const cmd = new Deno.Command(pythonExe, {
+            args: [exportScript, blendPath, folderPath],
+          });
+          const { success, stderr } = await cmd.output();
+          if (!success) {
+            console.warn(
+              `  [-] Warning: Blender export failed for ${dirEntry.name}:`,
+              new TextDecoder().decode(stderr),
+            );
+          }
+        }
+      }
+    } catch {
+      // Ignored if directory cannot be read
+    }
+
+    // 2. Patch internal collision header if needed so header model name matches IDE
+    if (entry.col && entry.name) {
+      const colPath = join(folderPath, entry.col);
+      try {
+        const data = await Deno.readFile(colPath);
+        if (new TextDecoder().decode(data.subarray(0, 4)) === "COLL") {
+          const nameBytes = new Uint8Array(22);
+          const encoded = new TextEncoder().encode(entry.name);
+          nameBytes.set(encoded.subarray(0, 21));
+          data.set(nameBytes, 8);
+          await Deno.writeFile(colPath, data);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
     if (entry.dff) {
-      await Deno.copyFile(join(folderPath, entry.dff), join(imgStagingDir, entry.dff));
+      await Deno.copyFile(
+        join(folderPath, entry.dff),
+        join(imgStagingDir, entry.dff),
+      );
       console.log(`  [+] Packaged DFF: ${entry.dff}`);
       count++;
     }
     if (entry.txd) {
-      await Deno.copyFile(join(folderPath, entry.txd), join(imgStagingDir, entry.txd));
+      await Deno.copyFile(
+        join(folderPath, entry.txd),
+        join(imgStagingDir, entry.txd),
+      );
       console.log(`  [+] Packaged TXD: ${entry.txd}`);
       count++;
     }
@@ -237,7 +296,10 @@ if (shouldRun(4, "maps")) {
       const entry: Record<string, string> = {};
       header.forEach((k, idx) => (entry[k] = row[idx]));
       if (entry.col) {
-        enabledCols.set(entry.col.toLowerCase(), entry.enabled?.toLowerCase() === "true");
+        enabledCols.set(
+          entry.col.toLowerCase(),
+          entry.enabled?.toLowerCase() === "true",
+        );
       }
     }
 
@@ -254,7 +316,9 @@ if (shouldRun(4, "maps")) {
     const newTxtContent = updatedTxtLines.join("\n");
     await Deno.writeTextFile(manifestSrc, newTxtContent);
     await Deno.copyFile(manifestSrc, manifestDest);
-    console.log("  [+] Synchronized and packaged modloader/Noodles/noodles_custom.txt");
+    console.log(
+      "  [+] Synchronized and packaged modloader/Noodles/noodles_custom.txt",
+    );
   } catch {
     // Fallback if manifest files not present
     await Deno.writeTextFile(
@@ -267,7 +331,9 @@ if (shouldRun(4, "maps")) {
 
 // Step 5: TXD UI/Splash Overrides
 if (shouldRun(5, "txd")) {
-  console.log("Step 5 (txd): Packaging TXD overrides into modloader/Noodles/txd/...");
+  console.log(
+    "Step 5 (txd): Packaging TXD overrides into modloader/Noodles/txd/...",
+  );
   const txdDir = join(cwd, "data", "txd");
   const txdStagingDir = join(noodlesStagingDir, "txd");
   await ensureDir(txdStagingDir);
@@ -295,7 +361,9 @@ if (shouldRun(6, "text")) {
       const cleoTextDir = join(noodlesStagingDir, "cleo", "cleo_text");
       await ensureDir(cleoTextDir);
       await Deno.copyFile(fxtSrc, join(cleoTextDir, "UL_TEXT.fxt"));
-      console.log("  [+] Packaged modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt");
+      console.log(
+        "  [+] Packaged modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt",
+      );
     }
   } catch {
     // Optional
@@ -320,7 +388,10 @@ const tarCmd = new Deno.Command("tar", {
 });
 const { success: tarSuccess, stderr: tarStderr } = await tarCmd.output();
 if (!tarSuccess) {
-  console.error("[-] Failed to create Drag-N-Drop.zip:", new TextDecoder().decode(tarStderr));
+  console.error(
+    "[-] Failed to create Drag-N-Drop.zip:",
+    new TextDecoder().decode(tarStderr),
+  );
   Deno.exit(1);
 }
 

@@ -56,7 +56,8 @@
 ## Mod Installation, Packaging & Game Runner
 - **ModLoader Runtime Packaging**: All mod assets are packaged strictly into `dist/Drag-N-Drop.zip` under `modloader/Noodles/` (`data/main.scm`, `cleo/*.cm`, `models/gta3.img/`, `data/maps/`, `noodles_custom.txt`, `txd/`). Base ModLoader system files (`modloader/.data/`, `modloader.ini`) and video overrides (`movies/GTAtitles.mpg`) reside at the archive root.
 - **Installer Cleanup**: `scripts/install.ts` removes `[gta3]/modloader/Noodles` before unpacking `dist/Drag-N-Drop.zip` to prevent unmanifested or disabled assets from persisting in the game.
-- **Model Manifest Discipline**: `models/manifest.csv` (`name,folder,dff,txd,col,enabled`) controls which models are packaged into `models/gta3.img/`.
+- **Model Manifest Discipline**: `models/manifest.csv` (`name,folder,dff,txd,col,enabled`) controls which models are compiled and packaged into `models/gta3.img/`.
+- **Build Pipeline Model Compilation**: `scripts/build.ts` Step 3 automatically compiles `.blend` models for enabled manifest entries via `scripts/export-blend-models.py` and patches the internal 22-byte COLL model header to match `entry.name`.
 - **Map & Collision Injection**:
   - In GTA III, custom map object collisions must NOT be placed in `models/gta3.img` (causes streaming install/uninstall conflicts); they belong in `data/maps/noodles/col/` registered via `COLFILE 0` in `data/noodles_custom.txt`.
   - The internal COLL model name in the 22-byte archive header must strictly match the IDE model name (e.g. `rosa_apartment`, not `rosa_apartment.col`).
@@ -68,7 +69,7 @@
 
 ## Blender Model & Collision Export Architecture
 - **Root Collection Naming**: Root collections named `*.dff` and `*.col` in `.blend` files define the output models.
-- **DFF Export Visibility Filter**: For `*.dff` collections, *only* subitems enabled in renders (`not obj.hide_render`) are exported. Objects with `hide_render == True` are construction helpers / curve guides and must be excluded (`dff.type = 'NON'`).
+- **Single Atomic DFF Export**: `scripts/export-blend-models.py` merges all render-enabled subitems (`hide_render == False`) into a singular unified atomic mesh with world transformations applied and root frame origin at `(0, 0, 0)`.
 - **COL Export Full Scope**: For `*.col` collections, all mesh elements are exported normally (`obj.dff.type = 'COL'`, collision v1), ignoring Blender visibility flags.
 - **Export Script**: Automated via `python scripts/export-blend-models.py <blend-file> [out-dir]`.
 - **No World Position Compensation**: Never shift IPL or world map placement coordinates (`custom.ipl`, `.pos`) to compensate for local frame offset or unapplied mesh transforms. Model origins and root frame hierarchies must be fixed in the model itself.
@@ -77,8 +78,12 @@
 - **Pipeline Plugin (`0x253F2F3`)**: In DragonFF, `obj.dff.pipeline` must be set to `NONE`. Never export with GTA SA building pipeline (`0x53F20098`), which causes GTA III to fail to bind render pipelines.
 - **Night Vertex Colors (`0x253F2F9`)**: Must be disabled (`night_cols = False`). GTA III does not support SA night vertex colors plugin.
 - **Collision Plugin (`0x253F2FA`)**: Must not be embedded in DFF (`export_coll = False`). GTA III map objects require external `.col` files.
-- **Version**: Export version must strictly target GTA III PC (`0x33002` / v3.3.0.2).
+- **Version**: Export version must strictly target GTA III PC `0x32000` (RenderWare v3.2.0.0 / library ID `0x0800FFFF`), matching all vanilla GTA III models. Do NOT use `0x33002`; DragonFF writes a 12-byte clump struct `(num_atomics, num_lights, num_cameras)` for versions `>= 0x33000`, whereas GTA III PC expects the 4-byte clump struct `(num_atomics)` emitted when version is `< 0x33000` (`0x32000`).
+- **Inspection Tooling**: Use `scripts/inspect-dff.py <model.dff>` to inspect RW version, clump frame hierarchy, geometry vertex/triangle bounds, prelit alpha ranges, texture references, and atomic flags.
+- **DragonFF Material Mapping**: Image texture nodes must have clean `node.label` values matching texture names to prevent DragonFF's `clear_extension` from truncating `.txd` prefixes into model texture names. Sampler properties must be set to `tex_filters = 6` (Linear Mipmap Linear) and `tex_u_addr = tex_v_addr = 1` (Wrap).
+
+## Known Issues & Open Bugs
+- **Rosa's Apartment Invisible In-Game**: Documented in [`.agents/bugs/rosa-tenament-invisible.md`](bugs/rosa-tenament-invisible.md). Model passes external rendering tools and has valid single-atomic geometry and texture references, but fails to render in GTA III runtime.
 
 ## Host Disk Constraints
 - **Drive C: Free Space**: Drive `C:` has critically low free disk space (~110 MB free). Never write large temporary archive duplicates or run operations that balloon storage on `C:\`.
-

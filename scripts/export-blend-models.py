@@ -6,7 +6,8 @@ Exports DFF and COL assets from a given Blender document based on root-level
 collections named '*.dff' and '*.col'.
 
 Rules:
-- For DFF collections: only export subitems enabled in renders (hide_render == False).
+- For DFF collections: merge all render-enabled subitems (hide_render == False)
+  into a singular atomic mesh with applied world transformations.
 - For COL collections: export all elements to col files normally, ignoring visibility flags.
 """
 
@@ -42,25 +43,63 @@ def run_inside_blender(blend_path: str, output_dir: str):
             if hasattr(obj, "dff"):
                 prev_props[obj] = (obj.dff.type, getattr(obj.dff, "pipeline", None), getattr(obj.dff, "night_cols", None))
 
+        temp_coll = None
+        merged_obj = None
+
         try:
-            # Only export subitems in this collection that are enabled in renders
+            # Synchronize texture node labels to prevent .txd prefix truncation by DragonFF
+            for mat in bpy.data.materials:
+                if mat.use_nodes:
+                    for n in mat.node_tree.nodes:
+                        if n.type == 'TEX_IMAGE' and n.image:
+                            if not n.label or "/" in n.label:
+                                parts = n.image.name.split("/")
+                                tex_clean = parts[-2] if len(parts) >= 2 else parts[0].split(".")[0]
+                                n.label = tex_clean
+
+            render_meshes = [obj for obj in c.objects if obj.type == 'MESH' and not obj.hide_render]
+            if not render_meshes:
+                print(f"  [-] No render-enabled mesh elements in {c.name}, skipping.")
+                continue
+
+            # Disable DFF export flag on all existing scene objects
             for obj in bpy.data.objects:
                 if hasattr(obj, "dff"):
                     obj.dff.type = 'NON'
 
-            valid_count = 0
-            for obj in c.objects:
-                if obj.type == 'MESH' and not obj.hide_render:
-                    obj.dff.type = 'OBJ'
-                    obj.dff.pipeline = 'NONE'
-                    obj.dff.night_cols = False
-                    valid_count += 1
-                else:
-                    obj.dff.type = 'NON'
+            # Create temporary export collection
+            temp_coll = bpy.data.collections.new(f"temp_export_{c.name}")
+            bpy.context.scene.collection.children.link(temp_coll)
 
-            if valid_count == 0:
-                print(f"  [-] No render-enabled mesh elements in {c.name}, skipping.")
-                continue
+            # Duplicate render meshes into temporary collection and apply world transforms
+            dups = []
+            for obj in render_meshes:
+                new_obj = obj.copy()
+                new_obj.data = obj.data.copy()
+                temp_coll.objects.link(new_obj)
+                dups.append(new_obj)
+
+            bpy.ops.object.select_all(action='DESELECT')
+            for d in dups:
+                d.select_set(True)
+            bpy.context.view_layer.objects.active = dups[0]
+
+            for d in dups:
+                d.data.transform(d.matrix_world)
+                d.matrix_world.identity()
+
+            if len(dups) > 1:
+                bpy.ops.object.join()
+            merged_obj = bpy.context.view_layer.objects.active
+
+            # Determine unified frame name (prefer existing _l0 name if present)
+            l0_match = next((obj.name for obj in render_meshes if "_l0" in obj.name.lower()), None)
+            base_name = c.name.rsplit(".", 1)[0]
+            merged_obj.name = l0_match if l0_match else f"{base_name}_l0"
+
+            merged_obj.dff.type = 'OBJ'
+            merged_obj.dff.pipeline = 'NONE'
+            merged_obj.dff.night_cols = False
 
             options = {
                 'file_name': out_path,
@@ -71,19 +110,29 @@ def run_inside_blender(blend_path: str, output_dir: str):
                 'mass_export': False,
                 'preserve_positions': True,
                 'preserve_rotations': True,
-                'version': 0x33002,  # GTA 3 (v3.3.0.2)
+                'version': 0x32000,  # GTA 3 (v3.2.0.0 / 0x0800FFFF matching vanilla GTA III models)
                 'export_coll': False,
                 'coll_ext_type': '39056122',
                 'apply_coll_trans': False,
                 'from_outliner': False
             }
 
-            dff_exporter.collection = c
+            dff_exporter.collection = temp_coll
             dff_exporter.from_outliner = False
             dff_exporter.export_dff(options)
-            print(f"  [+] Exported DFF: {out_path} ({os.path.getsize(out_path)} bytes)")
+            print(f"  [+] Exported DFF (merged singular atomic): {out_path} ({os.path.getsize(out_path)} bytes)")
 
         finally:
+            if merged_obj:
+                mesh_data = merged_obj.data
+                bpy.data.objects.remove(merged_obj, do_unlink=True)
+                if mesh_data:
+                    bpy.data.meshes.remove(mesh_data, do_unlink=True)
+            if temp_coll:
+                if temp_coll.name in bpy.context.scene.collection.children:
+                    bpy.context.scene.collection.children.unlink(temp_coll)
+                bpy.data.collections.remove(temp_coll)
+
             for obj, (dtype, pipe, night) in prev_props.items():
                 obj.dff.type = dtype
                 if pipe is not None:
