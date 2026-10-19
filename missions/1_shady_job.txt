@@ -63,9 +63,10 @@ wait 3750
 // Rosa (_Huh? Who's talking to me?_)
 // QUESTION: Is Rosa mute?
 Player.TurnToFaceChar($player, $sal)
-$salHeading = Char.GetHeading($sal)
-$faceSalHeading = invertHeading($salHeading)
-Player.SetHeading($player, $faceSalHeading)
+// FIXME: Face the characters toward each other
+//$salHeading = Char.GetHeading($sal)
+//$faceSalHeading = invertHeading($salHeading)
+//Player.SetHeading($player, $faceSalHeading)
 Player.LookAtCharAlways($player, $sal)
 wait 550
 // FIXME: Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)

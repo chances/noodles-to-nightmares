@@ -6,7 +6,8 @@ import { capitalCase } from "change-case";
 
 /** Compiles a script using the Sanny Builder CLI. */
 async function compile(inputPath: string, outputPath: string) {
-  const command = new Deno.Command("sanny.exe", {
+  const sannyExe = Deno.env.get("SANNY") || "sanny.exe";
+  const command = new Deno.Command(sannyExe, {
     args: [
       "--no-splash",
       "--mode",

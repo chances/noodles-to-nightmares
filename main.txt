@@ -85,7 +85,7 @@ Streaming.LoadSpecialCharacter(2, 'MARIA')
 Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
 
-// Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
+// Safehouse: Rosa's apartment, NE Portland, area behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
 $SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
 Garage.ChangeType($ApartmentGarage, GarageType.HideoutOne)

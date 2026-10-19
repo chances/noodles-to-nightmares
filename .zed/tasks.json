@@ -3,7 +3,8 @@
   {
     "label": "Build",
     "command": "deno",
-    "args": ["task", "build"]
+    "args": ["task", "build"],
+    "hide": "on_success"
   },
   // See https://github.com/sannybuilder/dev/issues/391
   // FIXME: 😕 This simply doesn't work...
@@ -17,11 +18,25 @@
       "gta3_sbl",
       "--compile",
       "$ZED_FILE"
-    ]
+    ],
+    "hide": "on_success"
+  },
+  {
+    "label": "Install",
+    "command": "deno",
+    "args": ["task", "install"],
+    "hide": "on_success"
+  },
+  {
+    "label": "Run",
+    "command": "deno",
+    "args": ["task", "run"],
+    "hide": "on_success"
   },
   {
     "label": "Format Documentation",
     "command": "deno",
-    "args": ["fmt", "./**/*.md"]
+    "args": ["fmt", "./**/*.md"],
+    "hide": "on_success"
   }
 ]
