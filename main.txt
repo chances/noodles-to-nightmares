@@ -56,13 +56,15 @@ initPickups()
 initGarages()
 
 // Play music when splash screens are shown
-Audio.SetMusicDoesFade(false)
+Audio.SetMusicDoesFade(true)
 
 // Setup pickups, spawn points, and hidden drugs
 {$INCLUDE utils/pickups.txt}
 {$INCLUDE utils/spawn_points.txt}
 {$INCLUDE utils/packages.txt}
 
+// Stream in everything near the player
+Streaming.LoadScene(1039.66, -653.112, 14.015)
 // Load the model for Rosa's apartment (ind_newtenement08)
 // TODO: Extract important model IDs to constants
 // QUESTION: What's the constant for this? Like #CELLPHONE, but different 😖
@@ -84,9 +86,6 @@ while true
   end
 end
 
-// QUESTION: Why isn't Rosa's apartment ready yet?
-// QUESTION: Why is the Rosa's apartment collision not correct?
-
 // Load our characters
 Streaming.LoadSpecialCharacter(1, 'ASUKA')
 Streaming.LoadSpecialCharacter(2, 'MARIA')
@@ -107,7 +106,7 @@ wait 750
 
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
-Player.SetControl($player, True)
+Player.SetControl($player, true)
 Weather.Release
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE

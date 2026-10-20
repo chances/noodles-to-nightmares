@@ -41,7 +41,7 @@ while true
 
   checkSafety()
 
-  // Failure if the player is wasted or busted
+  // Fail: if the player is wasted or busted
   if or
     Player.IsDead($player)
     Player.HasBeenArrested($player)
@@ -54,7 +54,8 @@ while true
     break
   end
 
-  // Wait for the player to get to their safehouse
+  // Wait for the player to get to their apartment
+  // QUESTION: Why is Rosa's apartment collision not correct?
   if Player.LocateAnyMeans3D($player, 1165.0, -398.5, 26.25, 3.0, 3.0, 3.0, true)
   then
     Camera.SetFixedPosition(1183.0, -384.4, 34.0, 0, 0, 0)
@@ -83,7 +84,7 @@ while true
     Camera.DoFade(750, Fade.In)
     wait 1000
 
-    Text.PrintString("TGIF, I really needed that rent money.", {time} 3250)
+    Text.PrintString("TGIF! I really needed that rent money.", {time} 3250)
 
     break
   end
