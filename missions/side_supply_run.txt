@@ -1,21 +1,312 @@
 {$CLEO .cm}
 {$INCLUDE ../variables.txt}
+{$INCLUDE ../utils/geography.txt}
 
-//====================================
+//=================================================================
 // Side Mission: Supply Run
-// Buy groceries for the Punk Noodles
+// Buy groceries for Punk Noodles
 // Light exploration and NPC dialogue
-//====================================
-const REWARD = 250 // Payment and relationship boost
+//=================================================================
+//
+// Trigger: A shift-start marker inside Punk Noodles, available once
+// Mission 1 (Easy Money) is complete. It cannot overlap Mission 1's
+// own start marker.
+//
+// CUTSCENE MAP
+//   C1 Briefing    Punk Noodles, interior. Lee Chong hands over cash.
+//   C2 Toll        Street, mid-route. Gang demands a toll. In-engine,
+//                  no camera cut: Rosa keeps control.
+//   C3 Theft       SupaSave front door. A homeless man snatches the
+//                  remaining cash and runs. Camera cut, then control
+//                  returns for the chase or the let-go choice.
+//   C4 Payoff      Punk Noodles, interior. Lee Chong reacts and pays.
+//
+// FLOW
+//   Briefing -> drive Lee Chong's van to SupaSave -> gang toll on the
+//   way -> theft at the door -> chase (full reward) or let go (half
+//   reward) -> shop at SupaSave -> drive the van back -> payoff
+//=================================================================
+const REWARD = 250 // Full pay, plus a relationship boost with Lee Chong
+const REWARD_LET_GO = 125 // Half pay when Rosa covers the groceries herself
+const CASH_GIVEN = 250 // Lee Chong's grocery money
+const TOLL = 100 // The gang's cut
+const TIME_LIMIT = 240000 // Four minutes, in real time
 
+$onMission = true
 $isDying = false
+$isWanted = false
+$skipCutscene = false
+$groceryCash = CASH_GIVEN
+$paidToll = false
+$letGo = false
+$thiefHasCash = false
+
+Player.SetControl($player, false)
 
 Text.PrintBigString("Supply Run", {time} 5000, TextStyle.BottomRight)
-wait 7500
 
-// TODO: Implement side mission
-Text.PrintHelpString("This mission is under construction.")
-wait 2500
+Camera.DoFade(500, Fade.Out)
+wait 500
+Text.ClearSmallPrints()
+Text.ClearPrints()
+
+// TODO: Streaming.RequestModel() for Lee Chong, the van, the gang, and the thief
+// Streaming.LoadAllModelsNow()
+
+//==================
+// C1: Briefing
+//==================
+// TODO: Lee Chong is character 87
+// TODO: Create Lee Chong at LEE_CHONG_X, LEE_CHONG_Y, LEE_CHONG_Z and face him toward Rosa
+// TODO: Fixed camera, like the shop's security camera in Mission 1
+if $skipCutscene == false
+then
+  Camera.DoFade(500, Fade.In)
+  wait 525
+
+  // Lee Chong
+  Text.PrintString("Rosa. The lunch rush ate everything. We have no onions, no cabbage, no noodles.", 4500)
+  wait 4750
+
+  // Rosa
+  Text.PrintString("It's Tuesday. How does a Tuesday eat everything?", 3500)
+  wait 3750
+
+  // Lee Chong
+  Text.PrintString("Take the van. Here is $250. Go to SupaSave and buy what I wrote on the list.", 4500)
+  wait 4750
+  // Hand over the cash
+  Player.AddScore($player, CASH_GIVEN)
+
+  // Lee Chong
+  Text.PrintString("And come straight back. The customers do not like to wait.", 3500)
+  wait 3750
+
+  // Rosa
+  Text.PrintString("They don't like to eat here, either, and yet.", 3000)
+  wait 3250
+
+  // TODO: End cutscene, restore camera
+  Camera.Restore()
+else
+  Camera.DoFade(500, Fade.In)
+  wait 525
+end
+
+// Spawn Lee Chong's van outside the shop
+// TODO: Pick the van model, e.g. Boxville. Car.Create(#BOXVILLE, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z, $van)
+$vanBlip = Blip.AddForCar($van)
+
+Player.SetControl($player, true)
+TIMERA = 0
+Text.PrintHelpString("Get in Lee Chong's van and drive to SupaSave.")
+
+// Wait for Rosa to get in the van
+while true
+  wait 0
+  if Player.IsInCar($player, $van)
+  then
+    Blip.Remove($vanBlip)
+    break
+  end
+  // TODO: Failure checks: see the stage loop below
+end
+
+$supasaveBlip = Blip.AddForCoord(SUPASAVE_X, SUPASAVE_Y, SUPASAVE_Z)
+
+// TODO: Refactor the failure checks and the stage loops into one main mission loop, like Mission 1
+// Stage 1: Drive toward SupaSave, with the toll on the way
+while true
+  wait 0
+
+  // TODO: Failure checks:
+  // - Rosa is wasted or busted
+  // - TIMERA > TIME_LIMIT (Lee Chong's lunch rush)
+  // - The van is destroyed
+  // - Wanted level of 2 or more
+
+  //==================
+  // C2: The Toll
+  //==================
+  // TODO: Spawn the gang (3 members, 1 leader) at SUPPLY_GANG_X, SUPPLY_GANG_Y, SUPPLY_GANG_Z, with a blip and a roadblock
+  // QUESTION: Roadblock as a parked car, or as gang members standing in the road?
+  if and
+    $paidToll == false
+    Player.LocateAnyMeans2D($player, SUPPLY_GANG_X, SUPPLY_GANG_Y, 25, 25, false)
+  then
+    // TODO: Gang leader walks to the van window. Rosa keeps control of the van.
+    // Gang Leader
+    Text.PrintString("Nobody drives this street for free, sweetheart.", 3500)
+    wait 3750
+
+    // Rosa
+    Text.PrintString("It's a van full of onion money. Who taxes onions?", 3500)
+    wait 3750
+
+    // Gang Leader
+    Text.PrintString("$100 and the onions get to live.", 3500)
+    wait 3750
+
+    // TODO: Pay or refuse? QUESTION: How does the player pay? A button prompt, or driving through the leader's marker?
+    // TODO: If Rosa refuses or drives off, the gang opens fire (fail path: the van takes damage)
+    Player.AddScore($player, -TOLL)
+    $groceryCash = $groceryCash - TOLL
+    $paidToll = true
+
+    // Rosa
+    Text.PrintString("Great. Lee Chong's budget is now a hostage situation.", 3500)
+    wait 3750
+
+    // TODO: Remove the gang and clear the roadblock
+  end
+
+  if
+    Player.LocateAnyMeans3D($player, SUPASAVE_DOOR_X, SUPASAVE_DOOR_Y, SUPASAVE_DOOR_Z, 5.0, 5.0, 5.0, true)
+  then
+    Blip.Remove($supasaveBlip)
+    break
+  end
+end
+
+//==================
+// C3: The Theft
+//==================
+Player.SetControl($player, false)
+// TODO: Camera cut to the SupaSave front door
+// TODO: Spawn the homeless man near the door, holding a sign and a shopping cart
+// TODO: Rosa gets out of the van and walks toward the door
+
+// Homeless Man
+Text.PrintString("Spare change? Spare anything?", 3000)
+wait 3250
+
+// Rosa
+Text.PrintString("I have $150 and a list. You can have the list.", 3500)
+wait 3750
+
+// TODO: He snatches the cash from Rosa's hand
+$thiefHasCash = true
+// TODO: The homeless man runs. Remove $groceryCash from Rosa: Player.AddScore($player, -$groceryCash)
+
+// Homeless Man
+Text.PrintString("Thank you! God bless!", 2500)
+wait 2750
+
+// Rosa
+Text.PrintString("Hey! That is not how this works!", 2500)
+wait 2750
+
+// TODO: Return the camera to Rosa
+Player.SetControl($player, true)
+// Note: TIMERA keeps running through the chase
+Text.PrintHelpString("Chase the thief and get the cash back, or let him go and pay out of your own pocket.")
+
+// TODO: Rosa's choice. Chasing: he flees on foot. Rosa catches and knocks him down to drop a cash pickup.
+// TODO: Letting go: Rosa walks into SupaSave without the cash and the let-go flag is set.
+// QUESTION: Is "let go" decided by walking into the store, or by a button prompt?
+$thiefBlip = Blip.AddForChar($thief)
+$chaseDone = false
+
+while $chaseDone == false
+  wait 0
+
+  // TODO: Failure checks, plus:
+  // - The thief gets out of range with the cash: fail ("Thief escapes")
+  // QUESTION: Does leaving range count as "let go" instead of a failure? It conflicts with "Thief escapes" as a fail state.
+
+  // TODO: Chase path: when the cash pickup is collected, restore $groceryCash
+  // TODO: Let-go path: when Rosa enters SupaSave, set $letGo = true and $groceryCash = 0
+
+  // Placeholder exit so the scaffold compiles
+  $chaseDone = true
+end
+
+Blip.Remove($thiefBlip)
+
+if $letGo == true
+then
+  // Rosa
+  Text.PrintString("Fine. I'll cover it. Lee Chong owes me a favor.", 3500)
+  wait 3750
+else
+  // Rosa
+  Text.PrintString("Got it. Sorry, pal. The list comes first.", 3000)
+  wait 3250
+end
+
+//==================
+// SupaSave: Shopping
+//==================
+// TODO: Shopping happens off-screen on a fade, since the SupaSave interior is not modeled yet
+// TODO: Shop interior beat: three list items, e.g. onions, cabbage, noodles. Each is a pickup or a prompt.
+Camera.DoFade(500, Fade.Out)
+wait 525
+Text.PrintString("Onions, cabbage, noodles. That is the whole list.", 3500)
+wait 3750
+Camera.DoFade(500, Fade.In)
+wait 525
+
+// TODO: Spawn the grocery bags in the van's back seat
+Text.PrintHelpString("Drive the groceries back to Punk Noodles.")
+$shopBlip = Blip.AddForCoord(SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
+
+// Stage 3: Drive back
+while true
+  wait 0
+
+  // TODO: Failure checks: wasted, busted, van destroyed, wanted level of 2 or more, TIMERA > TIME_LIMIT
+  // QUESTION: Does the gang return for a second toll on the way back?
+
+  if
+    Player.LocateAnyMeans3D($player, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z, 5.0, 5.0, 5.0, true)
+  then
+    Blip.Remove($shopBlip)
+    break
+  end
+end
+
+//==================
+// C4: Payoff
+//==================
+Player.SetControl($player, false)
+// TODO: Fixed camera at Lee Chong, inside Punk Noodles
+
+if $letGo == true
+then
+  // Lee Chong
+  Text.PrintString("Onions. Cabbage. Noodles. And you paid yourself? Rosa, you are a saint.", 4500)
+  wait 4750
+
+  // Rosa
+  Text.PrintString("I'm a broke saint. Put it on my tab.", 3000)
+  wait 3250
+
+  $reward = REWARD_LET_GO
+else
+  // Lee Chong
+  Text.PrintString("Onions. Cabbage. Noodles. You did well, Rosa. Even the cabbage is happy.", 4500)
+  wait 4750
+
+  // Rosa
+  Text.PrintString("The cabbage had a rough morning.", 3000)
+  wait 3250
+
+  $reward = REWARD
+end
+
+// TODO: Lee Chong's relationship boost: set a global flag and decide what it unlocks
+Audio.PlayMissionPassedTune(1)
+// TODO: register_mission_passed with a new string key, e.g. 'NooM_S1' in data/strings.txt
+Player.AddScore($player, $reward)
+Text.PrintWithNumberBig('M_PASS', $reward, 5000, TextStyle.Middle)
+wait 5500
+
+// Lee Chong
+Text.PrintString("Come back tomorrow. The cabbage will want to see you.", 3500)
+wait 3750
+
+Player.SetControl($player, true)
+Camera.Restore()
 
 Mission.Finish()
 $onMission = false
