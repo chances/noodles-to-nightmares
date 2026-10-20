@@ -18,16 +18,19 @@ $isSalNearby = false
 Player.SetControl($player, false)
 
 // QUESTION: Trigger mission with this? Char.HasSpottedPlayer($sal, $player)
-
-// FIXME: The neighborhood text will not go away.
-// The neighborhood text stays there for at least five (5) seconds
 // QUESTION: How long after the game starts do we need to slow down the player?
 
 // Start a cutscene with the "mysterious contact", Salvatore
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 
 Camera.DoFade(500, Fade.Out)
-wait 2500
+wait 500
+// FIXME: Use clearUI()
+Text.ClearSmallPrints()
+Text.ClearPrints()
+// FIXME: The neighborhood text will not go away.
+// NOTE: The neighborhood text stays there for at least five (5) seconds
+wait 2000 // Artificially inflated to give the player a break
 
 // TODO: Add more NPCs, e.g. the noodle man
 // TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
@@ -83,27 +86,25 @@ wait 3750
 Text.PrintString("I'll call you later.", 4000)
 wait 2250
 
-// Show a payphone waypoint blip
-Blip.AddSpriteForContactPoint(1168.33, -414.841, 22.8, PAYPHONE, $payphoneBlip)
-// FIXME: Add the payphone blip to the map
-
 // End cutscene
 Char.StopLooking($sal)
 Player.StopLooking($player)
 Char.SetObjFleeCharOnFootAlways($sal, $playerChar)
-// FIXME: CTD here ☹
 Camera.SetInterpolationParameters(0, {time} 750)
 Camera.Restore()
 wait 500
 Player.SetControl($player, true)
+// Remove sal from the scene
+tryRemoveSal()
+$isSalNearby = false
+
+// Show a payphone waypoint blip
+Blip.AddSpriteForContactPoint(1168.33, -414.841, 22.8, PAYPHONE, $payphoneBlip)
 
 TIMERA = 0
-$isSalNearby = false
 
 while true
   wait 0
-
-  tryRemoveSal()
 
   // Wait for the player to get near the payphone
   if
