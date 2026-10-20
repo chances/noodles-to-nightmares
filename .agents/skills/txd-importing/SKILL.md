@@ -24,8 +24,15 @@ python scripts/manage-txd.py --build <image_path> <internal_texture_name> <outpu
 ```
 Example (8bpp startup splash screen):
 ```bash
-python scripts/manage-txd.py --build docs/rosa-title-splash.jpg splash3 assets/splash3.txd --depth 8 --size 512 256
+python scripts/manage-txd.py --build data/textures/rosa-title-splash.jpg splash3 assets/splash3.txd --depth 8 --size 512 256
 ```
+
+### 1b. Building Every TXD From the Manifest
+`data/txd/manifest.csv` (`source,txd,texture,width,height,depth`) maps each source JPG to its TXD. Build all rows:
+```bash
+python scripts/manage-txd.py --manifest
+```
+`deno task build` step 5 (`txd`) does this per row, skipping rows whose source JPG, size, and `manage-txd.py` hash match `dist/.build-cache.json`.
 
 ### 2. Inspecting TXD Contents
 Verify internal texture rasters, dimensions, depth, and compression:

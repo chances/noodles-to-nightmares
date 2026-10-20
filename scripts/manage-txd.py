@@ -4,6 +4,7 @@ RenderWare Texture Dictionary (.txd) reader and builder for GTA III / Vice City.
 Supports 32-bit (FORMAT_8888) and 8-bit palettized (FORMAT_8888 palette, 256 colors) textures.
 """
 
+import csv
 import sys
 import struct
 import argparse
@@ -115,6 +116,18 @@ def build_txd_from_image(image_path, texture_name="splash3", output_path="data/t
     print(f"Successfully created TXD: {output_path} ({w}x{h} @ {depth}bpp, {len(txd_bytes)} bytes)")
     return output_path
 
+def build_manifest(manifest_csv):
+    manifest_path = Path(manifest_csv)
+    with open(manifest_path, newline="") as f:
+        for row in csv.DictReader(f):
+            build_txd_from_image(
+                row["source"].strip(),
+                row["texture"].strip(),
+                manifest_path.parent / row["txd"].strip(),
+                depth=int(row["depth"]),
+                target_size=(int(row["width"]), int(row["height"])),
+            )
+
 def read_txd_info(txd_path):
     with open(txd_path, "rb") as f:
         data = f.read()
@@ -160,9 +173,12 @@ if __name__ == "__main__":
     parser.add_argument("--depth", type=int, default=8, choices=[8, 32], help="Texture bit depth (8 for splash, 32 for models)")
     parser.add_argument("--size", nargs=2, type=int, metavar=("W", "H"), default=[512, 256], help="Target texture resolution")
     parser.add_argument("--info", metavar="TXD_FILE", help="Display TXD contents")
+    parser.add_argument("--manifest", metavar="CSV", nargs="?", const="data/txd/manifest.csv", help="Build every TXD listed in a manifest CSV (source,txd,texture,width,height,depth); output lands beside the CSV")
     args = parser.parse_args()
-    
-    if args.build:
+
+    if args.manifest:
+        build_manifest(args.manifest)
+    elif args.build:
         target_size = tuple(args.size) if args.size else None
         build_txd_from_image(args.build[0], args.build[1], args.build[2], depth=args.depth, target_size=target_size)
     elif args.info:

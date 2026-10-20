@@ -626,6 +626,57 @@ if (shouldRun(5, "txd")) {
   const txdStagingDir = join(noodlesStagingDir, "txd");
   await ensureDir(txdStagingDir);
 
+  // Rebuild each manifested TXD when its source JPG, size, or the builder changed
+  const txdManifestPath = join(txdDir, "manifest.csv");
+  const txdBuilder = join(cwd, "scripts", "manage-txd.py");
+  const builderHash = await sha256(await Deno.readFile(txdBuilder));
+  const txdRows = (await Deno.readTextFile(txdManifestPath)).trim()
+    .split(/\r?\n/);
+  const txdHeader = txdRows[0].split(",").map((s) => s.trim());
+  for (const rowText of txdRows.slice(1)) {
+    const cells = rowText.split(",").map((s) => s.trim());
+    if (cells.length < txdHeader.length) continue;
+    const row: Record<string, string> = {};
+    txdHeader.forEach((k, idx) => (row[k] = cells[idx]));
+
+    const outputPath = join(txdDir, row.txd);
+    const hash = await sha256(
+      `${await sha256(
+        await Deno.readFile(join(cwd, row.source)),
+      )}|${builderHash}|${row.texture}|${row.width}|${row.height}|${row.depth}`,
+    );
+    const cacheKey = `txd:${row.txd}`;
+    if (hashCache[cacheKey] === hash && await allExist([outputPath])) {
+      continue;
+    }
+    console.log(`  [*] Building ${row.txd} from ${row.source}...`);
+    const { success, stderr } = await new Deno.Command(
+      Deno.env.get("PYTHON") || "python",
+      {
+        args: [
+          txdBuilder,
+          "--build",
+          row.source,
+          row.texture,
+          outputPath,
+          "--depth",
+          row.depth,
+          "--size",
+          row.width,
+          row.height,
+        ],
+      },
+    ).output();
+    if (!success) {
+      console.error(
+        `Failed to build ${row.txd}:`,
+        new TextDecoder().decode(stderr),
+      );
+      Deno.exit(1);
+    }
+    await saveHash(cacheKey, hash);
+  }
+
   let txdCount = 0;
   for await (const entry of Deno.readDir(txdDir)) {
     if (entry.isFile && entry.name.toLowerCase().endsWith(".txd")) {

@@ -2,8 +2,8 @@ from pathlib import Path
 from PIL import Image
 
 def downscale_splash():
-    concept_path = Path("docs/rosa-title-splash-concept.jpg")
-    output_path = Path("docs/rosa-title-splash.jpg")
+    concept_path = Path("data/textures/rosa-title-splash-concept.jpg")
+    output_path = Path("data/textures/rosa-title-splash.jpg")
     
     if not concept_path.exists():
         raise FileNotFoundError(f"Concept image not found: {concept_path}")

@@ -25,6 +25,7 @@ Player.SetControl($player, false)
 Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 
 Camera.DoFade(500, Fade.Out)
+Hud.LoadSplash('SPLASH1')
 wait 500
 // FIXME: Use clearUI()
 Text.ClearSmallPrints()

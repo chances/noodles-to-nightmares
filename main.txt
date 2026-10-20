@@ -26,7 +26,7 @@ Streaming.LoadCollision(0)
 // Show the splash screen
 Camera.SetFadingColor(0, 0, 0)
 Camera.DoFade(0, Fade.Out)
-Hud.LoadSplash('SPLASH2')
+Hud.LoadSplash('SPLASH1')
 
 // Put the player at the front door of the ramen shop in Chinatown
 $player = Player.Create(0, 1039.66, -653.112, 14.015)

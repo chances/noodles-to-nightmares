@@ -18,7 +18,7 @@
 
 ## 3. Splash Screen & Title Attribution Specs
 
-In title cards and splash screens (such as [`docs/rosa-title-splash.jpg`](file:///c:/Users/enigm/Documents/GTA%203/Projects/Noodles%20to%20Nightmares/docs/rosa-title-splash.jpg)):
+In title cards and splash screens (such as [`data/textures/rosa-title-splash.jpg`](file:///c:/Users/enigm/Documents/GTA%203/Projects/Noodles%20to%20Nightmares/data/textures/rosa-title-splash.jpg)):
 - **Bottom Left**: Take-Two Interactive (`T2`) badge.
 - **Bottom Right**:
   - **Coldstart Computer Entertainment**: Electric royal blue rounded tile badge (`#2563EB`) housing the signature white snowflake emblem, sized at 45x41 px (7px corner radius, matching the exact 1.098 aspect ratio and footprint of the adjacent Rockstar Games badge).
