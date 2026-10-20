@@ -1,6 +1,7 @@
 //================================
 //------- Functions: Saves -------
 //================================
+// See https://docs.sannybuilder.com/language/functions
 
 function saveGame() 
   Game.ActivateSaveMenu()
@@ -297,4 +298,13 @@ function initSpawnParams()
   Zone.SetCarInfo('GTHOSP', DayOrNight.Night, 17, 0, 0, 0, 0, 0, 0, 0, 20, 350, 300, 200, 0, 0, 100)
   Zone.SetGroup('GTHOSP', DayOrNight.Day, 17)
   Zone.SetGroup('GTHOSP', DayOrNight.Night, 18)
+end
+
+//================================
+//-------- Functions: GUI --------
+//================================
+
+function clearUI()
+  Text.ClearSmallPrints()
+  Text.ClearPrints()
 end

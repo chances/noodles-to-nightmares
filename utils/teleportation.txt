@@ -1,0 +1,26 @@
+//================================
+//-------- Teleportation ---------
+//================================
+
+/// Teleport player to the given position.
+function teleport(x: float, y: float, z: float)
+  Text.ClearHelp()
+  wait 500
+
+  Player.SetControl($player, False)
+  Camera.DoFade(500, Fade.Out)
+  wait 500
+
+  if $isCarInWater == true
+  then
+    Player.WarpFromCarToCoord($player, x, y, z)
+  else
+    Player.SetControl($player, False)
+    Player.SetCoordinates($player, x, y, z)
+  end
+
+  wait 500
+  Camera.DoFade(500, Fade.In)
+  wait 500
+  Player.SetControl($player, True)
+end
