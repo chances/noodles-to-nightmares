@@ -10,6 +10,7 @@ const REWARD = 250 // Rosa's paycheck
 
 $onMission = true
 $isDriving = false
+$wasArrested = false
 $isDying = false
 
 wait 5000
@@ -23,6 +24,7 @@ Text.PrintString("The sooner I'm home in bed, the better.", {time} 3000)
 wait 3000
 
 // Flash Rosa's apartment blip
+$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
 Text.PrintHelpString("This map will guide you around town.")
 Hud.FlashObject(HudObject.Radar)
 wait 3000
@@ -34,8 +36,7 @@ checkSafety()
 if
   $isDriving == false
 then
-  Text.PrintHelpString("Find the best way home.")
-  ensureSafehouseBlip()
+  Text.PrintHelpString("Find your way home.")
 end
 
 while true
@@ -48,11 +49,16 @@ while true
     Player.IsDead($player)
     Player.HasBeenArrested($player)
   then
-    Text.PrintString("Ouch!", {time} 2500)
+    if not
+      Player.IsDead($player)
+    then
+      $wasArrested = true
+    end
     Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
     wait 3000
-
     Mission.Fail()
+
+    // Finish the tutorial
     break
   end
 
@@ -119,7 +125,7 @@ function checkSafety()
 
   $health = 0
   Player.GetHealth($player, $health)
-  // Remind the player not to die 😜
+  // Remind the player not to die 😜💀
   if and
     $health < 45
     $isDying == false

@@ -134,31 +134,36 @@ while true
   // Chores to keep things clean
   //=============================
 
-  if $onMission == true
+  // Hide the safehouse blip while on a mission
+  if and
+    $onMission == true
+    $missionIndex > 0
   then
-    // Hide the safehouse blip while on a mission
     Blip.Remove($SafeBlip)
     $SafeBlip = 0
   else
-    // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
-    // Note: Punk Noodles is 10.8m by 29.54m
-    // TODO: Refactor this into a function: avoidObstacles()
-    if and
-      $isCameraAvoidingObstacle == false
-      // NOTE: Are radii params are half-extents, i.e. actual radii
-      Player.LocateOnFoot2D($player, NOODLES_X, NOODLES_Y, NOODLES_HALF_EXTENT_X, NOODLES_HALF_EXTENT_Y, false)
-    then
-      // TODO: Ensure the camera doesn't clip the building, i.e. always used a fixed position _inside_ the noodle shop
-      // TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
-      Camera.SetFixedPosition(NOODLES_CAM_X, NOODLES_CAM_Y, NOODLES_CAM_Z, 0, 0, 0)
-      Camera.SetInterpolationParameters(0, {time} 750)
-      //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
-      $isCameraAvoidingObstacle = true
-    else
-      Camera.SetInterpolationParameters(0, {time} 750)
-      Camera.Restore()
-      $isCameraAvoidingObstacle = false
-    end
+    ensureSafehouseBlip()
+  end
+
+  // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
+  // Note: Punk Noodles is 10.8m by 29.54m
+  // TODO: Refactor this into a function: avoidObstacles()
+  if and
+    $isCameraAvoidingObstacle == false
+    $onMission == false
+    // NOTE: Are radii params are half-extents, i.e. actual radii
+    Player.LocateOnFoot2D($player, NOODLES_X, NOODLES_Y, NOODLES_HALF_EXTENT_X, NOODLES_HALF_EXTENT_Y, false)
+  then
+    // TODO: Ensure the camera doesn't clip the building, i.e. always used a fixed position _inside_ the noodle shop
+    // TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
+    Camera.SetFixedPosition(NOODLES_CAM_X, NOODLES_CAM_Y, NOODLES_CAM_Z, 0, 0, 0)
+    Camera.SetInterpolationParameters(0, {time} 750)
+    //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
+    $isCameraAvoidingObstacle = true
+  else
+    Camera.SetInterpolationParameters(0, {time} 750)
+    Camera.Restore()
+    $isCameraAvoidingObstacle = false
   end
 
   //=============================================
@@ -212,9 +217,6 @@ function tryTriggerMission()
         Text.PrintHelpString("You're done with the game already?")
         wait 2500
     end
-    // Player is NOT on a mission; do some chores:
-    else
-      ensureSafehouseBlip()
   end
 end
 

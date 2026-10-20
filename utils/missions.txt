@@ -26,9 +26,12 @@ function clearUI()
   Text.ClearPrints()
 end
 
-/// Ensure the player's safehouse blip is shown.
+/// Ensure the player's safehouse blip is shown, if they've completed the tutorial.
 function ensureSafehouseBlip()
-  $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  if $missionIndex > 0
+  then
+    $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  end
 end
 
 function saveGame() 
