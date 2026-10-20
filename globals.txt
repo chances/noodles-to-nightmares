@@ -1,4 +1,5 @@
 {$INCLUDE constants.txt}
+{$INCLUDE variables.txt}
 
 // Setup Missions constants
 set_total_number_of_missions MAX_MISSION_INDEX
@@ -7,24 +8,7 @@ $onMission = false
 // FIXME: Update this flag in the main loop
 $isCarInWater = false
 
-// FIXME: Global state is a code-smell
-//================================
-//-------- Global State ----------
-//================================
-
-var
-  $missionIndex: int
-  $player: Player
-  $playerChar: Char
-  $myCar: Car
-  $isCameraAvoidingObstacle: int
-  //====================//
-  $SafeBlip: Blip
-  $PunkNoodles: Pickup
-  $NoodlesBlip: Blip
-  $ApartmentGarage: Garage
-end
-
+// Note: Global variable declarations live in variables.txt
 $missionIndex = START_MISSION_INDEX
 $myCar = 0
 $isCameraAvoidingObstacle = false

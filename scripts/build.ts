@@ -194,9 +194,20 @@ async function saveHash(key: string, hash: string) {
   await Deno.writeTextFile(cachePath, JSON.stringify(hashCache, null, 2));
 }
 
-/** Like make: compiles only when the source hash changed or the output is missing. */
-async function compileIfChanged(inputPath: string, outputPath: string) {
-  const hash = await hashScript(inputPath);
+/**
+ * Like make: compiles only when the source hash changed or the output is missing.
+ * `dependsOn` scripts count toward the hash without being compiled themselves,
+ * e.g. a mission reads main's global variable slots, so its output goes stale when they move.
+ */
+async function compileIfChanged(
+  inputPath: string,
+  outputPath: string,
+  dependsOn: string[] = [],
+) {
+  const hash = await sha256(
+    (await Promise.all([inputPath, ...dependsOn].map((p) => hashScript(p))))
+      .join("\n"),
+  );
   if (await allExist([outputPath]) && hashCache[inputPath] === hash) {
     console.log(`  [=] Up to date: ${basename(inputPath)}`);
     return;
@@ -367,7 +378,7 @@ if (shouldRun(2, "missions")) {
     const outputPath = join(missionsDir, `${missionName}.cm`);
 
     console.log(`  [*] ${entryName}`);
-    await compileIfChanged(inputPath, outputPath);
+    await compileIfChanged(inputPath, outputPath, [join(cwd, "main.txt")]);
     await Deno.copyFile(outputPath, join(cleoStagingDir, `${missionName}.cm`));
   }
   console.log("  [+] Packaged modloader/Noodles/cleo/*.cm");

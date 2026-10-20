@@ -23,7 +23,9 @@ try {
     throw new Error("Not a file");
   }
 } catch {
-  console.error(`Error: Drag-N-Drop archive not found at ${dragDropZip}. Run 'deno task build' first.`);
+  console.error(
+    `Error: Drag-N-Drop archive not found at ${dragDropZip}. Run 'deno task build' first.`,
+  );
   Deno.exit(1);
 }
 
@@ -43,10 +45,64 @@ const cmd = new Deno.Command("tar", {
 });
 const { success, stderr } = await cmd.output();
 if (!success) {
-  console.error("[-] Failed to extract Drag-N-Drop.zip via tar:", new TextDecoder().decode(stderr));
+  console.error(
+    "[-] Failed to extract Drag-N-Drop.zip via tar:",
+    new TextDecoder().decode(stderr),
+  );
   Deno.exit(1);
 }
 console.log("  [+] Extracted Drag-N-Drop package assets into game directory");
+
+/**
+ * Lints for loose copies of packaged scripts in `[gta3]/CLEO`. CLEO loads that
+ * folder directly, so a stale copy there can shadow the modloader one.
+ */
+async function findShadowingCleoFiles(
+  packagedDir: string,
+  looseDir: string,
+): Promise<string[]> {
+  const shadowing: string[] = [];
+  let looseNames: Set<string>;
+  try {
+    looseNames = new Set<string>();
+    for await (const entry of Deno.readDir(looseDir)) {
+      if (entry.isFile) looseNames.add(entry.name.toLowerCase());
+    }
+  } catch {
+    return shadowing; // No loose folder, nothing can shadow
+  }
+  try {
+    for await (const entry of Deno.readDir(packagedDir)) {
+      if (entry.isFile && looseNames.has(entry.name.toLowerCase())) {
+        shadowing.push(join(looseDir, entry.name));
+      }
+    }
+  } catch {
+    // Nothing packaged in this folder
+  }
+  return shadowing;
+}
+
+const shadowedFiles = [
+  ...await findShadowingCleoFiles(
+    join(noodlesDestDir, "cleo"),
+    join(gta3Base, "CLEO"),
+  ),
+  ...await findShadowingCleoFiles(
+    join(noodlesDestDir, "cleo", "cleo_text"),
+    join(gta3Base, "CLEO", "CLEO_TEXT"),
+  ),
+];
+if (shadowedFiles.length > 0) {
+  console.error(
+    "[-] Conflict: these files in [gta3]/CLEO duplicate packaged modloader/Noodles files and may be stale:",
+  );
+  for (const file of shadowedFiles) console.error(`      ${file}`);
+  console.error(
+    "    Remove them so the modloader copies are the ones that run.",
+  );
+  Deno.exit(1);
+}
 
 // Ensure unflagged runner hardlink exists (bypasses Windows UAC elevation)
 const gtaExe = join(gta3Base, "gta3.exe");

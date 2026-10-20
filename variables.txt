@@ -1,0 +1,57 @@
+// FIXME: 🦨 Global state is a code-smell
+//================================
+//-------- Global State ----------
+//================================
+// Sanny hands out a script's undeclared globals in first-use order, so main and each
+// mission would otherwise disagree on which slot a name lives in. Every global is
+// pinned to an explicit slot here, and main and every mission include this file first.
+
+var
+  $missionIndex: int
+  $player: Player
+  $playerChar: Char
+  $sal: Char
+  $myCar: Car
+  $isCameraAvoidingObstacle: int
+  //====================//
+  $SafeBlip: Blip
+  $PunkNoodles: Pickup
+  $NoodlesBlip: Blip
+  $ApartmentGarage: Garage
+end
+
+// Shared by main and the missions
+Alloc($missionIndex, 4400)
+Alloc($player, 4401)
+Alloc($playerChar, 4402)
+Alloc($sal, 4403)
+Alloc($myCar, 4404)
+Alloc($isCameraAvoidingObstacle, 4405)
+
+// Main
+Alloc($SafeBlip, 4406)
+Alloc($PunkNoodles, 4407)
+Alloc($NoodlesBlip, 4408)
+Alloc($ApartmentGarage, 4409)
+Alloc($isCarInWater, 4410)
+Alloc($isSafehouseAvail, 4411)
+Alloc($SafeInfo, 4412)
+Alloc($Bribe, 4413)
+Alloc($SavePickup, 4414)
+Alloc($Canyonero, 4415)
+Alloc($KurumaGen, 4416)
+Alloc($gen_car3, 4417)
+Alloc($tempPickup, 4418)
+
+// Missions
+Alloc($isDying, 4419)
+Alloc($isWanted, 4420)
+Alloc($isDriving, 4421)
+Alloc($health, 4422)
+Alloc($isSalNearby, 4423)
+Alloc($payphone, 4424)
+Alloc($payphoneBlip, 4425)
+Alloc($payphoneSfx, 4426)
+Alloc($package, 4427)
+Alloc($pickupBlip, 4428)
+Alloc($deliveryBlip, 4429)

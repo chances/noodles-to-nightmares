@@ -126,26 +126,26 @@ while true
     // Hide the safehouse blip while on a mission
     Blip.Remove($SafeBlip)
     $SafeBlip = 0
-  end
-
-  // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
-  // Note: Punk Noodles is 10.8m by 29.54m
-  // TODO: Refactor this into a function: avoidObstacles()
-  if and
-    $isCameraAvoidingObstacle == false
-    // NOTE: Are radii params are half-extents, i.e. actual radii
-    Player.LocateOnFoot2D($player, 1031.13, -654.956, 5.4, 14.77, false)
-  then
-    // TODO: Ensure the camera doesn't clip the building, i.e. always used a fixed position _inside_ the noodle shop
-    // TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
-    Camera.SetFixedPosition(1027.28, -623.825, 21.47, 0, 0, 0)
-    Camera.SetInterpolationParameters(0, {time} 750)
-    //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
-    $isCameraAvoidingObstacle = true
   else
-    Camera.SetInterpolationParameters(0, {time} 750)
-    Camera.Restore()
-    $isCameraAvoidingObstacle = false
+    // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
+    // Note: Punk Noodles is 10.8m by 29.54m
+    // TODO: Refactor this into a function: avoidObstacles()
+    if and
+      $isCameraAvoidingObstacle == false
+      // NOTE: Are radii params are half-extents, i.e. actual radii
+      Player.LocateOnFoot2D($player, 1031.13, -654.956, 5.4, 14.77, false)
+    then
+      // TODO: Ensure the camera doesn't clip the building, i.e. always used a fixed position _inside_ the noodle shop
+      // TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
+      Camera.SetFixedPosition(1027.28, -623.825, 21.47, 0, 0, 0)
+      Camera.SetInterpolationParameters(0, {time} 750)
+      //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
+      $isCameraAvoidingObstacle = true
+    else
+      Camera.SetInterpolationParameters(0, {time} 750)
+      Camera.Restore()
+      $isCameraAvoidingObstacle = false
+    end
   end
 
   //=============================================

@@ -1,0 +1,41 @@
+//================================
+//------- Functions: Debug -------
+//================================
+// Tools that write readings to CLEO\debug.ini in the game folder, so values can be read from disk instead of off the screen.
+// Needs CLEO's III.IniFiles.cleo plugin in CLEO\CLEO_PLUGINS, and constants.txt for the DEBUG_* log points.
+//
+// Notes:
+// - A bare file name makes Win32 use the Windows directory, so the path needs a folder.
+// - CLEO III cannot pass strings into functions, so callers pass a DEBUG_* constant from constants.txt and each
+//   function below maps it to a literal ini section and key.
+// - To add a log point, add a const to constants.txt and a case to each function below.
+
+/// Logs a float reading under the ini section and key of the given DEBUG_* log point
+function debugLogFloat(point: int, value: float)
+  switch point
+    case DEBUG_ROSA_HEADING
+      IniFile.WriteFloat(value, "CLEO\debug.ini", "Rosa", "Heading")
+    case DEBUG_SAL_HEADING
+      IniFile.WriteFloat(value, "CLEO\debug.ini", "Sal", "Heading")
+    case DEBUG_SAL_FACE_HEADING
+      IniFile.WriteFloat(value, "CLEO\debug.ini", "Sal", "FaceHeading")
+  end
+end
+
+/// Logs an int reading under the ini section and key of the given DEBUG_* log point
+function debugLogInt(point: int, value: int)
+  switch point
+    case DEBUG_ROSA_HEADING
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Rosa", "Heading")
+    case DEBUG_SAL_HEADING
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "Heading")
+    case DEBUG_SAL_FACE_HEADING
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "FaceHeading")
+  end
+end
+
+/// Logs a character's heading, in degrees, under the given DEBUG_* log point
+function debugLogHeading(point: int, ped: Char)
+  float heading = Char.GetHeading(ped)
+  debugLogFloat(point, heading)
+end

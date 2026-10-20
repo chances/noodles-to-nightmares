@@ -6,3 +6,8 @@ const SALVATORE = 100
 
 // Blips
 const PAYPHONE = 8 // RadarSprite.Diablo
+
+// Debug log points, mapped to an ini section and key by utils/debug.txt
+const DEBUG_ROSA_HEADING = 1
+const DEBUG_SAL_HEADING = 2
+const DEBUG_SAL_FACE_HEADING = 3

@@ -2,15 +2,19 @@
 //----- Functions: Missions ------
 //================================
 
+/// Inverts the given heading, e.g. 90° becomes 270°.
 function invertHeading(heading: float): float
-  float opposite = heading + 180.0
+  // Note: Sanny compiles a three-operand float sum as INT_ADD (0A8E), so add in place
+  float opposite = heading
+  opposite += 180.0
   if opposite >= 360.0
   then
     opposite -= 360.0
   end
   // Note: `return` is not supported in GTA 3!
   // See https://docs.sannybuilder.com/language/functions#return-from-function
-  cleo_return opposite
+  // Note: The first `cleo_return` argument is the number of returned values, e.g. `1`
+  cleo_return 1 opposite
 end
 
 function saveGame() 

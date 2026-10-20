@@ -1,4 +1,5 @@
 {$CLEO .cm}
+{$INCLUDE ../variables.txt}
 
 //=============================================
 // Mission 0: Car Tutorial
