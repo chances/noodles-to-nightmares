@@ -111,7 +111,7 @@ carefully, avoid high-speed chases, and think tactically about her route.
 
 ### Script Requirements
 
-- [ ] Interior dialogue at Punk Noodles (accept job cutscene)
+- [x] Interior dialogue at Punk Noodles (accept job cutscene)
 - [ ] Waypoint marker for package pickup location outside her apartment
 - [ ] Ring the pay-phone (1168.33, -414.141, 22.8)
       `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
@@ -264,7 +264,7 @@ she's not just a delivery driver.
 
 ### Side Mission: Supply Run
 
-**Script File**: `missions/side_shopping.txt` (To be created)
+**Script File**: [`missions/side_supply_run.txt`](../missions/side_supply_run.txt) (Stub)
 
 **Objective**: Rosa runs a simple errand: buy groceries for the Punk Noodles
 owner, Lee Chong (character 87). It goes sideways when a street gang blocks the
@@ -276,7 +276,7 @@ route or a homeless NPC steals her money.
 - Minor combat or stealth (stealing back cash)
 - Shopping cart/package delivery mechanic
 
-**Reward**: $150 + relationship boost with shop owner
+**Reward**: $250 + relationship boost with shop owner
 
 **Teaching Points**: Shop interiors, NPC dialogue trees, inventory management
 
@@ -284,7 +284,7 @@ route or a homeless NPC steals her money.
 
 ### Side Mission: The Squeeze
 
-**Script File**: `missions/side_debt_collect.txt` (To be created)
+**Script File**: [`missions/side_debt_collect.txt`](../missions/side_debt_collect.txt) (Stub)
 
 **Objective**: A street-level loan shark hires Rosa to collect a debt from a
 local business owner. Rosa intimidates and collects payment.

@@ -9,6 +9,7 @@ DEFINE MISSIONS 0
 nop
 
 {$INCLUDE globals.txt}
+{$INCLUDE utils/geography.txt}
 
 //================================
 //------------ MAIN --------------
@@ -29,16 +30,16 @@ Camera.DoFade(0, Fade.Out)
 Hud.LoadSplash('SPLASH1')
 
 // Put the player at the front door of the ramen shop in Chinatown
-$player = Player.Create(0, 1039.66, -653.112, 14.015)
-Player.SetHeading($player, 315.0) // Facing north-east
+$player = Player.Create(0, ROSA_SPAWN_X, ROSA_SPAWN_Y, ROSA_SPAWN_Z)
+Player.SetHeading($player, ROSA_SPAWN_HEADING) // Facing north-east
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
 Player.SetNeverGetsTired($player, True)
 Player.SetControl($player, False)
 
 // QUESTION: This removes the bridge barriers?
-World.SetVisibilityOfClosestObjectOfType(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, false)
-World.SwapNearestBuildingModel(1027.25, -933.6875, 15.0, 50.0, #INDHELIX_BARRIER, #LOD_LAND014)
+World.SetVisibilityOfClosestObjectOfType(BRIDGE_BARRIER_X, BRIDGE_BARRIER_Y, BRIDGE_BARRIER_Z, BRIDGE_BARRIER_RADIUS, #INDHELIX_BARRIER, false)
+World.SwapNearestBuildingModel(BRIDGE_BARRIER_X, BRIDGE_BARRIER_Y, BRIDGE_BARRIER_Z, BRIDGE_BARRIER_RADIUS, #INDHELIX_BARRIER, #LOD_LAND014)
 
 // Sunshine! 🌞 :D
 Weather.ForceNow(WeatherType.Sunny)
@@ -64,7 +65,7 @@ Audio.SetMusicDoesFade(true)
 {$INCLUDE utils/packages.txt}
 
 // Stream in everything near or visible to the player
-Streaming.LoadScene(1039.66, -653.112, 14.015)
+Streaming.LoadScene(ROSA_SPAWN_X, ROSA_SPAWN_Y, ROSA_SPAWN_Z)
 // TODO: Extract important model IDs to constants
 Streaming.RequestModel(332)
 Streaming.RequestModel(343)
@@ -109,8 +110,8 @@ Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
 
 // Safehouse: Rosa's apartment, NE Portland, area behind Rosa's building
-$SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
-$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1173.523, -415.67, 23.50)
+$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, SAFEHOUSE_INFO_X, SAFEHOUSE_INFO_Y, SAFEHOUSE_INFO_Z)
 Garage.ChangeType($ApartmentGarage, GarageType.HideoutOne)
 
 // Set the clock to 9:25p and let the player enjoy the splash art
@@ -145,11 +146,11 @@ while true
     if and
       $isCameraAvoidingObstacle == false
       // NOTE: Are radii params are half-extents, i.e. actual radii
-      Player.LocateOnFoot2D($player, 1031.13, -654.956, 5.4, 14.77, false)
+      Player.LocateOnFoot2D($player, NOODLES_X, NOODLES_Y, NOODLES_HALF_EXTENT_X, NOODLES_HALF_EXTENT_Y, false)
     then
       // TODO: Ensure the camera doesn't clip the building, i.e. always used a fixed position _inside_ the noodle shop
       // TODO: Extract this into a new function: animateCameraTo(1027.28, -623.825, -21.47)
-      Camera.SetFixedPosition(1027.28, -623.825, 21.47, 0, 0, 0)
+      Camera.SetFixedPosition(NOODLES_CAM_X, NOODLES_CAM_Y, NOODLES_CAM_Z, 0, 0, 0)
       Camera.SetInterpolationParameters(0, {time} 750)
       //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
       $isCameraAvoidingObstacle = true
@@ -196,11 +197,11 @@ function tryTriggerMission()
         if $NoodlesBlip == 0
         then
           // Add a contect blip to Punk Noodles
-          Blip.AddSpriteForContactPoint(1031.13, -654.956, 14.0094, RadarSprite.Asuka, $NoodlesBlip)
+          Blip.AddSpriteForContactPoint(NOODLES_X, NOODLES_Y, NOODLES_Z, RadarSprite.Asuka, $NoodlesBlip)
         end
 
         // Trigger: Start the mission inside Punk Noodles
-        if Player.LocateStoppedOnFoot3D($player, 1031.13, -654.956, 14.0094, 2.5, 2.5, 2.5, true)
+        if Player.LocateStoppedOnFoot3D($player, NOODLES_X, NOODLES_Y, NOODLES_Z, 2.5, 2.5, 2.5, true)
         then
           clearUI()
           register_mission_given
@@ -216,7 +217,7 @@ function tryTriggerMission()
       // Ensure the player's safehouse blip is shown
       if $SafeBlip == 0
       then
-        $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
+        $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
       end
   end
 end
@@ -265,6 +266,6 @@ function monitorShortcutKey_T()
     wait 3250
 
     // Teleport player to front door of Rosa's apartment
-    teleport(1170.372, -416.70, 23.178)
+    teleport(SAFEHOUSE_TELEPORT_X, SAFEHOUSE_TELEPORT_Y, SAFEHOUSE_TELEPORT_Z)
   end
 end

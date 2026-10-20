@@ -1,0 +1,126 @@
+//================================
+//----- Constants: Geography -----
+//================================
+// POI coordinates.
+// Naming: <PLACE>_<WHAT>_<AXIS>, where AXIS is X, Y, Z, or HEADING.
+
+//--------------------------------
+// Portland: Punk Noodles
+//--------------------------------
+// Interior is 10.8m by 29.54m. Source: main.txt
+const NOODLES_X = 1031.13 // Center of the building, dinerind in custom.ipl
+const NOODLES_Y = -654.956
+const NOODLES_Z = 14.0094
+const NOODLES_HALF_EXTENT_X = 5.4 // Camera-avoidance zone, half-extents
+const NOODLES_HALF_EXTENT_Y = 14.77
+
+// Rosa's new-game spawn, at the front door
+const ROSA_SPAWN_X = 1039.66
+const ROSA_SPAWN_Y = -653.112
+const ROSA_SPAWN_Z = 14.015
+const ROSA_SPAWN_HEADING = 315.0 // Facing north-east
+
+// Camera that avoids clipping inside the shop
+const NOODLES_CAM_X = 1027.28
+const NOODLES_CAM_Y = -623.825
+const NOODLES_CAM_Z = 21.47
+
+// Easy Money cutscene: where Salvatore stands and where the security camera sits
+const NOODLES_SAL_X = 1031.98
+const NOODLES_SAL_Y = -660.83
+const NOODLES_SAL_Z = 14.2
+const NOODLES_SECURITY_CAM_X = 1034.16
+const NOODLES_SECURITY_CAM_Y = -646.5
+const NOODLES_SECURITY_CAM_Z = 15.0
+const NOODLES_SOUND_Z = 11.073 // One-off sound at the security camera's X and Y
+
+//--------------------------------
+// Portland: Rosa's Apartment
+//--------------------------------
+// Safehouse: the area behind Rosa's building
+const SAFEHOUSE_X = 1165.0
+const SAFEHOUSE_Y = -398.5
+const SAFEHOUSE_Z = 25.8 // Blip, bribe, and save pickup height
+const SAFEHOUSE_ARRIVE_Z = 26.25 // Mission 0 arrival check
+const SAFEHOUSE_ARRIVE_RADIUS = 3.0
+
+// Mission 0 arrival cutscene camera
+const SAFEHOUSE_CAM_X = 1183.0
+const SAFEHOUSE_CAM_Y = -384.4
+const SAFEHOUSE_CAM_Z = 34.0
+
+// Info pickup
+const SAFEHOUSE_INFO_X = 1173.523
+const SAFEHOUSE_INFO_Y = -415.67
+const SAFEHOUSE_INFO_Z = 23.50
+
+// Debug teleport target
+const SAFEHOUSE_TELEPORT_X = 1170.372
+const SAFEHOUSE_TELEPORT_Y = -416.70
+const SAFEHOUSE_TELEPORT_Z = 23.178
+
+// The apartment building, ind_newtenement08 (model 445)
+const TENEMENT_X = 1160.77
+const TENEMENT_Y = -407.515
+const TENEMENT_Z = 33.28
+
+//--------------------------------
+// Portland: Payphone
+//--------------------------------
+// Source: missions/1_shady_job.txt
+const PAYPHONE_X = 1168.33
+const PAYPHONE_Y = -414.141 // Ringing, grabbing, and the phone object
+const PAYPHONE_BLIP_Y = -414.841 // Blip and the pick-up trigger
+const PAYPHONE_Z = 22.8
+const PAYPHONE_NEAR_RADIUS = 20 // The ringing trigger zone, in X and Y
+const PAYPHONE_CALL_CAM_X = 1193.55 // Over-the-shoulder camera during the call
+const PAYPHONE_CALL_CAM_Y = -409.2625
+const PAYPHONE_CALL_CAM_Z = 0.89
+
+//--------------------------------
+// Mission 1: Easy Money
+//--------------------------------
+const PACKAGE_PICKUP_X = 1316.96 // Docks
+const PACKAGE_PICKUP_Y = -1088.5
+const PACKAGE_PICKUP_Z = 11.1705
+const DELIVERY_X = 966.364 // The projects, north side
+const DELIVERY_Y = -133.515
+const DELIVERY_Z = 3.8
+const DELIVERY_RADIUS = 2.5
+
+//--------------------------------
+// Portland: SupaSave
+//--------------------------------
+// Source: data/maps/noodles/custom.ipl (supasave_open, id 3153)
+const SUPASAVE_X = 1296.64
+const SUPASAVE_Y = -592.45
+const SUPASAVE_Z = 13.53
+
+//--------------------------------
+// Side Mission: Supply Run
+//--------------------------------
+// TODO: Fill in from the remodel: the pavement in front of the SupaSave door
+const SUPASAVE_DOOR_X = 1296.64
+const SUPASAVE_DOOR_Y = -592.45
+const SUPASAVE_DOOR_Z = 13.53
+// TODO: Fill in: the van's parking spot outside Punk Noodles
+const SUPPLY_VAN_X = 1031.98
+const SUPPLY_VAN_Y = -660.83
+const SUPPLY_VAN_Z = 14.2
+// TODO: Fill in: Lee Chong's spot inside Punk Noodles
+const LEE_CHONG_X = 1031.98
+const LEE_CHONG_Y = -660.83
+const LEE_CHONG_Z = 14.2
+// TODO: Fill in: a chokepoint on the road between the shop and SupaSave
+const SUPPLY_GANG_X = 1160.0
+const SUPPLY_GANG_Y = -620.0
+const SUPPLY_GANG_Z = 14.0
+
+//--------------------------------
+// World Tweaks
+//--------------------------------
+// Bridge barrier removed and swapped for a LOD in main.txt
+const BRIDGE_BARRIER_X = 1027.25
+const BRIDGE_BARRIER_Y = -933.6875
+const BRIDGE_BARRIER_Z = 15.0
+const BRIDGE_BARRIER_RADIUS = 50.0

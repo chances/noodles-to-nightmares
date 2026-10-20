@@ -1,5 +1,6 @@
 {$CLEO .cm}
 {$INCLUDE ../variables.txt}
+{$INCLUDE ../utils/geography.txt}
 
 //=============================================
 // Mission 0: Car Tutorial
@@ -56,9 +57,9 @@ while true
 
   // Wait for the player to get to their apartment
   // QUESTION: Why is Rosa's apartment collision not correct?
-  if Player.LocateAnyMeans3D($player, 1165.0, -398.5, 26.25, 3.0, 3.0, 3.0, true)
+  if Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
   then
-    Camera.SetFixedPosition(1183.0, -384.4, 34.0, 0, 0, 0)
+    Camera.SetFixedPosition(SAFEHOUSE_CAM_X, SAFEHOUSE_CAM_Y, SAFEHOUSE_CAM_Z, 0, 0, 0)
     Camera.SetInterpolationParameters(0, {time} 1250)
     Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
 
