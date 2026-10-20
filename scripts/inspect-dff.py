@@ -46,8 +46,9 @@ def inspect_file(filepath):
             print(f"    prelit alpha min: {min(alphas)}, max: {max(alphas)}, zeros: {alphas.count(0)}")
         print(f"    materials ({len(g.materials)}):")
         for mi, m in enumerate(g.materials):
-            tex = m.texture.name if (hasattr(m, 'texture') and m.texture) else "NONE"
-            mask = m.texture.mask if (hasattr(m, 'texture') and m.texture) else "NONE"
+            tex_obj = m.textures[0] if (hasattr(m, 'textures') and m.textures) else (getattr(m, 'texture', None))
+            tex = tex_obj.name if (tex_obj and hasattr(tex_obj, 'name')) else "NONE"
+            mask = tex_obj.mask if (tex_obj and hasattr(tex_obj, 'mask')) else "NONE"
             color = f"RGBA({m.color.r},{m.color.g},{m.color.b},{m.color.a})" if hasattr(m, 'color') else "None"
             print(f"      [{mi}] tex='{tex}', mask='{mask}', color={color}")
     print(f"Atomics: {len(model.atomic_list)}")

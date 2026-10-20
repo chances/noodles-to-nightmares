@@ -63,11 +63,19 @@ Audio.SetMusicDoesFade(false)
 {$INCLUDE utils/spawn_points.txt}
 {$INCLUDE utils/packages.txt}
 
+// Load the model for Rosa's apartment (ind_newtenement08)
+// TODO: Extract important model IDs to constants
+Streaming.RequestModel(445)
+Streaming.LoadModel(445)
+
 // Wait for the scene to load
 while true
   wait 0
 
-  if Streaming.IsCollisionInMemory(LevelName.Industrial)
+  if and
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+    // FIXME: Only do this if the player is in Little Italy
+    Streaming.IsModelLoaded(445)
   then
     break
   else
@@ -75,12 +83,14 @@ while true
   end
 end
 
-// FIXME: "Welcome to Portland" is shown before this
+// QUESTION: Why isn't Rosa's apartment ready yet?
+// QUESTION: Why is the Rosa's apartment collision not correct?
 
 // Load our characters
 Streaming.LoadSpecialCharacter(1, 'ASUKA')
 Streaming.LoadSpecialCharacter(2, 'MARIA')
 // TODO: utils/characters.txt
+// QUESTION: `Char` class is only for third-party characters?
 // FIXME: Char.Create(PedType.CivFemale, 83, 1039, -653, 14, $playerChar)
 Char.Undress($playerChar, 'PLAYER')
 Char.Dress($playerChar)
@@ -113,6 +123,7 @@ while true
   if $onMission == true
   then
     // De-clutter the UI
+    // QUESTION: Does this clear prompts too fast?
     Text.ClearSmallPrints()
     Text.ClearPrints()
 

@@ -153,6 +153,7 @@ wait 3250
 // End the cutscene
 Camera.DoFade(500, Fade.Out)
 Camera.RestoreJumpcut()
+// QUESTION: Will this prevent Rosa from finding a car?
 Camera.SetGenerateCarsAround(false)
 wait 525
 Camera.DoFade(500, Fade.In)
@@ -197,6 +198,7 @@ Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
 wait 5500
 
 // TODO: Send this text on the pager
+// FIXME: Pager.Send("Here's your cut. There may be more work soon. I'll be in touch.", )
 Text.PrintString("Here's your cut. There may be more work soon. I'll be in touch.", 4000)
 wait 4250
 

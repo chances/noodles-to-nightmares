@@ -1,5 +1,8 @@
 objs
+# Overrides
+445, ind_newtenement08, rosa_apartment, 1, 115, 0
+
+# New Models
 # 3153, supasave_open, supasave_open, 1, 160.0, 0
-3154, rosa_apartment, rosa_apartment, 1, 300.0, 0
-# 3155, dinerind, newbuildind, 1, 300.0, 0
+# 3155, dinerind, newbuildind, 1, 137.5, 0
 end

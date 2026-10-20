@@ -43,24 +43,40 @@
 ### E. DFF Byte-Level Inspection Tooling (Added)
 - **Tooling Enhancement**: Created [`scripts/inspect-dff.py`](../../scripts/inspect-dff.py) powered by DragonFF's `dff` library. Parses and reports Clump RenderWare version, frame tree, geometry flags, prelit alpha ranges (detecting 0-alpha verts), triangle/vertex counts, exact bounding sphere, vertex extents (min/max bounds on X/Y/Z), material texture mappings, and atomic flags.
 
+### F. Vanilla Asset Byte-Level Comparison (Completed)
+- **Finding**: Inspected vanilla baseline [`models/Rosa's Apartment/ind_newtenement08.dff`](../../models/Rosa's%20Apartment/ind_newtenement08.dff) using [`scripts/inspect-dff.py`](../../scripts/inspect-dff.py).
+- **Results**:
+  - RW Version: `208898` (`0x33002` / RenderWare 3.3.0.2).
+  - Structure: 1 Frame (`ind_newtenement08_l0`, parent `-1`), 1 Geometry (`flags: 0x1002E`, 452 tris, 683 verts), 1 Atomic (`flags: 0x4`).
+  - Bounding Sphere: Center `(0.118, 13.171, -0.071)`, radius `43.519`.
+  - Geometry Extents: X `(-25.01, 25.24)`, Y `(-6.66, 33.00)`, Z `(-14.53, 14.39)`.
+- **Conclusion**: Exported [`rosa_apartment.dff`](../../models/Rosa's%20Apartment/rosa_apartment.dff) matches the vanilla asset in RW version (`208898`), geometry flags (`0x1002E`), atomic flags (`0x4`), frame count (`1`), and bounding extents. RW version `208898` is **not** the cause of invisibility.
+
+### G. Texture Inspection Script Correction (Completed)
+- **Finding**: Fixed material texture lookup in [`scripts/inspect-dff.py`](../../scripts/inspect-dff.py) to inspect `m.textures[0]` rather than `m.texture`.
+- **Result**: Confirmed all 15 textured materials in `rosa_apartment.dff` cleanly map to textures (`concrete_64HV`, `tenwhitebrick64`, `billboard`, etc.) with zero null or corrupted texture references.
+
+### H. Draw Distance Lowering (Tested - Ruled Out)
+- **Test**: Reduced draw distance in [`custom.ide`](../../data/maps/noodles/custom.ide) from `300.0` to `160.0` to match vanilla `ind_newtenement08`.
+- **Result**: Manual smoke-test confirmed the model remains invisible. Draw distance ceiling is not the cause.
+
+### I. IPL Explicit Float Formatting (Tested - Ruled Out)
+- **Test**: Formatted scale values explicitly as floats (`1.0, 1.0, 1.0`) in [`custom.ipl`](../../data/maps/noodles/custom.ipl).
+- **Result**: Manual smoke-test confirmed the model remains invisible. Coordinate / scale token typing is not the cause.
+
+### J. TXD Square Billboard Texture (Tested - Ruled Out)
+- **Test**: Resized `billboard.jpg` to square power-of-two dimensions and re-imported into [`rosa_apartment.txd`](../../models/Rosa's%20Apartment/rosa_apartment.txd).
+- **Result**: Manual smoke-test confirmed the model remains invisible. Texture aspect/dimension in TXD is not the cause.
+
 ---
 
-## 3. Leading Hypothesis: RenderWare Version Mismatch in DFF Export
+## 3. Active Investigation: World Sector Culling & Vanilla Building Overlap
 
-- **Discovery**: Comparing extracted vanilla GTA III assets (`ind_newtenement08.dff`, `ind_newbuilds03.dff`) against `rosa_apartment.dff`:
-  - **Vanilla Models**: RW Version `204800` (`0x32000`, library ID `0x0800FFFF`).
-  - **Exported Model**: RW Version `208898` (`0x33002`, library ID `0x0C02FFFF`).
-- **Structural Difference in RenderWare Clump Stream**:
-  - In DragonFF (`gtaLib/dff.py` lines 2703, 2886):
-    - For `version < 0x33000` (e.g. `0x32000`): The Clump data struct contains strictly **4 bytes** (`num_atomics`).
-    - For `version >= 0x33000` (e.g. `0x33002`): The Clump data struct contains **12 bytes** (`num_atomics`, `num_lights`, `num_cameras`).
-  - Vanilla GTA III PC stream reader expects the 4-byte clump struct. When fed `0x33002`, the 8 extra bytes in the clump struct displace chunk stream alignment or cause early reader failure.
-- **Action**: Update `version` in [`scripts/export-blend-models.py`](../../scripts/export-blend-models.py) from `0x33002` to `0x32000` (`v3.2.0.0` / `0x0800FFFF`), rebuild, and re-test.
-
----
-
-## 4. Secondary Remaining Potential Causes
-
-1. **Atomic Collision Test Flag**: Vanilla models use atomic flags `0x5` (`rpATOMICCOLLISIONTEST | rpATOMICRENDER`), whereas DragonFF exports `0x4` (`rpATOMICRENDER`).
-2. **Frustum Culling / Bounding Sphere**: Merged geometry bounding sphere is centered at `(0.118, 13.171, -0.071)` with radius `43.519`. Ensure the expanded radius does not fail engine sector culling.
-3. **IPL / IDE Model Type Configuration**: Check draw distance (`300.0` vs vanilla `115.0`) or map sector occlusion.
+### Hypothesis 4: World Sector Culling & Vanilla Building Overlap
+- **Evidence**:
+  - Position `(1160.770020, -407.515015, 29.460000)` coincides with Portland's existing tenement block where vanilla `ind_newtenement08` resides.
+  - In GTA III, if the vanilla building instance is not removed or if the area falls inside a pre-compiled occlusion/cull zone, sector culling or z-buffer / bounding-box overlap may hide the newly instantiated model.
+  - Alternatively, island streaming zones or binary IPL (`.ipl` in `gta3.img`) sector instances might override or cull custom text IPL instances in the same world bounding cell.
+- **Action Plan**:
+  1. **Open Coordinate Isolation**: Spawn `rosa_apartment` at an open test coordinate with no nearby geometry (e.g. Portland beach / docks: `880.0, -600.0, 15.0` or Portland safehouse courtyard) to verify if the asset renders outside the tenement sector.
+  2. **Vanilla Instance Replacement**: Identify and remove / cull the original `ind_newtenement08` instance from Portland's placement.

@@ -63,6 +63,12 @@
   - The internal COLL model name in the 22-byte archive header must strictly match the IDE model name (e.g. `rosa_apartment`, not `rosa_apartment.col`).
   - `build.ts` automatically synchronizes `data/noodles_custom.txt` against `models/manifest.csv`, commenting out disabled collision files before packaging.
   - Any model instantiated in `custom.ipl` must be declared in `custom.ide` and present in `gta3.img`, otherwise the engine dereferences a null `pColModel` at `0x0047402D`.
+  - `data/maps/noodles/col/*.col` are git symlinks (mode `120000`) to the COL artifacts under `models/<folder>/`; `build.ts` step 4 copies with `copyFollowingSymlinks` so the zip holds real files.
+  - Manifest `name` is the IDE model name. `dff` and `col` are the source file names inside the model folder (the exporter writes `<collection>.dff`, e.g. `rosa_apartment.dff`); `build.ts` stages them as `<name>.dff` and `<name>.col` (e.g. `ind_newtenement08.dff`), and `noodles_custom.txt` `COLFILE` lines use `<name>.col`. The stock COL archive entry for `ind_newtenement08` is in `data/maps/industne/INDUSTNE.col`.
+  - `build.ts` step 4 writes each manifest folder's `*.pos` (`x y z`) into the matching `custom.ipl` `inst` line (matched by the `dff` basename). Without a `*.pos`, `custom.ipl` stays the source of truth. `custom.ide` has no coordinates and is never synced.
+  - Stock `ind_newtenement08` is ID `445` (`industne.ide`: `445, ind_newtenement08, inditaly1, 1, 115, 0`), already placed by `industNE.ipl` at `1160.77, -407.514, 33.3118`. An override in `custom.ide` reuses `445`; a new ID such as `3895` has no stock definition.
+- **Build Incrementality**: `scripts/build.ts` skips unchanged work via SHA-256 hashes in `dist/.build-cache.json`: step 1 and 2 hash each script plus its `{$INCLUDE}` files; step 3 hashes each `.blend`. Outputs must still exist for a skip.
+- **Build Shell**: Run `deno task build` from PowerShell. Git Bash's GNU `tar` fails the zip step with "Cannot connect to C: resolve failed"; Windows `tar` works.
 - **Frontend TXDs Location**: Frontend and boot textures reside in `data/txd/` (moved from legacy `assets/`) and package into `modloader/Noodles/txd/`.
 - **Step Bisection**: `scripts/build.ts` supports interactive bisection and filtering via `--bisect`, `--step=<N>`, `--only=<name>`, and `--skip=<name>`.
 - **UAC Bypass Runner**: When Windows sets `WINXPSP3` on `gta3.exe` in HKLM, launching directly throws OS error 740. Hardlink runner `gta3-game.exe` bypasses the exact-path registry flag with zero UAC prompts via `deno task run`.

@@ -1,6 +1,6 @@
 ---
 name: txd-importing
-description: Use when building, reading, or importing RenderWare TXD textures, game startup splash screens, or managing GTA III and Vice City img archives
+description: Use when building, reading, or importing RenderWare TXD textures, game startup splash screens, managing GTA III and Vice City img archives, or wiring a model's DFF/TXD/COL into models/manifest.csv and the custom IDE/IPL so it replaces a stock building
 ---
 
 # GTA III Texture & Archive Management
@@ -45,6 +45,38 @@ python scripts/manage-img.py --extract models/gta3.dir dinerind.dff extracted/di
 # Replace file in archive
 python scripts/manage-img.py --replace models/gta3.dir models/gta3.img dinerind.dff models/Punk\ Noodles/dinerind.dff
 ```
+
+## Model Packaging: Manifest, ModLoader, IDE, IPL
+
+**REQUIRED BACKGROUND:** modloader-guidance (package layout, `std.stream`, `std.data`, `IDE`/`IPL`/`COLFILE` directives).
+
+Flow for one model: `models/manifest.csv` row, then `scripts/build.ts` step 3 stages files, then step 4 stages maps and `noodles_custom.txt`, then ModLoader loads them.
+
+| Manifest column | Becomes | Must match |
+| :--- | :--- | :--- |
+| `name` | Name patched into the COL header (22 bytes) | The IDE model name for that object |
+| `dff` | Source file in the folder; staged as `models/gta3.img/<name>.dff` | `<name>` equals the IDE `ModelName` |
+| `txd` | `modloader/Noodles/models/gta3.img/<txd>` | IDE `TxdName` + `.txd` |
+| `col` | Source file in the folder; staged as `data/maps/noodles/col/<name>.col` | A `COLFILE 0` line for `<name>.col` in `data/noodles_custom.txt` |
+| `enabled` | Gates step 3 packaging; step 4 comments `COLFILE` lines in `noodles_custom.txt` to match | `IDE`/`IPL` entries are NOT synced; comment those by hand |
+
+### IDE (`data/maps/noodles/custom.ide`)
+`objs` line: `Id, ModelName, TxdName, MeshCount, DrawDistance, Flags` ([GTA III OBJS](https://www.grandtheftwiki.com/OBJS)). Example: `3895, ind_newtenement08, rosa_apartment, 1, 160.0, 0`.
+
+### IPL (`data/maps/noodles/custom.ipl`)
+`inst` line starts with the same `Id`; the name field is ignored by the game ([Item Placement](https://gtamods.com/wiki/Item_Placement)). Use the `Id` from the IDE line.
+
+### Registration
+`std.data` does not load an IDE or IPL without a matching `gta.dat` entry ([std.data doc](https://github.com/thelink2012/modloader/blob/master/doc/plugins/gta3/std.data.md)). `data/noodles_custom.txt` carries the `IDE`, `IPL`, and `COLFILE 0` directives.
+
+### Replacing a stock building (e.g. `ind_newtenement08`)
+1. Keep `dff` in the manifest named like the stock file, so `std.stream` overrides the `gta3.img` entry by name.
+2. Look up the stock `Id` in the game install's `data/maps/*/*.ide` (e.g. `445, ind_newtenement08, inditaly1, 1, 115, 0` in `industne.ide`) and reuse it in `custom.ide`. The stock `inst` for that `Id` already exists in `industNE.ipl`, so `custom.ipl` needs no second one.
+3. Reuse the stock ModelName, and set `TxdName` to the new TXD.
+4. Place the `inst` with that `Id` in `custom.ipl`.
+5. Check `modloader.log` for `Importing model file for index <Id>`. The index must equal the IDE `Id`.
+
+**UNVERIFIED (no source found; test in game):** which definition wins when `custom.ide` repeats a stock `Id` or ModelName, and whether the stock IPL instance of the same building must be removed or hidden.
 
 ## Quick Reference
 

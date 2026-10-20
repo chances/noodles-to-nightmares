@@ -14,10 +14,8 @@
  * --bisect, -b, --step=<N>, --only=<name>, --skip=<name>
  */
 
-import { basename, extname, join } from "@std/path";
-import { copy } from "@std/fs/copy";
+import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
-import { walk } from "@std/fs/walk";
 import { capitalCase } from "change-case";
 
 // Bisection / filtering arguments
@@ -58,6 +56,153 @@ async function compile(inputPath: string, outputPath: string) {
     console.error(`Failed to compile: ${inputPath}`);
     Deno.exit(1);
   }
+}
+
+/** Hex SHA-256 of a string or bytes. */
+async function sha256(data: string | Uint8Array<ArrayBuffer>): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    typeof data === "string" ? new TextEncoder().encode(data) : data,
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/** Hashes a script together with every file it `{$INCLUDE}`s, recursively. */
+async function hashScript(
+  path: string,
+  seen = new Set<string>(),
+): Promise<string> {
+  if (seen.has(path)) return "";
+  seen.add(path);
+  const text = await Deno.readTextFile(path);
+  const parts = [text];
+  for (const m of text.matchAll(/\{\$INCLUDE\s+([^}]+)\}/gi)) {
+    const includePath = join(dirname(path), m[1].trim());
+    try {
+      parts.push(await hashScript(includePath, seen));
+    } catch {
+      parts.push(`missing:${includePath}`);
+    }
+  }
+  return await sha256(parts.join("\n"));
+}
+
+const cachePath = join(Deno.cwd(), "dist", ".build-cache.json");
+let hashCache: Record<string, string> = {};
+try {
+  hashCache = JSON.parse(await Deno.readTextFile(cachePath));
+} catch {
+  // No cache yet; everything compiles
+}
+
+async function allExist(paths: string[]): Promise<boolean> {
+  for (const path of paths) {
+    try {
+      await Deno.stat(path);
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function saveHash(key: string, hash: string) {
+  hashCache[key] = hash;
+  await ensureDir(dirname(cachePath));
+  await Deno.writeTextFile(cachePath, JSON.stringify(hashCache, null, 2));
+}
+
+/** Like make: compiles only when the source hash changed or the output is missing. */
+async function compileIfChanged(inputPath: string, outputPath: string) {
+  const hash = await hashScript(inputPath);
+  if (await allExist([outputPath]) && hashCache[inputPath] === hash) {
+    console.log(`  [=] Up to date: ${basename(inputPath)}`);
+    return;
+  }
+
+  await compile(inputPath, outputPath);
+  await saveHash(inputPath, hash);
+}
+
+/** Recursively copies src to dest, following symlinks so staging holds real files. */
+async function copyFollowingSymlinks(src: string, dest: string) {
+  const stat = await Deno.stat(src);
+  if (stat.isDirectory) {
+    await ensureDir(dest);
+    for await (const entry of Deno.readDir(src)) {
+      await copyFollowingSymlinks(
+        join(src, entry.name),
+        join(dest, entry.name),
+      );
+    }
+  } else {
+    await Deno.copyFile(src, dest);
+  }
+}
+
+/**
+ * Writes each manifested model's `*.pos` coordinates into data/maps/noodles/custom.ipl.
+ * A `*.pos` file in the model's folder wins; without one, the IPL line is left as is.
+ * IDE lines carry no coordinates, so custom.ide is never touched.
+ */
+async function syncPositions() {
+  const iplPath = join(cwd, "data", "maps", "noodles", "custom.ipl");
+  const manifestText = await Deno.readTextFile(
+    join(cwd, "models", "manifest.csv"),
+  );
+  const iplText = await Deno.readTextFile(iplPath);
+  const eol = iplText.includes("\r\n") ? "\r\n" : "\n";
+  const iplLines = iplText.split(/\r?\n/);
+
+  const rows = manifestText.trim().split(/\r?\n/);
+  const header = rows[0].split(",").map((s) => s.trim());
+  for (const rowText of rows.slice(1)) {
+    const cells = rowText.split(",").map((s) => s.trim());
+    if (cells.length < header.length) continue;
+    const entry: Record<string, string> = {};
+    header.forEach((k, idx) => (entry[k] = cells[idx]));
+    if (!entry.dff) continue;
+
+    const folderPath = join(cwd, "models", entry.folder);
+    let posFile: string | undefined;
+    try {
+      for await (const f of Deno.readDir(folderPath)) {
+        if (f.isFile && f.name.toLowerCase().endsWith(".pos")) {
+          posFile = f.name;
+          break;
+        }
+      }
+    } catch {
+      continue;
+    }
+    if (!posFile) continue;
+
+    const coords = (await Deno.readTextFile(join(folderPath, posFile)))
+      .trim().split(/[\s,]+/).map(Number);
+    if (coords.length < 3 || coords.slice(0, 3).some(Number.isNaN)) {
+      console.warn(`  [-] Warning: ${posFile} is not "x y z"; skipped`);
+      continue;
+    }
+    const [x, y, z] = coords.map((n) => n.toFixed(6));
+
+    const modelName = basename(entry.dff, extname(entry.dff)).toLowerCase();
+    const instLine =
+      /^(\s*#?\s*\d+\s*,\s*(\S+?)\s*,\s*)[-+\d.eE]+(\s*,\s*)[-+\d.eE]+(\s*,\s*)[-+\d.eE]+(.*)$/;
+    for (let i = 0; i < iplLines.length; i++) {
+      const m = iplLines[i].match(instLine);
+      if (!m || m[2].toLowerCase() !== modelName) continue;
+      const synced = `${m[1]}${x}${m[3]}${y}${m[4]}${z}${m[5]}`;
+      if (synced !== iplLines[i]) {
+        iplLines[i] = synced;
+        console.log(`  [~] custom.ipl ${modelName} <- ${posFile}`);
+      }
+    }
+  }
+
+  const synced = iplLines.join(eol);
+  if (synced !== iplText) await Deno.writeTextFile(iplPath, synced);
 }
 
 function formatMissionName(name: string): string {
@@ -114,7 +259,7 @@ if (shouldRun(1, "main")) {
   console.log("Step 1 (main): Compiling main script...");
   const mainInput = join(cwd, "main.txt");
   const mainOutput = join(cwd, "main.scm");
-  await compile(mainInput, mainOutput);
+  await compileIfChanged(mainInput, mainOutput);
 
   const dataStagingDir = join(noodlesStagingDir, "data");
   await ensureDir(dataStagingDir);
@@ -141,8 +286,8 @@ if (shouldRun(2, "missions")) {
     const missionName = basename(entry.name, ".txt");
     const outputPath = join(missionsDir, `${missionName}.cm`);
 
-    console.log(`  [*] Compiling ${entryName}`);
-    await compile(inputPath, outputPath);
+    console.log(`  [*] ${entryName}`);
+    await compileIfChanged(inputPath, outputPath);
     await Deno.copyFile(outputPath, join(cleoStagingDir, `${missionName}.cm`));
   }
   console.log("  [+] Packaged modloader/Noodles/cleo/*.cm");
@@ -188,6 +333,16 @@ if (shouldRun(3, "models")) {
       for await (const dirEntry of Deno.readDir(folderPath)) {
         if (dirEntry.isFile && dirEntry.name.endsWith(".blend")) {
           const blendPath = join(folderPath, dirEntry.name);
+          const blendHash = await sha256(await Deno.readFile(blendPath));
+          const outputs = [entry.dff, entry.col]
+            .filter(Boolean)
+            .map((f) => join(folderPath, f));
+          if (
+            hashCache[blendPath] === blendHash && await allExist(outputs)
+          ) {
+            console.log(`  [=] Up to date: ${dirEntry.name}`);
+            continue;
+          }
           console.log(
             `  [*] Compiling model from Blender: ${dirEntry.name}...`,
           );
@@ -200,6 +355,8 @@ if (shouldRun(3, "models")) {
               `  [-] Warning: Blender export failed for ${dirEntry.name}:`,
               new TextDecoder().decode(stderr),
             );
+          } else {
+            await saveHash(blendPath, blendHash);
           }
         }
       }
@@ -225,11 +382,13 @@ if (shouldRun(3, "models")) {
     }
 
     if (entry.dff) {
+      // Staged under the IDE model name so it overrides the stock gta3.img entry
+      const stagedDff = `${entry.name}.dff`;
       await Deno.copyFile(
         join(folderPath, entry.dff),
-        join(imgStagingDir, entry.dff),
+        join(imgStagingDir, stagedDff),
       );
-      console.log(`  [+] Packaged DFF: ${entry.dff}`);
+      console.log(`  [+] Packaged DFF: ${entry.dff} as ${stagedDff}`);
       count++;
     }
     if (entry.txd) {
@@ -241,16 +400,18 @@ if (shouldRun(3, "models")) {
       count++;
     }
     if (entry.col) {
+      // Staged under the IDE model name, matching data/maps/noodles/col/<name>.col
+      const stagedCol = `${entry.name}.col`;
       const srcCol = join(folderPath, entry.col);
       try {
-        await Deno.copyFile(srcCol, join(colStagingDir, entry.col));
-        console.log(`  [+] Packaged COL: ${entry.col}`);
+        await Deno.copyFile(srcCol, join(colStagingDir, stagedCol));
+        console.log(`  [+] Packaged COL: ${entry.col} as ${stagedCol}`);
         count++;
       } catch {
-        const dataCol = join(cwd, "data", "maps", "noodles", "col", entry.col);
+        const dataCol = join(cwd, "data", "maps", "noodles", "col", stagedCol);
         try {
-          await Deno.copyFile(dataCol, join(colStagingDir, entry.col));
-          console.log(`  [+] Packaged COL: ${entry.col} (from data/maps)`);
+          await Deno.copyFile(dataCol, join(colStagingDir, stagedCol));
+          console.log(`  [+] Packaged COL: ${stagedCol} (from data/maps)`);
           count++;
         } catch {
           console.warn(`  [-] Warning: COL not found for ${entry.col}`);
@@ -264,13 +425,14 @@ if (shouldRun(3, "models")) {
 // Step 4: Maps
 if (shouldRun(4, "maps")) {
   console.log("Step 4 (maps): Packaging custom map files...");
+  await syncPositions();
   const mapsSrc = join(cwd, "data", "maps");
   const mapsDest = join(noodlesStagingDir, "data", "maps");
   try {
     const stat = await Deno.stat(mapsSrc);
     if (stat.isDirectory) {
       await ensureDir(mapsDest);
-      await copy(mapsSrc, mapsDest, { overwrite: true });
+      await copyFollowingSymlinks(mapsSrc, mapsDest);
       console.log("  [+] Packaged modloader/Noodles/data/maps/");
     }
   } catch {
@@ -297,7 +459,7 @@ if (shouldRun(4, "maps")) {
       header.forEach((k, idx) => (entry[k] = row[idx]));
       if (entry.col) {
         enabledCols.set(
-          entry.col.toLowerCase(),
+          `${entry.name}.col`.toLowerCase(),
           entry.enabled?.toLowerCase() === "true",
         );
       }
