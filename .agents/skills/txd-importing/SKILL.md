@@ -46,6 +46,13 @@ python scripts/manage-img.py --extract models/gta3.dir dinerind.dff extracted/di
 python scripts/manage-img.py --replace models/gta3.dir models/gta3.img dinerind.dff models/Punk\ Noodles/dinerind.dff
 ```
 
+### 4. Converting a D3D9 TXD for GTA III
+GTA III reads only Direct3D 8 TXDs (platform `8`, device `0`, RW stamp `0x320`). A TXD saved by San Andreas or Vice City tools carries platform `9`, and GTA III silently fails to stream it, so every model that depends on it is invisible. Convert it:
+```bash
+python scripts/convert-txd-d3d9-to-d3d8.py <input.txd> <output.txd>
+```
+The converter handles 32-bit `A8R8G8B8` and DXT1 textures. Check the result with the platform field of the first native header: vanilla `inditaly1.txd` shows platform `0x8`; a failing TXD shows `0x9`. `manage-txd.py --info` does not read multi-texture or non-D3D8 files.
+
 ## Model Packaging: Manifest, ModLoader, IDE, IPL
 
 **REQUIRED BACKGROUND:** modloader-guidance (package layout, `std.stream`, `std.data`, `IDE`/`IPL`/`COLFILE` directives).
@@ -74,7 +81,8 @@ Flow for one model: `models/manifest.csv` row, then `scripts/build.ts` step 3 st
 2. Look up the stock `Id` in the game install's `data/maps/*/*.ide` (e.g. `445, ind_newtenement08, inditaly1, 1, 115, 0` in `industne.ide`) and reuse it in `custom.ide`. The stock `inst` for that `Id` already exists in `industNE.ipl`, so `custom.ipl` needs no second one.
 3. Reuse the stock ModelName, and set `TxdName` to the new TXD.
 4. Place the `inst` with that `Id` in `custom.ipl`.
-5. Check `modloader.log` for `Importing model file for index <Id>`. The index must equal the IDE `Id`.
+5. Check `modloader.log` for `Importing model file for index <Id>`. The index must equal the IDE `Id`. Only the log the game writes at launch counts; `dist/Drag-N-Drop.zip` packs an old copy that the install overwrites into the game folder.
+6. A model that imports cleanly but never renders points at its TXD (see "Converting a D3D9 TXD"), not at the IDE or IPL.
 
 **UNVERIFIED (no source found; test in game):** which definition wins when `custom.ide` repeats a stock `Id` or ModelName, and whether the stock IPL instance of the same building must be removed or hidden.
 
@@ -94,3 +102,5 @@ Flow for one model: `models/manifest.csv` row, then `scripts/build.ts` step 3 st
 - **RGB vs BGRA Byte Order**: RenderWare Direct3D raster payloads require little-endian BGRA channel ordering; storing RGB results in blue/red color inversion.
 - **2048-Byte Sector Alignment**: Files inside `gta3.img` must be aligned to 2048-byte sector boundaries; unpadded files corrupt subsequent archive offsets.
 - **Texture Name Truncation**: Texture names inside TXD native headers are strictly 32 bytes null-padded; strings exceeding 31 characters overflow the header.
+- **D3D9 TXD in a GTA III package**: A TXD with platform `9` (San Andreas format, as exported by DragonFF-era tooling) imports without a ModLoader error, then leaves its models invisible. Blender and Ariane still render it. Convert it to platform `8` before packaging.
+- **`deno task build` in the sandboxed shell**: Fails with `Loading unprepared module ... change-case`. Run `deno task build` and `deno task install` in a Terminal panel tab instead.

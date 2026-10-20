@@ -409,3 +409,11 @@ understand context before making changes.
 ### Sanny Builder Library
 
 - [SBL Opcode Documentation](https://library.sannybuilder.com/)
+
+---
+
+## 10. Bug Reports
+
+- **Location**: Resolved bugs live in `.agents/reports/bugs/<bug-name>.md` (kebab-case file names).
+- **Content**: Symptom, root cause, fix, and ruled-out candidates, written as the current state of the finding.
+- **Index**: `.agents/Memory.md` lists open bugs under "Known Issues & Open Bugs" and links the report for resolved ones.

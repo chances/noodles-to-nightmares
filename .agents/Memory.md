@@ -85,11 +85,12 @@
 - **Night Vertex Colors (`0x253F2F9`)**: Must be disabled (`night_cols = False`). GTA III does not support SA night vertex colors plugin.
 - **Collision Plugin (`0x253F2FA`)**: Must not be embedded in DFF (`export_coll = False`). GTA III map objects require external `.col` files.
 - **Version**: Export version must strictly target GTA III PC `0x32000` (RenderWare v3.2.0.0 / library ID `0x0800FFFF`), matching all vanilla GTA III models. Do NOT use `0x33002`; DragonFF writes a 12-byte clump struct `(num_atomics, num_lights, num_cameras)` for versions `>= 0x33000`, whereas GTA III PC expects the 4-byte clump struct `(num_atomics)` emitted when version is `< 0x33000` (`0x32000`).
+- **Texture Dictionary Platform**: A model's `.txd` must be Direct3D 8 (platform `8`, device `0`, stamp `0x320`). A Direct3D 9 TXD imports without error but leaves its models invisible; convert it with `scripts/convert-txd-d3d9-to-d3d8.py <in.txd> <out.txd>`. See [`reports/bugs/rosa-tenament-invisible.md`](reports/bugs/rosa-tenament-invisible.md).
 - **Inspection Tooling**: Use `scripts/inspect-dff.py <model.dff>` to inspect RW version, clump frame hierarchy, geometry vertex/triangle bounds, prelit alpha ranges, texture references, and atomic flags.
 - **DragonFF Material Mapping**: Image texture nodes must have clean `node.label` values matching texture names to prevent DragonFF's `clear_extension` from truncating `.txd` prefixes into model texture names. Sampler properties must be set to `tex_filters = 6` (Linear Mipmap Linear) and `tex_u_addr = tex_v_addr = 1` (Wrap).
 
 ## Known Issues & Open Bugs
-- **Rosa's Apartment Invisible In-Game**: Documented in [`.agents/bugs/rosa-tenament-invisible.md`](bugs/rosa-tenament-invisible.md). Model passes external rendering tools and has valid single-atomic geometry and texture references, but fails to render in GTA III runtime.
+- None open. Resolved bugs live in [`.agents/reports/bugs/`](reports/bugs/).
 
 ## Host Disk Constraints
 - **Drive C: Free Space**: Drive `C:` has critically low free disk space (~110 MB free). Never write large temporary archive duplicates or run operations that balloon storage on `C:\`.
