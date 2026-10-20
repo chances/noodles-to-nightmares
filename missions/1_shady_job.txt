@@ -13,6 +13,8 @@ $onMission = true
 $isDying = false
 $isWanted = false
 
+Player.SetControl($player, false)
+
 // QUESTION: Trigger mission with this? Char.HasSpottedPlayer($sal, $player)
 
 // FIXME: The neighborhood text will not go away.
@@ -47,7 +49,6 @@ Camera.SetFixedPosition(1034.16, -646.5, 15.0, 0, 0, 0)
 
 //
 Camera.DoFade(500, Fade.In)
-Player.SetControl($player, false)
 wait 525
 
 // TODO: Rosa mulls around the shop for a few moments
@@ -78,7 +79,7 @@ wait 3750
 
 // Sal
 // TODO: Char.SetSay()
-Text.PrintString("I'll call you later at your payphone.", 4000)
+Text.PrintString("I'll call you later.", 4000)
 wait 2250
 
 // Show a payphone waypoint blip
@@ -147,7 +148,7 @@ Text.PrintString("Pick up the package at the docks, deliver it to the projects o
 wait 4750
 Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
 wait 3750
-Text.PrintString("You don't have much time. Don't fuck this up.", 3000)
+Text.PrintString("You don't have much time. Don't fuck this up!", 3000)
 wait 3250
 
 // End the cutscene

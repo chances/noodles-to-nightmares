@@ -97,7 +97,7 @@ Char.Dress($playerChar)
 
 // Safehouse: Rosa's apartment, NE Portland, area behind Rosa's building
 $SafeBlip = Blip.AddSpriteForCoord(1165.0, -398.5, 25.8, RadarSprite.Savehouse)
-$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1171.1, -415.14, 23.6)
+$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, 1173.523, -415.67, 23.50)
 Garage.ChangeType($ApartmentGarage, GarageType.HideoutOne)
 
 // Set the clock to 9:25p and let the player enjoy the splash art

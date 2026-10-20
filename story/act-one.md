@@ -42,9 +42,9 @@ increasingly dangerous as her choices attract attention.
 
 ### Gameplay Objectives
 
-1. **Steal a car** – Demonstrate vehicle entry and hotwiring
+1. **Steal a car** – Demonstrate vehicle entry and hot-wiring
 2. **Drive to safehouse** – Navigate to Rosa's apartment (marked on map)
-3. **Park the car** – Learn that safehouses store vehicles
+3. **Park the car** – Learn that safe-houses store vehicles
 4. **Enter safehouse** – Transition to interior; mission completion
 
 ### Script Requirements
@@ -72,7 +72,7 @@ Internal monologue: exhausted, matter-of-fact.
 
 ### Win/Fail Conditions
 
-- **Win**: Rosa walks or drives to safehouse
+- **Win**: Rosa walks or drives to safehouse (her apartment)
 - **Fail**: Rosa gets wasted or busted: mission restarts
 
 ### Mechanical Teaching Points
