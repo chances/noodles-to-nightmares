@@ -147,7 +147,7 @@ tutorials, encounters)
 
 ---
 
-## Independent/Optional Missions (2–3 per island)
+## Independent/Optional Missions (2–3 Per Island)
 
 These are **not** part of the main story arc but provide:
 

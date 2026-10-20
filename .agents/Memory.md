@@ -93,6 +93,9 @@
 - **Inspection Tooling**: Use `scripts/inspect-dff.py <model.dff>` to inspect RW version, clump frame hierarchy, geometry vertex/triangle bounds, prelit alpha ranges, texture references, and atomic flags.
 - **DragonFF Material Mapping**: Image texture nodes must have clean `node.label` values matching texture names to prevent DragonFF's `clear_extension` from truncating `.txd` prefixes into model texture names. Sampler properties must be set to `tex_filters = 6` (Linear Mipmap Linear) and `tex_u_addr = tex_v_addr = 1` (Wrap).
 
+## Teaching Lessons
+- **Lesson HTML**: standards for `.agents/lessons/*.html` (light and dark themes, quiz answers, preview server) are in [`.agents/rules/lesson-html.md`](rules/lesson-html.md).
+
 ## Known Issues & Open Bugs
 - None open. Resolved bugs live in [`.agents/reports/bugs/`](reports/bugs/).
 

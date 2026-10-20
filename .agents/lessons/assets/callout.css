@@ -1,0 +1,27 @@
+/* Lesson callouts: <blockquote class="callout" data-variant="warning">...</blockquote>
+   Variants: note (default), tip, warning, danger. The icon comes from ::before. */
+blockquote.callout {
+  --callout-color: #3b82f6;
+  margin-block: 1rem;
+  margin-inline: 0;
+  padding-block: .6rem;
+  padding-inline: .9rem;
+  border-inline-start: 4px solid var(--callout-color);
+  border-radius: .3rem;
+  background: color-mix(in srgb, var(--callout-color) 12%, transparent);
+  font-size: .92rem;
+  overflow: hidden;
+}
+blockquote.callout > :first-child { margin-block-start: 0; }
+blockquote.callout > :last-child { margin-block-end: 0; }
+blockquote.callout::before {
+  content: "\2139\FE0F";
+  float: inline-start;
+  margin-inline-end: .6rem;
+}
+blockquote.callout[data-variant="tip"] { --callout-color: #2e8b57; }
+blockquote.callout[data-variant="tip"]::before { content: "\1F4A1"; }
+blockquote.callout[data-variant="warning"] { --callout-color: #d4a017; }
+blockquote.callout[data-variant="warning"]::before { content: "\26A0\FE0F"; }
+blockquote.callout[data-variant="danger"] { --callout-color: #c0392b; }
+blockquote.callout[data-variant="danger"]::before { content: "\26D4"; }

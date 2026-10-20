@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candle 2DFX in GTA III</title>
+<link rel="stylesheet" href="assets/callout.css">
+<style>
+:root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; }
+:root[data-theme="light"] { color-scheme:light; }
+#theme { position:fixed; inset-block-start:.6rem; inset-inline-end:.6rem; font:inherit; font-size:.85rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.3rem; padding:.3rem .6rem; cursor:pointer; }
+body { background:var(--bg); color:var(--fg); font:17px/1.6 Georgia, serif; max-inline-size:46rem; margin-inline:auto; padding-inline:1rem; padding-block:2rem; }
+h1 { font-size:1.8rem; margin-block-end:.2rem; }
+h2 { font-size:1.15rem; margin-block-start:2rem; border-block-end:1px solid var(--line); padding-block-end:.2rem; }
+.sub, small { color:var(--mute); }
+table { border-collapse:collapse; inline-size:100%; font-size:.9rem; }
+td, th { border-block-end:1px solid var(--line); padding:.35rem .5rem; text-align:start; vertical-align:top; }
+code, pre { font-family:Consolas, monospace; font-size:.88em; }
+pre { background:var(--code); padding:.7rem; border-radius:.3rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(9rem, 1fr)); gap:.6rem; }
+label { display:block; font-size:.85rem; color:var(--mute); }
+input, select { inline-size:100%; box-sizing:border-box; font:inherit; font-size:.95rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.25rem; padding:.3rem .4rem; }
+.swatch { block-size:3rem; border-radius:.4rem; border:1px solid var(--line); margin-block:.6rem; }
+button.opt { display:block; inline-size:100%; text-align:start; margin-block:.4rem; padding:.5rem .7rem; font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:.3rem; cursor:pointer; }
+button.opt.ok { border-color:#2e8b57; background:rgba(46,139,87,.15); }
+button.opt.bad { border-color:#c0392b; background:rgba(192,57,43,.15); }
+.fb { min-block-size:1.5rem; color:var(--accent); }
+</style>
+</head>
+<body>
+<button id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<h1>Candle 2DFX in GTA III</h1>
+<p class="sub">Lesson 2. Mission: put a candle light (corona, point light, ground shadow) on a diner prop. Follows <a href="0001-color-temperature-in-blender.html">Lesson 1</a>.</p>
+
+<h2>1. Where GTA III Reads 2DFX</h2>
+<p>The panel in your screenshot (<strong>Type: 2DFX, Effect: Light</strong>) is DragonFF's editor for the binary <em>2d Effect</em> section embedded in a DFF. DragonFF's source reads and writes that section as one struct holding color, corona, shadow, and flag fields
+(<a href="https://github.com/Parik27/DragonFF">DragonFF, <code>gtaLib/dff.py</code>, class <code>Light2dfx</code></a>).
+The GTAMods wiki documents that section for versions 3.6.0.3 and higher, and says San Andreas uses it for effects that earlier games kept in IDE files
+(<a href="https://gtamods.com/wiki/2d_Effect_(RW_Section)">2d Effect (RW Section)</a>).
+GTA III and Vice City define lights in a text <code>2dfx</code> section of an IDE file instead
+(<a href="https://gtamods.com/wiki/2DFX">2DFX (IDE Section)</a>).</p>
+
+<h2>2. Does the Shadow Section Work in GTA III?</h2>
+<p><strong>Shadows exist in GTA III, and you set them in the IDE file.</strong></p>
+<blockquote class="callout" data-variant="warning">Do not rely on this panel for them. Its Shadow section is a San Andreas layout, and no source documents GTA III reading it.</blockquote>
+<table>
+<tr><th>Shadow Part</th><th>Where GTA III Reads It</th><th>Status</th></tr>
+<tr><td>Texture</td><td>IDE column <code>Shadow</code></td><td>Documented</td></tr>
+<tr><td>Ground range</td><td>IDE column <code>InnerRange</code></td><td>Documented</td></tr>
+<tr><td>Darkness</td><td>IDE column <code>ShadowIntensity</code> (0 to 255)</td><td>Documented</td></tr>
+<tr><td>Panel fields Size and Z Distance</td><td>No column</td><td>Not documented</td></tr>
+<tr><td>Panel Shadow section in the DFF</td><td>Unknown</td><td>Test in game</td></tr>
+</table>
+<p><small>Source: <a href="https://gtamods.com/wiki/2DFX">GTAMods Wiki, 2DFX (IDE Section)</a>. Build your shadow in section 4.</small></p>
+
+<h2>3. Panel Field to GTA III Column</h2>
+<table>
+<tr><th>Panel Field</th><th>IDE Column</th><th>Status</th></tr>
+<tr><td>Color (RGB)</td><td>R, G, B</td><td>Same idea; darker color gives a dimmer light</td></tr>
+<tr><td>Alpha</td><td>none documented</td><td>No III column named</td></tr>
+<tr><td>Corona Far Clip</td><td>Distance</td><td>Likely counterpart; unconfirmed</td></tr>
+<tr><td>Point Light Range</td><td>OuterRange</td><td>Likely counterpart; unconfirmed</td></tr>
+<tr><td>Corona Size</td><td>Size</td><td>Same idea; 0 hides the corona</td></tr>
+<tr><td>Show Mode</td><td>Flash</td><td>Different value tables (III has 0 to 14)</td></tr>
+<tr><td>Enable Reflection</td><td>Wet</td><td>Likely counterpart; unconfirmed</td></tr>
+<tr><td>Flare Type</td><td>Flare</td><td>III: 0 none, 1 yellow, 2 white</td></tr>
+<tr><td>Shadow Size</td><td>none documented</td><td>InnerRange is a different description</td></tr>
+<tr><td>Shadow Color Multiplier</td><td>ShadowIntensity</td><td>Likely counterpart; unconfirmed</td></tr>
+<tr><td>Shadow Z Distance</td><td>none documented</td><td>No III column named</td></tr>
+<tr><td>Corona and Shadow Textures</td><td>Corona, Shadow</td><td>Names from <code>particle.txd</code>, in quotes</td></tr>
+<tr><td>Flags, View Vector</td><td>Flags</td><td>Different bit layout; no view vector in III</td></tr>
+</table>
+
+<h2>4. Try It: Build a Candle Line</h2>
+<blockquote class="callout" data-variant="warning">The output follows the column order on the 2DFX IDE wiki page. The corona and shadow names are the wiki's typical values, so check them against <code>particle.txd</code>.</blockquote>
+<blockquote class="callout" data-variant="tip">Your field values save to session storage while the tab stays open.</blockquote>
+<div class="grid">
+<div><label for="id">Model ID</label><input id="id" type="text" value="MODEL_ID"></div>
+<div><label for="x">X Offset</label><input id="x" type="number" step="0.05" value="0"></div>
+<div><label for="y">Y Offset</label><input id="y" type="number" step="0.05" value="0"></div>
+<div><label for="z">Z Offset</label><input id="z" type="number" step="0.05" value="0.1"></div>
+<div><label for="r">R (0 to 255)</label><input id="r" type="number" min="0" max="255" value="255"></div>
+<div><label for="g">G (0 to 255)</label><input id="g" type="number" min="0" max="255" value="150"></div>
+<div><label for="b">B (0 to 255)</label><input id="b" type="number" min="0" max="255" value="60"></div>
+<div><label for="dist">Distance</label><input id="dist" type="number" min="0" step="1" value="30"></div>
+<div><label for="outer">Outer Range</label><input id="outer" type="number" min="0" step="0.5" value="4"></div>
+<div><label for="size">Corona Size</label><input id="size" type="number" min="0" step="0.05" value="0.4"></div>
+<div><label for="inner">Inner Range</label><input id="inner" type="number" min="0" step="0.5" value="2"></div>
+<div><label for="inten">Shadow Intensity</label><input id="inten" type="number" min="0" max="255" value="40"></div>
+<div><label for="flash">Flash</label>
+<select id="flash">
+<option value="0">0 constantly lit</option>
+<option value="1">1 lit at night</option>
+<option value="2">2 occasional flicker</option>
+<option value="3">3 occasional flicker, night</option>
+<option value="10">10 random flicker</option>
+<option value="11">11 random flicker, night</option>
+</select></div>
+<div><label for="wet">Wet</label><select id="wet"><option value="0">0 no</option><option value="1">1 reflective</option></select></div>
+<div><label for="flare">Flare</label><select id="flare"><option value="0">0 none</option><option value="1">1 yellow</option><option value="2">2 white</option></select></div>
+<div><label for="flags">Flags (0 to 7)</label><input id="flags" type="number" min="0" max="7" value="0"></div>
+</div>
+<div class="swatch" id="sw" aria-label="Light color preview"></div>
+<pre id="out"></pre>
+
+<h2>5. Check Yourself</h2>
+<p>Which IDE column sets how far the light reaches onto the ground?</p>
+<div id="q">
+<button class="opt">OuterRange</button>
+<button class="opt" data-ok="1">InnerRange</button>
+<button class="opt">Distance</button>
+</div>
+<p class="fb" id="fb" role="status"></p>
+
+<h2>Next</h2>
+<p>Add a <code>2dfx</code> section to <code>custom.ide</code> with your candle line, rebuild, and compare Flash 0 against Flash 2 in game. Ask your teacher (this agent) about anything unclear, including which panel fields GTA III really reads from the DFF, which these sources leave open.</p>
+<p><small>Primary source: <a href="https://gtamods.com/wiki/2DFX">GTAMods Wiki, 2DFX (IDE Section)</a>.</small></p>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  try { const s=localStorage.getItem('lesson-theme'); if(s) root.dataset.theme=s; } catch(e){}
+  document.getElementById('theme').addEventListener('click',()=>{
+    const dark = root.dataset.theme ? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('lesson-theme', root.dataset.theme); } catch(e){}
+  });
+})();
+const ids=['id','x','y','z','r','g','b','dist','outer','size','inner','inten','flash','wet','flare','flags'];
+const el=Object.fromEntries(ids.map(i=>[i,document.getElementById(i)]));
+ids.forEach(i=>{
+  try { const s=sessionStorage.getItem('lesson-0002-'+i); if(s!==null) { el[i].value=s; if(el[i].tagName==='SELECT' && el[i].value!==s) el[i].selectedIndex=0; } } catch(e){}
+  el[i].addEventListener('input',render);
+});
+function render(){
+  ids.forEach(i=>{ try { sessionStorage.setItem('lesson-0002-'+i, el[i].value); } catch(e){} });
+  const v=i=>el[i].value;
+  document.getElementById('sw').style.background=`rgb(${v('r')},${v('g')},${v('b')})`;
+  document.getElementById('out').textContent =
+`2dfx
+${v('id')}, ${v('x')}, ${v('y')}, ${v('z')}, ${v('r')}, ${v('g')}, ${v('b')}, 0, 0, "coronastar", "shad_exp", ${v('dist')}, ${v('outer')}, ${v('size')}, ${v('inner')}, ${v('inten')}, ${v('flash')}, ${v('wet')}, ${v('flare')}, ${v('flags')}
+end`;
+}
+render();
+document.querySelectorAll('#q .opt').forEach(b=>b.addEventListener('click',()=>{
+  const ok=b.dataset.ok==='1';
+  b.classList.add(ok?'ok':'bad');
+  document.getElementById('fb').textContent = ok ? 'Correct: InnerRange is the ground range.' : 'Not that one. Recall the column table on the IDE wiki page, then try again.';
+}));
+</script>
+</body>
+</html>

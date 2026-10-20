@@ -77,7 +77,7 @@ Flow for one model: `models/manifest.csv` row, then `scripts/build.ts` step 3 st
 ### Registration
 `std.data` does not load an IDE or IPL without a matching `gta.dat` entry ([std.data doc](https://github.com/thelink2012/modloader/blob/master/doc/plugins/gta3/std.data.md)). `data/noodles_custom.txt` carries the `IDE`, `IPL`, and `COLFILE 0` directives.
 
-### Replacing a stock building (e.g. `ind_newtenement08`)
+### Replacing a Stock Building (e.g. `ind_newtenement08`)
 1. Keep `dff` in the manifest named like the stock file, so `std.stream` overrides the `gta3.img` entry by name.
 2. Look up the stock `Id` in the game install's `data/maps/*/*.ide` (e.g. `445, ind_newtenement08, inditaly1, 1, 115, 0` in `industne.ide`) and reuse it in `custom.ide`. The stock `inst` for that `Id` already exists in `industNE.ipl`, so `custom.ipl` needs no second one.
 3. Reuse the stock ModelName, and set `TxdName` to the new TXD.

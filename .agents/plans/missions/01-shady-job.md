@@ -22,7 +22,7 @@ that teaches wanted-level avoidance and multi-stage mission structure.
 
 ## Implementation Steps
 
-### Step 1 — Opening dialogue & title card
+### Step 1 — Opening Dialogue & Title Card
 
 Mirrors `0_tutorial.txt` preamble. Print the "Easy Money" title card (already
 stubbed), then deliver the contact's intro lines via `Text.PrintString`.
@@ -36,7 +36,7 @@ Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 
 wait 3750
 ```
 
-### Step 2 — Payphone ring + call cutscene
+### Step 2 — Payphone Ring + Call Cutscene
 
 Trigger `Sound.AddOneOffSound` at the payphone coord to simulate an incoming
 call, then print the delivery briefing lines.
@@ -54,7 +54,7 @@ Add a blip on the payphone so the player walks to it first (optional: make them
 touch the phone before the briefing plays, using a `Player.LocateAnyMeans2D`
 check).
 
-### Step 3 — Package pickup
+### Step 3 — Package Pickup
 
 1. Spawn a pickup object at the pickup waypoint (quiet alley / docks area —
    scout a Portland coord with low civilian density; candidate: near the docks
@@ -85,7 +85,7 @@ end
    the delivery zone (~5.0 radius).
 3. On arrival: set `$delivered = true`.
 
-### Step 5 — Mission event loop
+### Step 5 — Mission Event Loop
 
 Structure mirrors `0_tutorial.txt`. The loop runs every `wait 0` and checks
 (in order):
@@ -154,7 +154,7 @@ end
 > `get_game_timer` opcode (`0171`) into a local int and diff against start.
 > Alternatively use a frame counter. Confirm the correct opcode before coding.
 
-### Step 6 — Success sequence
+### Step 6 — Success Sequence
 
 ```sanny
 Audio.PlayMissionPassedTune(1)
@@ -210,7 +210,7 @@ break
 
 ---
 
-## Checklist (mirrors act-one.md)
+## Checklist (Mirrors act-one.md)
 
 - [ ] Opening dialogue + title card
 - [ ] Payphone ring sound at correct coord

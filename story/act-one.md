@@ -317,7 +317,7 @@ with her particular "talents."
 
 ## Narrative Flow Between Missions
 
-### M0 → M1 (3–5 days)
+### M0 → M1 (3–5 Days)
 
 **Transition scene**: Rosa at the Punk Noodles, now a familiar routine. The
 Handler approaches casually, as if asking her to sweep the floor. Tension builds
@@ -328,7 +328,7 @@ survival.
 questionable origin; Handler appears regularly. Portland feels less like home,
 more like a trap closing.
 
-### M1 → M2 (1–2 weeks)
+### M1 → M2 (1–2 Weeks)
 
 **Montage (optional cutscene)**: Rosa on multiple delivery runs. Each successful
 job builds confidence and attracts attention. Other criminals begin to recognize
@@ -341,7 +341,7 @@ opportunity, not a threat.
 **Environmental change**: Police presence increases in Portland. Gang tags
 appear on walls. The safehouse becomes less a sanctuary and more a hideout.
 
-### M2 → Act 2 (after M2 success)
+### M2 → Act 2 (After M2 Success)
 
 **Climax dialogue**: The Handler reveals they work for a larger organization.
 "You've proven yourself in Portland. Now we've got bigger plans—but not here.
