@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Point Blips on the Radar</title>
+<link rel="stylesheet" href="assets/callout.css">
+<style>
+:root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
+@media (prefers-color-scheme: dark) { :root { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+body { background:var(--bg); color:var(--fg); font:17px/1.6 Georgia, serif; max-inline-size:46rem; margin-inline:auto; padding-inline:1rem; padding-block:2rem; }
+h1 { font-size:1.8rem; margin-block-end:.2rem; }
+h2 { font-size:1.15rem; margin-block-start:2rem; border-block-end:1px solid var(--line); padding-block-end:.2rem; }
+h3 { font-size:.95rem; font-family:system-ui, sans-serif; color:var(--accent); margin-block:1.2rem .2rem; padding-inline-start:.6rem; border-inline-start:3px solid var(--accent); }
+.sub, small { color:var(--mute); }
+table { border-collapse:collapse; inline-size:100%; font-size:.9rem; }
+td, th { border-block-end:1px solid var(--line); padding:.35rem .5rem; text-align:start; vertical-align:top; }
+code, pre { background:var(--code); border-radius:.25rem; font-size:.88rem; }
+code { padding-inline:.25rem; }
+pre { padding:.7rem .9rem; overflow-x:auto; }
+a { color:var(--accent); }
+button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.3rem; padding:.4rem .7rem; margin-block:.25rem; cursor:pointer; display:block; text-align:start; }
+#result { min-block-size:1.6rem; }
+</style>
+</head>
+<body>
+<h1>Contact Point Blips on the Radar</h1>
+<p class="sub">Mission: show the payphone on the minimap while Rosa is on mission 1. Targets <code>missions/1_shady_job.txt</code> line 103.</p>
+
+<h2>1. Why the Radar Shows Nothing</h2>
+<p>The library describes <code>Blip.AddSpriteForContactPoint</code> (opcode <code>02A7</code>) as adding "a long range sprite blip and sphere to the contact point that is not displayed while on mission" (<a href="https://library.sannybuilder.com/#/gta3/default/02A7">02A7</a>). The mission script sets <code>$onMission = true</code> on line 13, so the library text predicts this blip stays hidden. No source read for this lesson confirms the engine code behind that.</p>
+<blockquote class="callout" data-variant="warning">The blip carries its own sphere, so the orb is not only the draw flag on the locate check.</blockquote>
+
+<h2>2. The Two Commands</h2>
+<table>
+<tr><th>Command</th><th>Opcode</th><th>Library Description</th></tr>
+<tr><td><code>Blip.ChangeDisplay(blip, display)</code></td><td><code>018B</code></td><td>Changes the display of the specified blip</td></tr>
+<tr><td><code>Blip.AddSpriteForCoord(x, y, z, sprite)</code></td><td><code>02A8</code></td><td>Adds a sprite blip to the location</td></tr>
+</table>
+<p><code>BlipDisplay</code> values from the library's <a href="https://github.com/sannybuilder/library/blob/master/gta3/enums.json">enums.json</a>:</p>
+<table>
+<tr><th>Name</th><th>Value</th></tr>
+<tr><td><code>Neither</code></td><td>0</td></tr>
+<tr><td><code>MarkerOnly</code></td><td>1</td></tr>
+<tr><td><code>BlipOnly</code></td><td>2</td></tr>
+<tr><td><code>Both</code></td><td>3</td></tr>
+</table>
+
+<h2>3. Every Way to Show a Blip or Sphere</h2>
+<p>All rows come from the GTA III library data (<a href="https://github.com/sannybuilder/library/blob/master/gta3/gta3.json">gta3.json</a>). Descriptions are the library's own words. "Blip" means the radar icon. "Marker" means the in-world indicator the library names.</p>
+<h3>Blips by Target</h3>
+<table>
+<tr><th>Target</th><th>Plain Blip</th><th>Sprite Blip</th><th>Color and Display Form</th></tr>
+<tr><td>Car</td><td><code>0186</code> blip and marker</td><td><code>02A4</code> sprite blip and marker</td><td><code>0161</code></td></tr>
+<tr><td>Char</td><td><code>0187</code> blip and marker</td><td><code>02A5</code> sprite blip and marker</td><td><code>0162</code></td></tr>
+<tr><td>Object</td><td><code>0188</code> blip and marker</td><td><code>02A6</code> sprite blip and marker</td><td><code>0163</code></td></tr>
+<tr><td>Pickup</td><td><code>03DC</code> blip and marker</td><td><code>03DD</code> sprite blip and marker</td><td><code>03DB</code></td></tr>
+<tr><td>Coordinate</td><td><code>018A</code> blip at the location</td><td><code>02A8</code> sprite blip at the location</td><td><code>0167</code></td></tr>
+<tr><td>Contact point</td><td><code>0189</code> blip at the contact point</td><td><code>02A7</code> long range sprite blip and sphere, hidden on mission</td><td>none</td></tr>
+</table>
+<p>The color and display forms take a <code>BlipColor</code> and a <code>BlipDisplay</code>. <code>BlipColor</code> values: Red 0, Green 1, LightBlue 2, Gray 3, Yellow 4, Magenta 5, Cyan 6 (<a href="https://github.com/sannybuilder/library/blob/master/gta3/enums.json">enums.json</a>).</p>
+<h3>Changing or Removing a Blip</h3>
+<table>
+<tr><th>Opcode</th><th>Name</th><th>Library Description</th></tr>
+<tr><td><code>018B</code></td><td>CHANGE_BLIP_DISPLAY</td><td>Changes the display of the specified blip</td></tr>
+<tr><td><code>0165</code></td><td>CHANGE_BLIP_COLOUR</td><td>Sets the blip's color</td></tr>
+<tr><td><code>0166</code></td><td>DIM_BLIP</td><td>Sets whether the blip should appear dimmed</td></tr>
+<tr><td><code>0168</code></td><td>CHANGE_BLIP_SCALE</td><td>Sets the blip's size</td></tr>
+<tr><td><code>0164</code></td><td>REMOVE_BLIP</td><td>Removes the blip</td></tr>
+</table>
+<h3>Spheres</h3>
+<table>
+<tr><th>Way</th><th>Command</th><th>Library Description</th></tr>
+<tr><td>Draw one</td><td><code>03A1</code> DRAW_SPHERE (x, y, z, diameter)</td><td>Displays a red cylinder sphere</td></tr>
+<tr><td>Create a static one</td><td><code>03BC</code> ADD_SPHERE (x, y, z, radius)</td><td>Creates a static sphere at the location, with the specified radius</td></tr>
+<tr><td>Destroy a static one</td><td><code>03BD</code> REMOVE_SPHERE</td><td>Destroys a static sphere</td></tr>
+<tr><td>Locate check flag</td><td>The <code>drawSphere</code> argument of locate commands such as <code>00E3</code></td><td>A bool parameter; the library page does not describe its effect</td></tr>
+<tr><td>Contact point blip</td><td><code>02A7</code></td><td>Includes a sphere, hidden on mission</td></tr>
+</table>
+<blockquote class="callout" data-variant="warning">The library does not say whether <code>03A1</code> must run every frame. Test it in a loop before relying on it. <code>03BC</code> is the documented static option.</blockquote>
+
+<h2>4. Two Candidate Edits</h2><h3>Option A: Force the Radar Icon On</h3>
+<p>This keeps the contact point. Tested in game: no blip appears on the minimap, even beside the payphone.</p>
+<pre>Blip.AddSpriteForContactPoint(1168.33, -414.841, 22.8, PAYPHONE, $payphoneBlip)
+Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)</pre>
+<h3>Option B: Use a Plain Coordinate Blip</h3>
+<p>This uses the command behind <code>$SafeBlip</code> in <code>main.txt</code>. The library does not describe it as hidden on mission:</p>
+<pre>$payphoneBlip = Blip.AddSpriteForCoord(1168.33, -414.841, 22.8, PAYPHONE)</pre>
+<blockquote class="callout" data-variant="warning"><code>018B</code> does not override the hiding, so Option A fails. Option B is untested. If it also shows nothing, the cause is not the contact point command.</blockquote>
+
+<h2>5. Check Yourself</h2>
+<p>Per the library, why is the payphone missing on the radar?</p>
+<button data-ok="1">The contact point blip hides while a mission runs.</button>
+<button>The sprite constant eight points at a missing icon.</button>
+<button>The blip handle gets overwritten before the radar draws.</button>
+<p id="result" aria-live="polite"></p>
+
+<h2>Next</h2>
+<p>Primary source: the <a href="https://library.sannybuilder.com/#/gta3/default/02A7">Sanny Builder Library entry for 02A7</a>. Ask follow-up questions in the session whenever a step is unclear. Related: <a href="0002-candle-2dfx-in-gta-iii.html">Lesson 2</a>.</p>
+
+<script>
+document.querySelectorAll("button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    document.getElementById("result").textContent = b.dataset.ok
+      ? "Correct, per the 02A7 library description."
+      : "Not that one. Section 1 quotes the 02A7 description, which names the cause.";
+  });
+});
+</script>
+</body>
+</html>

@@ -37,7 +37,8 @@ button.opt.bad { border-color:#c0392b; background:rgba(192,57,43,.15); }
 <h2>1. Where GTA III Reads 2DFX</h2>
 <p>The panel in your screenshot (<strong>Type: 2DFX, Effect: Light</strong>) is DragonFF's editor for the binary <em>2d Effect</em> section embedded in a DFF. DragonFF's source reads and writes that section as one struct holding color, corona, shadow, and flag fields
 (<a href="https://github.com/Parik27/DragonFF">DragonFF, <code>gtaLib/dff.py</code>, class <code>Light2dfx</code></a>).
-The GTAMods wiki documents that section for versions 3.6.0.3 and higher, and says San Andreas uses it for effects that earlier games kept in IDE files
+The GTAMods wiki documents that section for versions 3.6.0.3 and higher.
+San Andreas uses it for effects that earlier games kept in IDE files
 (<a href="https://gtamods.com/wiki/2d_Effect_(RW_Section)">2d Effect (RW Section)</a>).
 GTA III and Vice City define lights in a text <code>2dfx</code> section of an IDE file instead
 (<a href="https://gtamods.com/wiki/2DFX">2DFX (IDE Section)</a>).</p>
@@ -115,7 +116,7 @@ GTA III and Vice City define lights in a text <code>2dfx</code> section of an ID
 <p class="fb" id="fb" role="status"></p>
 
 <h2>Next</h2>
-<p>Add a <code>2dfx</code> section to <code>custom.ide</code> with your candle line, rebuild, and compare Flash 0 against Flash 2 in game. Ask your teacher (this agent) about anything unclear, including which panel fields GTA III really reads from the DFF, which these sources leave open.</p>
+<p>Add a <code>2dfx</code> section to <code>custom.ide</code> with your candle line, rebuild, and compare Flash 0 against Flash 2 in game. Ask your teacher (this agent) about anything unclear. These sources leave open which panel fields GTA III reads from the DFF, so ask there first.</p>
 <p><small>Primary source: <a href="https://gtamods.com/wiki/2DFX">GTAMods Wiki, 2DFX (IDE Section)</a>.</small></p>
 
 <script>
