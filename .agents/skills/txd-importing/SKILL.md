@@ -65,6 +65,7 @@ Flow for one model: `models/manifest.csv` row, then `scripts/build.ts` step 3 st
 | `dff` | Source file in the folder; staged as `models/gta3.img/<name>.dff` | `<name>` equals the IDE `ModelName` |
 | `txd` | `modloader/Noodles/models/gta3.img/<txd>` | IDE `TxdName` + `.txd` |
 | `col` | Source file in the folder; staged as `data/maps/noodles/col/<name>.col` | A `COLFILE 0` line for `<name>.col` in `data/noodles_custom.txt` |
+| `col_level` | Level number written into the `COLFILE <level>` line of `data/noodles_custom.txt` by step 4 (blank keeps the line's level) | The level its stock collision loads at: `1` for the Portland diner `dinerind` (stock `indust.col`), `0` for `ind_newtenement08` |
 | `enabled` | Gates step 3 packaging; step 4 comments `COLFILE` lines in `noodles_custom.txt` to match | `IDE`/`IPL` entries are NOT synced; comment those by hand |
 
 ### IDE (`data/maps/noodles/custom.ide`)

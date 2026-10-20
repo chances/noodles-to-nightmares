@@ -12,11 +12,63 @@
  *
  * Supports interactive bisection and step filtering via:
  * --bisect, -b, --step=<N>, --only=<name>, --skip=<name>
+ *
+ * Model assets are bisected with --skip-asset=<asset|model|model:asset>[,...]
+ * where <asset> is dff, txd, or col (e.g. --skip-asset=dinerind:col,dff), and a
+ * bare <model> skips all of that model's assets (e.g. --skip-asset=dinerind).
+ * A skipped COL is also commented out of the staged noodles_custom.txt. With
+ * --bisect, each manifested model asset is prompted for instead.
  */
 
 import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { capitalCase } from "change-case";
+import {
+  blue,
+  cyan,
+  green,
+  magenta,
+  red,
+  setColorEnabled,
+  yellow,
+} from "@std/fmt/colors";
+
+// Color the `[+]` / `[=]` / `[*]` / `[~]` / `[-]` indicators when the stream is a TTY
+const tagColors: Record<string, (s: string) => string> = {
+  "+": green,
+  "=": cyan,
+  "*": blue,
+  "~": magenta,
+  "-": yellow,
+};
+
+/** Wraps a console method so line-leading `[x]` indicators are colored, only for terminals. */
+function colorizeTags(
+  method: "log" | "warn" | "error",
+  stream: { isTerminal(): boolean },
+) {
+  if (!stream.isTerminal() || Deno.noColor) return;
+  setColorEnabled(true);
+  const original = console[method].bind(console);
+  console[method] = (...data: unknown[]) => {
+    original(
+      ...data.map((d) =>
+        typeof d === "string"
+          ? d.replace(
+            /^(\s*)\[([+=*~-])\]/gm,
+            (_, indent: string, tag: string) =>
+              `${indent}${
+                (method === "error" ? red : tagColors[tag])(`[${tag}]`)
+              }`,
+          )
+          : d
+      ),
+    );
+  };
+}
+colorizeTags("log", Deno.stdout);
+colorizeTags("warn", Deno.stderr);
+colorizeTags("error", Deno.stderr);
 
 // Bisection / filtering arguments
 const args = Deno.args;
@@ -25,6 +77,34 @@ const onlyArg = args.find((a) => a.startsWith("--only="))?.slice(7)?.split(",");
 const skipArg = args.find((a) => a.startsWith("--skip="))?.slice(7)?.split(",");
 const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",")
   .map(Number);
+
+const skipAssetArg = args.find((a) => a.startsWith("--skip-asset="))?.slice(13)
+  ?.split(",").map((s) => s.trim().toLowerCase());
+
+type ModelAsset = "dff" | "txd" | "col";
+const assetAnswers = new Map<string, boolean>();
+
+/** Whether a manifested model's asset is packaged, per --skip-asset or the --bisect prompt. */
+function shouldPackageAsset(modelName: string, asset: ModelAsset): boolean {
+  const name = modelName.toLowerCase();
+  if (
+    skipAssetArg?.includes(asset) || skipAssetArg?.includes(name) ||
+    skipAssetArg?.includes(`${name}:${asset}`)
+  ) {
+    return false;
+  }
+  if (!isBisect) return true;
+  const key = `${name}:${asset}`;
+  let answer = assetAnswers.get(key);
+  if (answer === undefined) {
+    const res = prompt(
+      `Package ${asset.toUpperCase()} for ${modelName}? [Y/n]:`,
+    );
+    answer = res === null || res.trim().toLowerCase() !== "n";
+    assetAnswers.set(key, answer);
+  }
+  return answer;
+}
 
 function shouldRun(stepNum: number, stepName: string): boolean {
   if (stepArg && !stepArg.includes(stepNum)) return false;
@@ -381,7 +461,9 @@ if (shouldRun(3, "models")) {
       }
     }
 
-    if (entry.dff) {
+    if (entry.dff && !shouldPackageAsset(entry.name, "dff")) {
+      console.log(`  [-] Skipped DFF: ${entry.dff} (${entry.name})`);
+    } else if (entry.dff) {
       // Staged under the IDE model name so it overrides the stock gta3.img entry
       const stagedDff = `${entry.name}.dff`;
       await Deno.copyFile(
@@ -391,7 +473,9 @@ if (shouldRun(3, "models")) {
       console.log(`  [+] Packaged DFF: ${entry.dff} as ${stagedDff}`);
       count++;
     }
-    if (entry.txd) {
+    if (entry.txd && !shouldPackageAsset(entry.name, "txd")) {
+      console.log(`  [-] Skipped TXD: ${entry.txd} (${entry.name})`);
+    } else if (entry.txd) {
       await Deno.copyFile(
         join(folderPath, entry.txd),
         join(imgStagingDir, entry.txd),
@@ -399,7 +483,9 @@ if (shouldRun(3, "models")) {
       console.log(`  [+] Packaged TXD: ${entry.txd}`);
       count++;
     }
-    if (entry.col) {
+    if (entry.col && !shouldPackageAsset(entry.name, "col")) {
+      console.log(`  [-] Skipped COL: ${entry.col} (${entry.name})`);
+    } else if (entry.col) {
       // Staged under the IDE model name, matching data/maps/noodles/col/<name>.col
       const stagedCol = `${entry.name}.col`;
       const srcCol = join(folderPath, entry.col);
@@ -450,7 +536,12 @@ if (shouldRun(4, "maps")) {
 
     const csvLines = csvContent.trim().split("\n");
     const header = csvLines[0].split(",").map((s) => s.trim());
-    const enabledCols = new Map<string, boolean>();
+    const enabledCols = new Map<
+      string,
+      { enabled: boolean; level?: string }
+    >();
+    // Bisected-out COLs: dropped from the staged maps and commented in the staged manifest only
+    const skippedCols = new Set<string>();
 
     for (let i = 1; i < csvLines.length; i++) {
       const row = csvLines[i].split(",").map((s) => s.trim());
@@ -458,18 +549,35 @@ if (shouldRun(4, "maps")) {
       const entry: Record<string, string> = {};
       header.forEach((k, idx) => (entry[k] = row[idx]));
       if (entry.col) {
-        enabledCols.set(
-          `${entry.name}.col`.toLowerCase(),
-          entry.enabled?.toLowerCase() === "true",
-        );
+        const isEnabled = entry.enabled?.toLowerCase() === "true";
+        const colFile = `${entry.name}.col`.toLowerCase();
+        enabledCols.set(colFile, {
+          enabled: isEnabled,
+          level: /^\d+$/.test(entry.col_level ?? "")
+            ? entry.col_level
+            : undefined,
+        });
+        if (isEnabled && !shouldPackageAsset(entry.name, "col")) {
+          skippedCols.add(colFile);
+          try {
+            await Deno.remove(
+              join(mapsDest, "noodles", "col", `${entry.name}.col`),
+            );
+          } catch {
+            // Not staged
+          }
+        }
       }
     }
 
     const updatedTxtLines = customTxtContent.split(/\r?\n/).map((line) => {
-      for (const [colFile, isEnabled] of enabledCols) {
+      for (const [colFile, { enabled, level }] of enabledCols) {
         if (line.toLowerCase().includes(colFile)) {
-          const clean = line.replace(/^#\s*/, "").trim();
-          return isEnabled ? clean : `# ${clean}`;
+          let clean = line.replace(/^#\s*/, "").trim();
+          if (level !== undefined) {
+            clean = clean.replace(/^COLFILE\s+\d+/i, `COLFILE ${level}`);
+          }
+          return enabled ? clean : `# ${clean}`;
         }
       }
       return line;
@@ -477,7 +585,14 @@ if (shouldRun(4, "maps")) {
 
     const newTxtContent = updatedTxtLines.join("\n");
     await Deno.writeTextFile(manifestSrc, newTxtContent);
-    await Deno.copyFile(manifestSrc, manifestDest);
+    const stagedTxtContent = updatedTxtLines.map((line) => {
+      const lower = line.toLowerCase();
+      const skipped = [...skippedCols].some((colFile) =>
+        lower.includes(colFile)
+      );
+      return skipped && !line.startsWith("#") ? `# ${line}` : line;
+    }).join("\n");
+    await Deno.writeTextFile(manifestDest, stagedTxtContent);
     console.log(
       "  [+] Synchronized and packaged modloader/Noodles/noodles_custom.txt",
     );

@@ -34,6 +34,12 @@
     "hide": "on_success"
   },
   {
+    "label": "Open Map Editor",
+    "command": "deno",
+    "args": ["task", "map-editor"],
+    "hide": "on_success"
+  },
+  {
     "label": "Format Documentation",
     "command": "deno",
     "args": ["fmt", "./**/*.md"],

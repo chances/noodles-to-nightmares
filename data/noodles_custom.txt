@@ -1,4 +1,4 @@
-# COLFILE 0 data/maps/noodles/col/dinerind.col
+COLFILE 1 data/maps/noodles/col/dinerind.col
 COLFILE 0 data/maps/noodles/col/ind_newtenement08.col
 # COLFILE 0 data/maps/noodles/col/supasave_open.col
 IDE data/maps/noodles/custom.ide

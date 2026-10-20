@@ -3,10 +3,12 @@
     "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts",
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
     "install": "deno task build && deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install.ts",
-    "run": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts"
+    "run": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts",
+    "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
+    "@std/fmt": "jsr:@std/fmt@^1.0.10",
     "@std/fs": "jsr:@std/fs@^1.0.23",
     "@std/path": "jsr:@std/path@^1.1.4",
     "change-case": "npm:change-case@^5.4.4"
