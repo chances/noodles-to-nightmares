@@ -9,6 +9,7 @@
  * - modloader/Noodles/noodles_custom.txt (Map manifest directives)
  * - modloader/Noodles/txd/ (UI, splash, and loading screens)
  * - modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt (Text strings)
+ * - modloader/Noodles/models/gta3.img/player.txd and models/generic/player.bmp (Player skin from skins/*.bmp)
  *
  * Supports interactive bisection and step filtering via:
  * --bisect, -b, --step=<N>, --only=<name>, --skip=<name>
@@ -529,6 +530,92 @@ if (shouldRun(6, "text")) {
     }
   } catch {
     // Optional
+  }
+}
+
+// Step 7: Player skin (replaces the default player's player.txd and frontend player.bmp)
+if (shouldRun(7, "skins")) {
+  const skinsDir = join(cwd, "skins");
+  const skinFiles: string[] = [];
+  try {
+    for await (const entry of Deno.readDir(skinsDir)) {
+      if (entry.isFile && entry.name.toLowerCase().endsWith(".bmp")) {
+        skinFiles.push(entry.name);
+      }
+    }
+  } catch {
+    // No skins directory
+  }
+  skinFiles.sort();
+
+  if (skinFiles.length > 0) {
+    // The first skin in name order is the default player skin
+    const skinName = skinFiles[0];
+    console.log(`Step 7 (skins): Packaging player skin ${skinName}...`);
+    const skinPath = join(skinsDir, skinName);
+    const skinHash = await sha256(await Deno.readFile(skinPath));
+    const playerTxd = join(distDir, "player.txd");
+    const playerBmp = join(distDir, "player.bmp");
+    const pythonExe = Deno.env.get("PYTHON") || "python";
+
+    if (
+      hashCache[skinPath] === skinHash &&
+      await allExist([playerTxd, playerBmp])
+    ) {
+      console.log(`  [=] Up to date: ${skinName}`);
+    } else {
+      const cmd = new Deno.Command(pythonExe, {
+        args: [
+          join(cwd, "scripts", "manage-txd.py"),
+          "--build",
+          skinPath,
+          "playa5nu", // Stock player.txd texture name, 256x256 @ 8bpp
+          playerTxd,
+          "--depth",
+          "8",
+          "--size",
+          "256",
+          "256",
+        ],
+      });
+      const { success, stderr } = await cmd.output();
+      if (!success) {
+        console.error(
+          `[-] Failed to build player.txd:`,
+          new TextDecoder().decode(stderr),
+        );
+        Deno.exit(1);
+      }
+      // Stock models/generic/player.bmp is 256x256 24-bit
+      const bmpCmd = new Deno.Command(pythonExe, {
+        args: [
+          join(cwd, "scripts", "resize-image.py"),
+          skinPath,
+          "256",
+          "256",
+          playerBmp,
+        ],
+      });
+      const { success: bmpOk, stderr: bmpErr } = await bmpCmd.output();
+      if (!bmpOk) {
+        console.error(
+          `[-] Failed to build player.bmp:`,
+          new TextDecoder().decode(bmpErr),
+        );
+        Deno.exit(1);
+      }
+      await saveHash(skinPath, skinHash);
+    }
+
+    const imgStagingDir = join(noodlesStagingDir, "models", "gta3.img");
+    const genericStagingDir = join(noodlesStagingDir, "models", "generic");
+    await ensureDir(imgStagingDir);
+    await ensureDir(genericStagingDir);
+    await Deno.copyFile(playerTxd, join(imgStagingDir, "player.txd"));
+    await Deno.copyFile(playerBmp, join(genericStagingDir, "player.bmp"));
+    console.log(
+      "  [+] Packaged modloader/Noodles/models/gta3.img/player.txd and models/generic/player.bmp",
+    );
   }
 }
 
