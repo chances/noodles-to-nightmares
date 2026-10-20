@@ -35,6 +35,7 @@ if
   $isDriving == false
 then
   Text.PrintHelpString("Find the best way home.")
+  ensureSafehouseBlip()
 end
 
 while true
@@ -80,6 +81,7 @@ while true
     wait 5500
 
     Camera.DoFade(750, Fade.Out)
+    Hud.LoadSplash('SPLASH1')
     wait 800
     Camera.RestoreJumpcut()
     Camera.DoFade(750, Fade.In)

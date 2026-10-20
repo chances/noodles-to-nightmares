@@ -299,12 +299,3 @@ function initSpawnParams()
   Zone.SetGroup('GTHOSP', DayOrNight.Day, 17)
   Zone.SetGroup('GTHOSP', DayOrNight.Night, 18)
 end
-
-//================================
-//-------- Functions: GUI --------
-//================================
-
-function clearUI()
-  Text.ClearSmallPrints()
-  Text.ClearPrints()
-end

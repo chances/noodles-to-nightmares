@@ -28,9 +28,7 @@ Text.PrintBigString("Easy Money", {time} 5000, TextStyle.BottomRight)
 Camera.DoFade(500, Fade.Out)
 Hud.LoadSplash('SPLASH1')
 wait 500
-// FIXME: Use clearUI()
-Text.ClearSmallPrints()
-Text.ClearPrints()
+clearUI()
 // FIXME: The neighborhood text will not go away.
 // NOTE: The neighborhood text stays there for at least five (5) seconds
 

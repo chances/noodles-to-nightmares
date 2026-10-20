@@ -17,6 +17,20 @@ function invertHeading(heading: float): float
   cleo_return 1 opposite
 end
 
+//================================
+//-------- Functions: GUI --------
+//================================
+
+function clearUI()
+  Text.ClearSmallPrints()
+  Text.ClearPrints()
+end
+
+/// Ensure the player's safehouse blip is shown.
+function ensureSafehouseBlip()
+  $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+end
+
 function saveGame() 
   Game.ActivateSaveMenu()
   while true
