@@ -63,13 +63,21 @@ Audio.SetMusicDoesFade(true)
 {$INCLUDE utils/spawn_points.txt}
 {$INCLUDE utils/packages.txt}
 
-// Stream in everything near the player
+// Stream in everything near or visible to the player
 Streaming.LoadScene(1039.66, -653.112, 14.015)
-// Load the model for Rosa's apartment (ind_newtenement08)
 // TODO: Extract important model IDs to constants
-// QUESTION: What's the constant for this? Like #CELLPHONE, but different 😖
+Streaming.RequestModel(332)
+Streaming.RequestModel(343)
+Streaming.RequestModel(409)
 Streaming.RequestModel(445)
-Streaming.LoadModel(445)
+Streaming.RequestModel(827)
+Streaming.RequestModel(961)
+Streaming.RequestModel(963)
+Streaming.RequestModel(1038)
+Streaming.RequestModel(1251)
+Streaming.RequestModel(1357)
+Streaming.RequestModel(1427)
+Streaming.LoadAllModelsNow()
 
 // Wait for the scene to load
 while true
@@ -78,7 +86,12 @@ while true
   if and
     Streaming.IsCollisionInMemory(LevelName.Industrial)
     // FIXME: Only do this if the player is in Little Italy
+    Streaming.IsModelLoaded(332)
+    Streaming.IsModelLoaded(409)
     Streaming.IsModelLoaded(445)
+    Streaming.IsModelLoaded(827)
+    Streaming.IsModelLoaded(1038)
+    Streaming.IsModelLoaded(1251)
   then
     break
   else

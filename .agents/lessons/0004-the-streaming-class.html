@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Streaming Class</title>
+<link rel="stylesheet" href="assets/callout.css">
+<style>
+:root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; }
+:root[data-theme="light"] { color-scheme:light; }
+body { background:var(--bg); color:var(--fg); font:17px/1.6 Georgia, serif; max-inline-size:46rem; margin-inline:auto; padding-inline:1rem; padding-block:2rem; }
+h1 { font-size:1.8rem; margin-block-end:.2rem; }
+h2 { font-size:1.15rem; margin-block-start:2rem; border-block-end:1px solid var(--line); padding-block-end:.2rem; }
+h3 { font-size:.95rem; font-family:system-ui, sans-serif; color:var(--accent); margin-block:1.2rem .2rem; padding-inline-start:.6rem; border-inline-start:3px solid var(--accent); }
+.sub, small { color:var(--mute); }
+table { border-collapse:collapse; inline-size:100%; font-size:.9rem; }
+td, th { border-block-end:1px solid var(--line); padding:.35rem .5rem; text-align:start; vertical-align:top; }
+code, pre { background:var(--code); border-radius:.25rem; font-size:.88rem; }
+code { padding-inline:.25rem; }
+pre { padding:.7rem .9rem; overflow-x:auto; }
+a { color:var(--accent); }
+button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.3rem; padding:.4rem .7rem; margin-block:.25rem; cursor:pointer; display:block; text-align:start; }
+#theme { position:fixed; inset-block-start:.6rem; inset-inline-end:.6rem; }
+.result { min-block-size:1.6rem; }
+</style>
+</head>
+<body>
+<button id="theme" type="button">Toggle Theme</button>
+<h1>The Streaming Class</h1>
+<p class="sub">Mission: load models, collision, and scenery before use in <code>main.txt</code> and <code>missions/1_shady_job.txt</code>, so buildings, cars, and characters stop popping or failing. Target: GTA III, Sanny Builder library <code>gta3</code>.</p>
+
+<h2>1. What the Class Is</h2>
+<p>In the GTA III library (<a href="https://github.com/sannybuilder/library/blob/master/gta3/gta3.json">gta3.json</a>), <code>Streaming</code> holds 14 static commands. None needs an instance. They fall into four jobs.</p>
+<table>
+<tr><th>Job</th><th>Command</th><th>Opcode</th><th>Library Description</th></tr>
+<tr><td rowspan="5">Models</td><td><code>RequestModel(id)</code></td><td><code>0247</code></td><td>Requests a new model to load</td></tr>
+<tr><td><code>HasModelLoaded(id)</code></td><td><code>0248</code></td><td>Returns true if the model is available for creation</td></tr>
+<tr><td><code>LoadAllModelsNow()</code></td><td><code>038B</code></td><td>Loads any requested models synchronously</td></tr>
+<tr><td><code>MarkModelAsNoLongerNeeded(id)</code></td><td><code>0249</code></td><td>Releases the model, freeing game memory</td></tr>
+<tr><td><code>LoadSpecialModel(id, name)</code></td><td><code>02F3</code></td><td>Loads a model by name as a cutscene model id (GTA III: 185-189)</td></tr>
+<tr><td rowspan="4">Special Characters</td><td><code>LoadSpecialCharacter(slot, name)</code></td><td><code>023C</code></td><td>Requests a special character model into the slot</td></tr>
+<tr><td><code>HasSpecialCharacterLoaded(slot)</code></td><td><code>023D</code></td><td>Returns true if the model is available for creation</td></tr>
+<tr><td><code>UnloadSpecialCharacter(slot)</code></td><td><code>0296</code></td><td>Releases the special character</td></tr>
+<tr><td><code>GetNameOfVehicleModel(id)</code></td><td><code>0ADB</code></td><td>No description in the library</td></tr>
+<tr><td rowspan="4">Map</td><td><code>LoadScene(x, y, z)</code></td><td><code>03CB</code></td><td>Starts loading a location as if the player were there, removing LOD textures</td></tr>
+<tr><td><code>LoadCollision(level)</code></td><td><code>03F7</code></td><td>Loads the level (island) collision</td></tr>
+<tr><td><code>LoadCollisionWithScreen(level)</code></td><td><code>044C</code></td><td>Loads a level collision with a greeting message</td></tr>
+<tr><td><code>IsCollisionInMemory(level)</code></td><td><code>03C6</code></td><td>Returns true if the level collision is loaded</td></tr>
+<tr><td>Global</td><td><code>Switch(state)</code></td><td><code>03AF</code></td><td>Sets the streaming of additional models like peds, cars, and maps</td></tr>
+</table>
+<p><code>LevelName</code> values from <a href="https://github.com/sannybuilder/library/blob/master/gta3/enums.json">enums.json</a>: <code>Industrial</code> 1, <code>Commercial</code> 2, <code>Suburban</code> 3.</p>
+
+<h2>2. The Request, Wait, Use Cycle</h2>
+<p>The library descriptions imply one cycle: request a model, wait until the matching <code>Has...Loaded</code> check is true, then create the entity. <code>RequestModel</code> only queues the load, and <code>HasModelLoaded</code> reports whether the queue finished. <code>LoadAllModelsNow</code> skips the waiting by loading synchronously. <code>MarkModelAsNoLongerNeeded</code> ends the cycle.</p>
+<pre>Streaming.RequestModel(#MALE01)
+Streaming.LoadAllModelsNow()
+// ... create the char ...
+Streaming.MarkModelAsNoLongerNeeded(#MALE01)</pre>
+<p>That exact shape is in <code>utils/characters.txt</code> lines 4 to 7.</p>
+<blockquote class="callout" data-variant="warning">The library does not say how long <code>LoadAllModelsNow</code> blocks, or what it does when the game runs out of streaming memory. Neither is tested in this project.</blockquote>
+
+<h2>3. How This Project Uses It</h2>
+<table>
+<tr><th>Where</th><th>Pattern</th></tr>
+<tr><td><code>main.txt:24</code></td><td><code>Streaming.LoadCollision(0)</code>. The enum has no value 0.</td></tr>
+<tr><td><code>main.txt:67</code></td><td><code>Streaming.LoadScene</code> at the player spawn, then a wait loop on <code>IsCollisionInMemory(LevelName.Industrial)</code> plus six model checks.</td></tr>
+<tr><td><code>main.txt:104-105</code></td><td><code>LoadSpecialCharacter</code> into slots 1 and 2, with no <code>HasSpecialCharacterLoaded</code> check after it.</td></tr>
+<tr><td><code>missions/1_shady_job.txt:54</code></td><td><code>LoadAllModelsNow</code> after a block of model requests.</td></tr>
+<tr><td><code>missions/1_shady_job.txt:133-139</code></td><td>Seven <code>RequestModel</code> calls with no matching release call found by grep.</td></tr>
+</table>
+<blockquote class="callout" data-variant="danger"><code>Streaming.LoadModel</code> and <code>Streaming.IsModelLoaded</code> appear in <code>main.txt</code> and the mission file. Neither name is in the library's <code>gta3.json</code> on GitHub master, and neither string appears in the Sanny install's <code>data</code> folder. The library names are <code>RequestModel</code> and <code>HasModelLoaded</code>. Where the project names come from is not established, so the semantics of those lines are unverified.</blockquote>
+
+<h2>4. Open Questions for Your Pop-Cycle Bug</h2>
+<h3>Question A: Is Collision Level 0 Valid?</h3>
+<p>The enum lists 1, 2, 3. The Sanny template <code>stripped.txt</code> also writes 0, so it is a suspect to test by itself, not a proven cause.</p>
+<h3>Question B: Does Anything Release Models?</h3>
+<p>The cycle ends with <code>MarkModelAsNoLongerNeeded</code>. Requests without releases hold memory, which the library page for <code>0249</code> describes as "freeing game memory".</p>
+<h3>Question C: Does Switch Matter?</h3>
+<p><code>Streaming.Switch</code> toggles streaming of "additional models like peds, cars, and maps". No script here calls it. Whether a call changes your symptom needs a one-change test.</p>
+
+<h2>5. Check Yourself</h2>
+<p>Per the library, which command reports that a requested model can be used to create an entity?</p>
+<div class="quiz" data-ok="1">
+<button type="button">Streaming.LoadSceneNow</button>
+<button type="button" data-correct="1">Streaming.HasModelLoaded</button>
+<button type="button">Streaming.ModelIsLoaded</button>
+</div>
+<p class="result" aria-live="polite"></p>
+<p>Per the library, which command removes LOD textures while loading around a point?</p>
+<div class="quiz">
+<button type="button">Streaming.LoadCollision</button>
+<button type="button">Streaming.LoadSpecialModel</button>
+<button type="button" data-correct="1">Streaming.LoadScene</button>
+</div>
+<p class="result" aria-live="polite"></p>
+
+<h2>Next</h2>
+<p>Primary source: the <a href="https://library.sannybuilder.com/#/gta3/default/0247">Sanny Builder Library entry for 0247</a> and its neighbours <code>0248</code>, <code>038B</code>, and <code>03CB</code>. Ask follow-up questions in the session whenever a step is unclear. Related: <a href="0003-contact-point-blips-on-the-radar.html">Lesson 3</a>.</p>
+
+<script>
+document.querySelectorAll(".quiz").forEach(function (q) {
+  var out = q.nextElementSibling;
+  q.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      out.textContent = b.dataset.correct
+        ? "Correct. Section 1 lists this one under Models."
+        : "Not that one. The Section 1 table gives each command's library description.";
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem("lesson-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = getComputedStyle(root).colorScheme.indexOf("dark") === 0;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("lesson-theme", root.dataset.theme); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

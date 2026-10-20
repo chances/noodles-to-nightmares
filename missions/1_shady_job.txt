@@ -31,7 +31,17 @@ Text.ClearSmallPrints()
 Text.ClearPrints()
 // FIXME: The neighborhood text will not go away.
 // NOTE: The neighborhood text stays there for at least five (5) seconds
-wait 2000 // Artificially inflated to give the player a break
+
+// Ensure the neighborhood is loaded
+Streaming.RequestModel(332)
+Streaming.RequestModel(354)
+Streaming.RequestModel(731)
+Streaming.RequestModel(767)
+Streaming.RequestModel(827)
+Streaming.RequestModel(961)
+Streaming.RequestModel(1357)
+Streaming.LoadAllModelsNow()
+wait 1250 // Artificially inflated to give the player a break
 
 // TODO: Add more NPCs, e.g. the noodle man
 // TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
@@ -119,6 +129,15 @@ while true
     Player.LocateAnyMeans2D($player, 1168.33, -414.141, 20, 20, false)
   then
     Text.PrintString("Must be Sal calling.", 4000)
+
+    // Ensure the neighborhood is visible
+    Streaming.RequestModel(333)
+    Streaming.RequestModel(343)
+    Streaming.RequestModel(444)
+    Streaming.RequestModel(445)
+    Streaming.RequestModel(453)
+    Streaming.RequestModel(1405)
+    Streaming.RequestModel(1428)
 
     // Ring the payphone
     Phone.Grab(1168.33, -414.141, $payphone)
