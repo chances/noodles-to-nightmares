@@ -282,13 +282,13 @@ function App() {
   return html`
     <header>
       <${ProjectMenu} name=${projectName} path=${project} />
+      <label class="field">
+        <span>Mission</span>
+        <select value=${stem ?? ""} disabled=${!list.data?.length} onChange=${(e) => setStem(e.currentTarget.value)}>
+          ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
+        </select>
+      </label>
       <div class="toolbar">
-        <label class="field">
-          <span>Mission</span>
-          <select value=${stem ?? ""} disabled=${!list.data?.length} onChange=${(e) => setStem(e.currentTarget.value)}>
-            ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
-          </select>
-        </label>
         <span class="save-status" role="status" data-state=${save.state}>
           ${save.state === "error" ? "Save failed" : SAVE_TEXT[save.state] ?? ""}
         </span>
