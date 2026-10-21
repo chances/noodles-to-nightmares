@@ -6,6 +6,12 @@
       "runtimeExecutable": "deno",
       "runtimeArgs": ["run", "-A", "jsr:@std/http/file-server", ".agents/lessons", "--port", "8123"],
       "port": 8123
+    },
+    {
+      "name": "mission-editor",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["task", "--cwd", "tools/mission-editor", "serve"],
+      "port": 8000
     }
   ]
 }

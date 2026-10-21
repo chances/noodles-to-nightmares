@@ -1,5 +1,5 @@
 {
-  "workspace": ["./lib/fsm"],
+  "workspace": ["./lib/fsm", "./tools/mission-editor"],
   "tasks": {
     "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts",
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
@@ -7,6 +7,8 @@
     "run": "deno task install && deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts",
     "probe": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install-probe.ts",
     "clean": "deno run --allow-read --allow-write scripts/clean.ts",
+    "editor": "deno task --cwd tools/mission-editor dev",
+    "editor:build": "deno task --cwd tools/mission-editor build",
     "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts"
   },
   "imports": {
@@ -14,7 +16,8 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/fmt": "jsr:@std/fmt@^1.0.10",
     "@std/fs": "jsr:@std/fs@^1.0.23",
-    "@std/path": "jsr:@std/path@^1.1.4",
+    "@std/path": "jsr:@std/path@^1.1.6",
+    "@valibot/valibot": "jsr:@valibot/valibot@^1.5.0",
     "change-case": "npm:change-case@^5.4.4"
   }
 }

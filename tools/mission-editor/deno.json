@@ -1,0 +1,16 @@
+{
+  "name": "@noodles/editor",
+  "version": "0.1.0",
+  "exports": "./server.ts",
+  "tasks": {
+    "dev": "deno run --allow-run dev.ts",
+    "serve": "deno run --allow-env --allow-read --allow-write --allow-net main.ts",
+    "build": "deno desktop --allow-env --allow-read --allow-write --allow-net --include ui --output ../../dist/MissionEditor main.ts",
+    "test": "deno test --allow-env --allow-read --allow-write --allow-run"
+  },
+  "fmt": { "exclude": ["ui/vendor"] },
+  "lint": { "exclude": ["ui/vendor"] },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}

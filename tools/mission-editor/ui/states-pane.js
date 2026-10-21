@@ -1,0 +1,41 @@
+// deno-fmt-ignore-file
+// The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
+
+import { html } from "/vendor/preact.js";
+
+/** The roles a state plays, as chip labels. Shared by the list and the graph. */
+export function roles(doc, id) {
+  const state = doc.mission.states[id];
+  return [
+    doc.mission.start === id && "Start",
+    doc.mission.onFail === id && "On Fail",
+    state.finish && "Finish",
+  ].filter(Boolean);
+}
+
+/** The CSS key of a role label: `On Fail` is `on-fail`. */
+export const roleKey = (role) => role.toLowerCase().replace(" ", "-");
+
+/** Every state in graph order (left to right, then top to bottom), one row each. */
+export function StatesPane({ doc, selected, onSelect }) {
+  const ids = Object.keys(doc.mission.states).sort((a, b) =>
+    doc.layout[a].x - doc.layout[b].x || doc.layout[a].y - doc.layout[b].y
+  );
+  return html`
+    <ul class="state-list">
+      ${ids.map((id) => html`
+        <li key=${id}>
+          <button
+            class="row"
+            aria-pressed=${selected === id}
+            title=${`Select ${id}`}
+            onClick=${() => onSelect(id)}
+          >
+            <span class="row-name">${id}</span>
+            ${roles(doc, id).map((role) => html`<span class="chip" key=${role} data-role=${roleKey(role)}>${role}</span>`)}
+          </button>
+        </li>
+      `)}
+    </ul>
+  `;
+}

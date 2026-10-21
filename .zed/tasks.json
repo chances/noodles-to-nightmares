@@ -40,9 +40,21 @@
     "hide": "on_success"
   },
   {
+    "label": "Open Mission Editor",
+    "command": "deno",
+    "args": ["task", "editor"],
+    "hide": "on_success",
+  },
+  {
     "label": "Format Documentation",
     "command": "deno",
     "args": ["fmt", "./**/*.md"],
+    "hide": "on_success"
+  },
+  {
+    "label": "Clean",
+    "command": "deno",
+    "args": ["task", "clean"],
     "hide": "on_success"
   }
 ]
