@@ -2,10 +2,14 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
+import { transitions, useDocument } from "./document.js";
 import { GraphPane } from "./graph-pane.js";
-import { InspectorPane, InspectorTitle } from "./inspector-pane.js";
+import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
+import { missionLabel } from "./mission-label.js";
+import { ProblemsList, ProblemsPanel, ProblemsPill } from "./problems.js";
 import { ProjectMenu } from "./project-menu.js";
 import { StatesPane } from "./states-pane.js";
+import { EditorContext } from "./step-controls.js";
 import { TimelinePane, TimelineSummary } from "./timeline-pane.js";
 import { Status } from "./status.js";
 
@@ -95,10 +99,10 @@ function saveSizes(sizes) {
  * The heading and the optional `bar` (the selected state's name, say) stay outside the scrolling body.
  * `hideTitle` keeps the heading for screen readers only.
  */
-function Pane({ title, hideTitle = false, bar = null, children, innerRef, class: className = "" }) {
+function Pane({ title, hideTitle = false, trail = null, bar = null, children, innerRef, class: className = "" }) {
   return html`
     <section class="pane ${className}" ref=${innerRef}>
-      ${hideTitle ? html`<h2 class="sr-only">${title}</h2>` : html`<hgroup><h2>${title}</h2></hgroup>`}
+      ${hideTitle ? html`<h2 class="sr-only">${title}</h2>` : html`<hgroup><h2>${title}</h2>${trail}</hgroup>`}
       ${bar && html`<div class="pane-bar">${bar}</div>`}
       <div class="pane-body">${children}</div>
     </section>
@@ -159,26 +163,61 @@ function Splitter({ side, label, pane, value, onResize, onReset, measure }) {
   `;
 }
 
-function ExportDialog({ onClose }) {
+/** Lists every problem. Errors block the export itself, which arrives with the generated Sanny. */
+function ExportDialog({ problems, onSelect, onClose }) {
   const dialog = useRef(null);
   const open = (el) => {
     dialog.current = el;
     if (el && !el.open) el.showModal();
   };
+  const errors = problems.filter((p) => p.severity === "error").length;
   return html`
     <dialog ref=${open} onClose=${onClose}>
       <h2>Export</h2>
-      <p class="hint">The generated Sanny, the compile check, and the local count appear here.</p>
+      ${errors > 0 && html`<p class="error" role="alert">Export is blocked until the errors are fixed.</p>`}
+      <${ProblemsList} problems=${problems} onSelect=${(id) => { dialog.current.close(); onSelect(id); }} />
+      ${errors === 0 && html`<p class="hint">The generated Sanny, the compile check, and the local count appear here.</p>`}
       <form method="dialog"><button autofocus>Close</button></form>
     </dialog>
   `;
 }
 
+const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
+
 function App() {
   const [exporting, setExporting] = useState(false);
-  const { list, stem, setStem, mission } = useMissions();
-  const [selected, setSelected] = useState(null);
+  const [showProblems, setShowProblems] = useState(false);
+  const { list, stem, setStem, mission: loadedMission } = useMissions();
+  const { doc, edit, undo, redo, canUndo, canRedo, problems, save } = useDocument(loadedMission.data ?? null, projectQuery);
+  // The document follows the loaded mission one render late; until it catches up the mission is still loading.
+  const current = loadedMission.data && doc?.stem === loadedMission.data.stem ? doc : null;
+  const mission = loadedMission.data && !current
+    ? { loading: true }
+    : current
+      ? { data: { ...current, edges: transitions(current.mission), node: loadedMission.data.node } }
+      : loadedMission;
+  const [picked, setSelected] = useState(null);
   useEffect(() => setSelected(null), [stem]);
+  // Undo or a delete can remove the picked state; the panes must never see it while the pick catches up.
+  const selected = current && picked && !current.mission.states[picked] ? null : picked;
+  useEffect(() => {
+    if (picked && !selected) setSelected(null);
+  }, [picked, selected]);
+  const [vocabulary, setVocabulary] = useState(null);
+  useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [] })); }, []);
+
+  useEffect(() => {
+    const keys = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) undo();
+      else if (key === "y" || (key === "z" && e.shiftKey)) redo();
+      else return;
+      e.preventDefault();
+    };
+    document.addEventListener("keydown", keys);
+    return () => document.removeEventListener("keydown", keys);
+  });
   const [custom, setCustom] = useState(loadSizes);
   const [measured, setMeasured] = useState({ left: 0, right: 0, timeline: 0 });
   const main = useRef(null);
@@ -231,9 +270,18 @@ function App() {
         <label class="field">
           <span>Mission</span>
           <select value=${stem ?? ""} disabled=${!list.data?.length} onChange=${(e) => setStem(e.currentTarget.value)}>
-            ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${m.stem}</option>`)}
+            ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
           </select>
         </label>
+        <span class="save-status" role="status" data-state=${save.state} title=${save.error ?? ""}>
+          ${save.state === "error" ? "Save Failed" : SAVE_TEXT[save.state] ?? ""}
+        </span>
+        <button disabled=${!canUndo} onClick=${undo} title="Undo (Ctrl+Z)">Undo</button>
+        <button disabled=${!canRedo} onClick=${redo} title="Redo (Ctrl+Y)">Redo</button>
+        <div class="menu-anchor">
+          <${ProblemsPill} problems=${problems} open=${showProblems} onToggle=${() => setShowProblems(!showProblems)} />
+          ${showProblems && html`<${ProblemsPanel} problems=${problems} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
+        </div>
         <button class="primary" onClick=${() => setExporting(true)}>Export</button>
       </div>
     </header>
@@ -272,9 +320,13 @@ function App() {
       </div>
       <aside class="right" ref=${panes.right}>
         <${Pane} title="Inspector"
-          bar=${mission.data && selected && html`<${InspectorTitle} doc=${mission.data} selected=${selected} />`}>
-          <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to inspect its states."
-            ready=${(m) => html`<${InspectorPane} doc=${m} edges=${m.edges} selected=${selected} onSelect=${setSelected} />`} />
+          trail=${mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
+          bar=${mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
+          <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to inspect its states."
+            ready=${(m) => html`
+              <${EditorContext.Provider} value=${{ ...vocabulary, monitorIds: (m.mission.monitors ?? []).map((x) => x.id) }}>
+                <${InspectorPane} doc=${m} edges=${m.edges} problems=${problems} selected=${selected} onSelect=${setSelected} edit=${edit} />
+              <//>`} />
         <//>
       </aside>
       </div>
@@ -293,7 +345,7 @@ function App() {
         onReset=${reset}
       />
     </main>
-    ${exporting && html`<${ExportDialog} onClose=${() => setExporting(false)} />`}
+    ${exporting && html`<${ExportDialog} problems=${problems} onSelect=${setSelected} onClose=${() => setExporting(false)} />`}
   `;
 }
 

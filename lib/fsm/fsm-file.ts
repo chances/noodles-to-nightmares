@@ -1,12 +1,13 @@
 // The editor's data file, `missions/<stem>.fsm.json`: a mission table plus the graph layout.
 //
 // Steps are stored as raw Sanny lines. A mission with both a `.states.ts` and a `.fsm.json` uses the
-// `.states.ts`.
+// `.fsm.json`: the editor writes one beside a `.states.ts` the first time that mission is edited.
 
 import * as v from "@valibot/valibot";
 import { join, resolve, toFileUrl } from "@std/path";
 import { layout } from "./graph.ts";
 import type { Point } from "./graph.ts";
+import { STATE_KINDS } from "./types.ts";
 import type { Mission } from "./types.ts";
 
 const lines = v.array(v.string());
@@ -24,6 +25,7 @@ const beat = v.object({
   wait: v.optional(v.number()),
 });
 const state = v.object({
+  kind: v.optional(v.picklist(STATE_KINDS)),
   notes: v.optional(lines),
   fail: v.optional(v.boolean()),
   onEnter: v.optional(steps),
@@ -121,7 +123,7 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-/** Missions that have a table: every `<stem>.states.ts` and `<stem>.fsm.json`, the `.states.ts` winning. */
+/** Missions that have a table: every `<stem>.states.ts` and `<stem>.fsm.json`, the `.fsm.json` winning. */
 export async function listMissions(dir: string): Promise<MissionSource[]> {
   const found = new Map<string, MissionSource["source"]>();
   let entries: Deno.DirEntry[];
@@ -135,8 +137,8 @@ export async function listMissions(dir: string): Promise<MissionSource[]> {
     if (!entry.isFile) continue;
     const ts = entry.name.match(/^(.+)\.states\.ts$/);
     const json = entry.name.match(/^(.+)\.fsm\.json$/);
-    if (ts) found.set(ts[1], "states.ts");
-    else if (json && !found.has(json[1])) found.set(json[1], "fsm.json");
+    if (ts && !found.has(ts[1])) found.set(ts[1], "states.ts");
+    else if (json) found.set(json[1], "fsm.json");
   }
   return [...found]
     .map(([stem, source]) => ({ stem, source }))
@@ -149,6 +151,11 @@ export async function loadMission(
   stem: string,
 ): Promise<(FsmDoc & MissionSource) | undefined> {
   if (!STEM.test(stem)) return undefined;
+  const jsonPath = join(dir, `${stem}.fsm.json`);
+  if (await exists(jsonPath)) {
+    const doc = parseFsmDoc(JSON.parse(await Deno.readTextFile(jsonPath)));
+    return { stem, source: "fsm.json", ...doc };
+  }
   const tsPath = join(dir, `${stem}.states.ts`);
   if (await exists(tsPath)) {
     const { mtime } = await Deno.stat(tsPath);
@@ -157,10 +164,24 @@ export async function loadMission(
     const module = await import(url.href);
     return { stem, source: "states.ts", ...docFromMission(module.default) };
   }
-  const jsonPath = join(dir, `${stem}.fsm.json`);
-  if (await exists(jsonPath)) {
-    const doc = parseFsmDoc(JSON.parse(await Deno.readTextFile(jsonPath)));
-    return { stem, source: "fsm.json", ...doc };
-  }
   return undefined;
+}
+
+/**
+ * Validates `json` as a `.fsm.json` document and writes it to `<stem>.fsm.json`, creating the file the
+ * first time a `.states.ts` mission is edited. Throws, and writes nothing, when the document is invalid.
+ */
+export async function saveMission(
+  dir: string,
+  stem: string,
+  json: unknown,
+): Promise<FsmDoc & MissionSource> {
+  if (!STEM.test(stem)) throw new Error(`invalid mission name ${stem}`);
+  const doc = parseFsmDoc(json);
+  await Deno.mkdir(dir, { recursive: true });
+  const path = join(dir, `${stem}.fsm.json`);
+  const temp = `${path}.tmp`;
+  await Deno.writeTextFile(temp, JSON.stringify(doc, null, 2) + "\n");
+  await Deno.rename(temp, path);
+  return { stem, source: "fsm.json", ...doc };
 }

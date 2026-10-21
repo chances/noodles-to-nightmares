@@ -62,6 +62,58 @@ Deno.test("serves a mission's table, layout, and edges", async () => {
   );
 });
 
+Deno.test("serves the step and condition vocabulary", async () => {
+  const body = await (await get("/api/vocabulary")).json();
+  assert(body.steps.some((d: { name: string }) => d.name === "say"));
+  assert(body.conds.some((d: { name: string }) => d.name === "playerNear3D"));
+});
+
+Deno.test("serves a mission's problems with its table", async () => {
+  const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
+    .json();
+  assertEquals(body.problems, []);
+});
+
+Deno.test("saving writes a .fsm.json that loads back, and refuses a bad table", async () => {
+  const dir = await Deno.makeTempDir();
+  try {
+    await Deno.mkdir(join(dir, "missions"));
+    const project = encodeURIComponent(dir);
+    const loaded = await (await get(`/api/missions/0_tutorial?project=${repo}`))
+      .json();
+    const put = (body: unknown) =>
+      handler(
+        new Request(
+          `http://editor.test/api/missions/0_tutorial?project=${project}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        ),
+      );
+
+    const edited = { ...loaded.mission, header: ["Edited"] };
+    const ok = await put({ mission: edited, layout: loaded.layout });
+    assertEquals(ok.status, 200);
+    assertEquals((await ok.json()).source, "fsm.json");
+
+    const reload = await (await handler(
+      new Request(
+        `http://editor.test/api/missions/0_tutorial?project=${project}`,
+      ),
+    )).json();
+    assertEquals(reload.mission.header, ["Edited"]);
+
+    const dangling = { ...edited, start: "NOWHERE" };
+    const bad = await put({ mission: dangling });
+    assertEquals(bad.status, 422);
+    assertStringIncludes((await bad.json()).error, "unknown state NOWHERE");
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
+});
+
 Deno.test("answers 404 for a mission with no table", async () => {
   const res = await get(`/api/missions/9_nothing?project=${repo}`);
   assertEquals(res.status, 404);

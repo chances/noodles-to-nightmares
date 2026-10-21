@@ -25,7 +25,21 @@ export interface Monitor {
   once: Step[];
 }
 
+/** What a state is for. The editor offers default sections by kind; the generator ignores it. */
+export const STATE_KINDS = [
+  "cutscene",
+  "tutorial",
+  "objective",
+  "interaction",
+  "encounter",
+  "choice",
+  "ending",
+] as const;
+export type StateKind = typeof STATE_KINDS[number];
+
 export interface State<S extends string = string> {
+  /** Set the first time the editor's kind select changes; the editor infers it from the sections present until then. */
+  kind?: StateKind;
   /** Comments copied into the generated source, e.g. TODO and QUESTION lines. */
   notes?: string[];
   /** The mission-level `fail` list applies in this state. Default true. */

@@ -1,0 +1,78 @@
+import { assertEquals } from "@std/assert";
+import { problems } from "./problems.ts";
+import { defineMission } from "./types.ts";
+import { cond } from "./vocabulary.ts";
+
+const ok = defineMission({
+  header: ["Fixture"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [cond.playerDead()],
+  states: {
+    A: { next: "WIN" },
+    WIN: { finish: true },
+    LOSE: { next: "A" },
+  },
+});
+
+Deno.test("a sound table has no problems", () => {
+  assertEquals(problems(ok), []);
+});
+
+Deno.test("a wait without a next state is an error on that state", () => {
+  const broken = {
+    ...ok,
+    states: { ...ok.states, A: { until: [cond.playerDead()] } },
+  };
+  const found = problems(broken);
+  assertEquals(found[0], {
+    severity: "error",
+    message: "A waits on a condition but has no Next state",
+    state: "A",
+  });
+});
+
+Deno.test("empty conditions and steps are errors", () => {
+  const broken = {
+    ...ok,
+    fail: [{ test: " " }],
+    states: { ...ok.states, A: { next: "WIN", onEnter: [[""]] } },
+  };
+  const messages = problems(broken).filter((p) => p.severity === "error").map((
+    p,
+  ) => p.message);
+  assertEquals(messages, [
+    "The mission's fail list has an empty condition",
+    "A's enter steps has an empty step",
+  ]);
+});
+
+Deno.test("warnings: stranded, unreachable, and no finish", () => {
+  const warned = {
+    ...ok,
+    states: { ...ok.states, ORPHAN: {}, WIN: {} },
+  };
+  const messages = problems(warned).map((p) => p.message);
+  assertEquals(messages, [
+    "WIN has no way out and does not finish the mission",
+    "ORPHAN has no way out and does not finish the mission",
+    "Nothing leads to ORPHAN",
+    "No state finishes the mission",
+  ]);
+});
+
+Deno.test("monitor and constant names must be identifiers, and unique", () => {
+  const broken = {
+    ...ok,
+    consts: { "bad name": 1 },
+    monitors: [
+      { id: "hint", when: [], once: [] },
+      { id: "hint", when: [], once: [] },
+    ],
+  };
+  const messages = problems(broken).map((p) => p.message);
+  assertEquals(messages, [
+    "Two monitors are named hint",
+    'Constant "bad name" needs a name made of letters, digits, and underscores',
+  ]);
+});

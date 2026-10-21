@@ -12,7 +12,16 @@ import { secureHeaders } from "jsr:@hono/hono@^4.13.13/secure-headers";
 import { vValidator } from "jsr:@hono/valibot-validator@^0.6.1";
 import * as v from "@valibot/valibot";
 import { fromFileUrl, join, resolve } from "@std/path";
-import { listMissions, loadMission, NODE, transitions } from "@noodles/fsm";
+import {
+  condDescriptors,
+  listMissions,
+  loadMission,
+  NODE,
+  problems,
+  saveMission,
+  stepDescriptors,
+  transitions,
+} from "@noodles/fsm";
 import { createProject, listProjects, openProject } from "./projects.ts";
 import type { ProjectDirs } from "./projects.ts";
 
@@ -22,6 +31,10 @@ const game = v.picklist(["gta3", "vc"]);
 const createBody = v.object({ name: v.string(), game, parent: v.string() });
 const openBody = v.object({ path: v.string(), game: v.optional(game) });
 const projectQuery = v.object({ project: v.pipe(v.string(), v.minLength(1)) });
+const saveBody = v.object({
+  mission: v.unknown(),
+  layout: v.optional(v.unknown()),
+});
 
 export function defaultDirs(): ProjectDirs {
   const home = Deno.env.get("USERPROFILE") ?? Deno.env.get("HOME") ?? ".";
@@ -91,8 +104,39 @@ export function createApp(dirs: ProjectDirs, { log = false } = {}) {
         ...loaded,
         edges: transitions(loaded.mission),
         node: NODE,
+        problems: problems(loaded.mission),
       });
     },
+  );
+
+  // Autosave: the editor sends the whole table after every edit. A `.states.ts` mission gets a `.fsm.json`
+  // beside it on its first save, and that file wins from then on.
+  app.put(
+    "/api/missions/:stem",
+    vValidator("query", projectQuery),
+    vValidator("json", saveBody),
+    async (c) => {
+      const stem = c.req.param("stem");
+      const { project } = c.req.valid("query");
+      const { mission, layout } = c.req.valid("json");
+      const saved = await unprocessable(() =>
+        saveMission(join(resolve(project), "missions"), stem, {
+          version: 1,
+          mission,
+          layout,
+        })
+      );
+      return c.json({
+        source: saved.source,
+        problems: problems(saved.mission),
+      });
+    },
+  );
+
+  // The steps and conditions the Inspector offers as typed controls.
+  app.get(
+    "/api/vocabulary",
+    (c) => c.json({ steps: stepDescriptors, conds: condDescriptors }),
   );
 
   app.use("*", serveStatic({ root: uiDir }));

@@ -6,6 +6,7 @@ import {
   listMissions,
   loadMission,
   parseFsmDoc,
+  saveMission,
 } from "./fsm-file.ts";
 import { layout, NODE, transitions } from "./graph.ts";
 import { defineMission } from "./types.ts";
@@ -134,7 +135,7 @@ Deno.test("a folder that does not exist lists no missions", async () => {
   }
 });
 
-Deno.test("a .states.ts wins over a .fsm.json of the same stem", async () => {
+Deno.test("a .fsm.json wins over a .states.ts of the same stem", async () => {
   const dir = await Deno.makeTempDir();
   try {
     const fsm = JSON.stringify(docFromMission(table));
@@ -147,11 +148,47 @@ Deno.test("a .states.ts wins over a .fsm.json of the same stem", async () => {
     );
     assertEquals(await listMissions(dir), [{
       stem: "7_demo",
-      source: "states.ts",
+      source: "fsm.json",
     }]);
     assertEquals((await loadMission(dir, "7_demo"))?.mission.header, [
-      "From TypeScript",
+      "Fixture",
     ]);
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
+});
+
+Deno.test("saving writes a .fsm.json that loads back, and refuses an invalid table", async () => {
+  const dir = await Deno.makeTempDir();
+  try {
+    const edited = { ...table, header: ["Edited"] };
+    const saved = await saveMission(dir, "7_demo", {
+      version: 1,
+      mission: edited,
+      layout: { A: { x: 1, y: 2 } },
+    });
+    assertEquals(saved.source, "fsm.json");
+    const loaded = await loadMission(dir, "7_demo");
+    assertEquals(loaded?.mission.header, ["Edited"]);
+    assertEquals(loaded?.layout.A, { x: 1, y: 2 });
+
+    const dangling = {
+      ...table,
+      states: { ...table.states, A: { next: "NOPE" } },
+    };
+    await assertRejects(
+      () => saveMission(dir, "7_demo", { version: 1, mission: dangling }),
+      Error,
+      "unknown state NOPE",
+    );
+    assertEquals((await loadMission(dir, "7_demo"))?.mission.header, [
+      "Edited",
+    ]);
+    await assertRejects(
+      () => saveMission(dir, "../escape", { version: 1, mission: edited }),
+      Error,
+      "invalid mission name",
+    );
   } finally {
     await Deno.remove(dir, { recursive: true });
   }

@@ -36,6 +36,8 @@ function subtitle(doc, id) {
 
 const LEFT = 0;
 const MIDDLE = 1;
+// Pointer travel, in pixels, beyond which a press on empty space is a pan and not a click.
+const CLICK_SLOP = 4;
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 2.5;
 const ZOOM_SPEED = 0.002;
@@ -45,11 +47,14 @@ const ZOOM_SPEED = 0.002;
  * or the left button is dragged on empty space. A left press on a state card is left for selecting it
  * (and, later, dragging it).
  */
-function usePan() {
+function usePan(onDeselect) {
   const start = useRef(null);
   const end = (e) => {
+    // A left press on empty space that never moved is a click, which deselects.
+    const click = e.type === "pointerup" && start.current?.click && !start.current.moved;
     start.current = null;
     delete e.currentTarget.dataset.panning;
+    if (click) onDeselect();
   };
   return {
     // Middle-click would otherwise start the browser's autoscroll.
@@ -61,11 +66,12 @@ function usePan() {
       const pane = e.currentTarget.closest(".pane-body");
       e.currentTarget.setPointerCapture(e.pointerId);
       e.currentTarget.dataset.panning = "";
-      start.current = { x: e.clientX, y: e.clientY, left: pane.scrollLeft, top: pane.scrollTop, pane };
+      start.current = { x: e.clientX, y: e.clientY, left: pane.scrollLeft, top: pane.scrollTop, pane, click: emptySpace, moved: false };
     },
     onPointerMove: (e) => {
       const s = start.current;
       if (!s) return;
+      if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > CLICK_SLOP) s.moved = true;
       s.pane.scrollLeft = s.left - (e.clientX - s.x);
       s.pane.scrollTop = s.top - (e.clientY - s.y);
     },
@@ -130,7 +136,7 @@ export function GraphPane({ doc, edges, node, selected, onSelect }) {
   };
 
   const canvas = useRef(null);
-  const pan = usePan();
+  const pan = usePan(() => onSelect(null));
   const zoom = useZoom(canvas);
 
   return html`

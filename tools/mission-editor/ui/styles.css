@@ -12,6 +12,7 @@
   --role-start: #00ff88;
   --role-on-fail: #ff0033;
   --role-finish: #d4af37;
+  --danger: color-mix(in srgb, var(--role-on-fail) 55%, var(--text));
   --gap: 8px;
   --pane-pad: 12px;
   --control-size: 1.75rem;
@@ -572,7 +573,7 @@ button.link:hover {
 
 /* Grab is reserved for dragging a state card, which a later phase adds. */
 .node {
-  cursor: grab;
+  cursor: pointer;
   outline: none;
 }
 
@@ -914,7 +915,7 @@ dialog .form {
 }
 
 .error {
-  color: color-mix(in srgb, var(--role-on-fail) 55%, var(--text));
+  color: var(--danger);
 }
 
 #welcome {
@@ -985,6 +986,322 @@ button.row.project {
 .project-time {
   flex: none;
   font-size: 12px;
+}
+
+/* The Inspector form */
+textarea {
+  inline-size: 100%;
+  padding-block: 4px;
+  padding-inline: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+textarea:hover {
+  border-color: var(--muted);
+}
+
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.mono {
+  font: 12px/1.5 ui-monospace, Consolas, monospace;
+}
+
+input.mono {
+  inline-size: 100%;
+}
+
+[aria-invalid="true"] {
+  border-color: var(--role-on-fail);
+}
+
+small.error {
+  display: block;
+  font-size: 12px;
+}
+
+/* A heading stays at the top of the pane while its section scrolls; the pane body's top padding is cancelled. */
+.detail-head {
+  position: sticky;
+  inset-block-start: calc(var(--gap) * -1);
+  z-index: 1;
+  padding-block: 4px;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.mini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mini input,
+.mini select {
+  inline-size: 100%;
+  max-inline-size: none;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.title-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+
+.mini.kind select {
+  inline-size: auto;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.check input {
+  min-block-size: 0;
+  accent-color: var(--accent);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 60%, var(--panel));
+}
+
+.item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.item-label {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-tools {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 6px var(--gap);
+}
+
+.typed-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.typed-list .typed-list {
+  padding-inline-start: var(--gap);
+}
+
+select.add {
+  align-self: flex-start;
+  max-inline-size: 100%;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button.tool {
+  min-block-size: 0;
+  padding-block: 0;
+  padding-inline: 6px;
+  border-color: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+button.tool:hover,
+button.tool[aria-pressed="true"] {
+  border-color: var(--line);
+  color: var(--text);
+}
+
+button.tool[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+
+button.icon {
+  justify-content: center;
+  min-inline-size: var(--control-size);
+  padding-inline: 0;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+button.icon:hover {
+  border-color: var(--line);
+  color: var(--text);
+}
+
+button.danger,
+button.tool.danger:hover,
+button.icon.danger:hover {
+  color: var(--danger);
+}
+
+button.icon.danger {
+  color: var(--danger);
+}
+
+button.danger-fill {
+  border-color: var(--role-on-fail);
+  background: var(--role-on-fail);
+  color: #fff;
+}
+
+button.danger-fill:hover {
+  background: color-mix(in srgb, var(--role-on-fail) 85%, #fff);
+}
+
+.rename {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 12ch;
+}
+
+.rename input {
+  inline-size: 100%;
+}
+
+.add-row {
+  display: flex;
+  gap: var(--gap);
+}
+
+.add-row input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.toolbar {
+  flex-wrap: wrap;
+}
+
+.save-status {
+  min-inline-size: 5.5ch;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.save-status[data-state="error"] {
+  color: var(--danger);
+}
+
+button.pill {
+  border-color: var(--role);
+  border-radius: 999px;
+  color: var(--text);
+}
+
+button.pill[data-level="error"] {
+  --role: var(--role-on-fail);
+}
+
+button.pill[data-level="warning"] {
+  --role: var(--role-finish);
+}
+
+button.pill[data-level="ok"] {
+  --role: var(--role-start);
+}
+
+button.pill:hover,
+button.pill[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--role) 14%, transparent);
+}
+
+button.pill:focus-visible {
+  outline-color: var(--role);
+}
+
+.problems-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-end: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  inline-size: min(480px, 90vw);
+  max-block-size: 70vh;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+
+.problems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.problems li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--gap);
+}
+
+.chip[data-level="error"] {
+  --role: var(--role-on-fail);
+}
+
+.chip[data-level="warning"] {
+  --role: var(--role-finish);
+}
+
+dialog .actions {
+  justify-content: flex-end;
 }
 
 @media (prefers-reduced-motion: reduce) {
