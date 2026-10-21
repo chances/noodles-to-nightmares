@@ -14,7 +14,7 @@ In `missions/1_shady_job.txt`, the cutscene camera pointed east instead of south
 Rosa's heading values never changed from the starting reading while this ran. The exact path from the per-frame camera calls to the heading reset was not traced; removing the interference fixed both symptoms.
 
 ## Fix
-The camera block now sits in the `else` of `if $onMission == true`, so it runs only when no mission is active.
+In [`main.txt`](../../../main.txt) the `if and` keeps its `$onMission == false` condition, and its `else` branch wraps `Camera.SetInterpolationParameters` and `Camera.Restore()` in a nested `if $onMission == false`, so neither call runs while a mission is active.
 
 ## Ruled Out
 | Candidate | Evidence |
@@ -25,4 +25,4 @@ The camera block now sits in the `else` of `if $onMission == true`, so it runs o
 | `scrlog` capturing the cutscene | The log kept only the last frames, so it could not |
 
 ## Prevention
-Any per-frame block in `main.txt` that touches the camera, the player's position, or the player's heading needs an `$onMission == false` guard around the whole block, not just its `if` condition.
+Any per-frame block in `main.txt` that touches the camera, the player's position, or the player's heading needs an `$onMission == false` guard on every branch, including its `else`, not just its `if` condition.

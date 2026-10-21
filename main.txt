@@ -111,7 +111,8 @@ Char.Dress($playerChar)
 
 // Safehouse: Rosa's apartment, NE Portland, area behind Rosa's building
 ensureSafehouseBlip()
-$SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, SAFEHOUSE_INFO_X, SAFEHOUSE_INFO_Y, SAFEHOUSE_INFO_Z)
+// TODO: Make this a save icon
+// $SafeInfo = Pickup.Create(#INFO, PickupType.OnStreet, SAFEHOUSE_INFO_X, SAFEHOUSE_INFO_Y, SAFEHOUSE_INFO_Z)
 Garage.ChangeType($ApartmentGarage, GarageType.HideoutOne)
 
 // Set the clock to 9:25p and let the player enjoy the splash art
@@ -121,7 +122,7 @@ wait 750
 // We're done! Show the game to the user
 Camera.DoFade(1000, Fade.In)
 Player.SetControl($player, true)
-Weather.Release
+Weather.Release()
 
 // Main loop. See https://www.youtube.com/watch?v=9lPLIiBgfeE
 while true
@@ -161,14 +162,18 @@ while true
     //Camera.PointAtPoint(1031.13, -654.956, 14.75, SwitchType.Interpolation)
     $isCameraAvoidingObstacle = true
   else
-    Camera.SetInterpolationParameters(0, {time} 750)
-    Camera.Restore()
-    $isCameraAvoidingObstacle = false
+    // Don't interfere with the camera while on a mission
+    if $onMission == false
+    then
+      Camera.SetInterpolationParameters(0, {time} 750)
+      Camera.Restore()
+      $isCameraAvoidingObstacle = false
+    end
   end
 
-  //=============================================
-  // Monitor pickups and teleportation locations
-  //=============================================
+  //=================
+  // Monitor pickups
+  //=================
 
   trySaveGame()
 

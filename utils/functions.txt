@@ -16,16 +16,15 @@ end
 
 /// Try to save the game if the user goes to their safehouse
 function trySaveGame()
-  $isSafehouseAvail = true 
   if $SafeBlip == 0
   then
-    $isSafehouseAvail = false
-  end
-  if and
-    Pickup.HasBeenCollected($SafeBlip)
-    $isSafehouseAvail == true
-  then
-    saveGame()
+    nop
+  else
+    if
+      Pickup.HasBeenCollected($SafeBlip)
+    then
+      saveGame()
+    end
   end
 end
 

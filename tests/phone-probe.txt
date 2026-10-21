@@ -1,0 +1,113 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+nop
+
+{$INCLUDE ../../../utils/geography.txt}
+
+// DEBUG: Bare-bones probe for the stock payphone. Remove once the phone plugin replaces it.
+// Writes every step to CLEO\phone-probe.ini in the GTA3 folder.
+
+var
+  $player: Player
+  $playerChar: Char
+  $payphone: int
+  $step: int
+  $px: float
+  $py: float
+  $pz: float
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the front door of Rosa's building
+$player = Player.Create(0, SAFEHOUSE_TELEPORT_X, SAFEHOUSE_TELEPORT_Y, SAFEHOUSE_TELEPORT_Z)
+Player.SetHeading($player, 0.0)
+$playerChar = Player.GetChar($player)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(SAFEHOUSE_TELEPORT_X, SAFEHOUSE_TELEPORT_Y, SAFEHOUSE_TELEPORT_Z)
+Streaming.RequestModel(827)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+// 1: Grab the stock payphone, exactly as 1_shady_job.txt does
+Phone.Grab(PAYPHONE_X, PAYPHONE_Y, $payphone)
+IniFile.WriteInt($payphone, "CLEO\phone-probe.ini", "Probe", "1_grab_handle")
+IniFile.WriteFloat(PAYPHONE_X, "CLEO\phone-probe.ini", "Probe", "1_grab_x")
+IniFile.WriteFloat(PAYPHONE_Y, "CLEO\phone-probe.ini", "Probe", "1_grab_y")
+
+// 2: Turn the phone on once
+Phone.TurnOn($payphone)
+IniFile.WriteInt(1, "CLEO\phone-probe.ini", "Probe", "2_turned_on")
+
+// 3: Play the ring sound by script at the phone, to separate sound from phone state
+Sound.AddOneOffSound(PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, ScriptSound.SoundPayphoneRinging)
+IniFile.WriteInt(1, "CLEO\phone-probe.ini", "Probe", "3_oneoff_ring_played")
+
+$step = 0
+while true
+  wait 250 ms
+  $step += 1
+
+  // 4: Log whether the player is inside the 20 unit ring zone
+  if
+    Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_NEAR_RADIUS, PAYPHONE_NEAR_RADIUS, false)
+  then
+    IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "4_in_ring_zone_at_step")
+  end
+
+  // 4b: Same check with float literals. The int constant 20 above may be read as a ~0 radius.
+  if
+    Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, 20.0, 20.0, false)
+  then
+    IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "4b_float_literal_in_zone_at_step")
+  end
+
+  // 5: Log the moment the player stands at the phone
+  if
+    Player.LocateOnFoot2D($player, PAYPHONE_X, PAYPHONE_BLIP_Y, 2, 2, false)
+  then
+    IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "5_at_phone_at_step")
+    if
+      Player.IsLiftingAPhone($player)
+    then
+      IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "5_lifting_phone_at_step")
+    end
+  end
+
+  // 6: Heartbeat and player position, to show the loop runs and where the player is
+  Char.GetCoordinates($playerChar, $px, $py, $pz)
+  IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "4_loop_step")
+  IniFile.WriteFloat($px, "CLEO\phone-probe.ini", "Probe", "6_player_x")
+  IniFile.WriteFloat($py, "CLEO\phone-probe.ini", "Probe", "6_player_y")
+end

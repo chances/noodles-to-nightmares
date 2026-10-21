@@ -43,21 +43,29 @@ $thiefHasCash = false
 
 Player.SetControl($player, false)
 
+clearUI()
 Text.PrintBigString("Supply Run", {time} 5000, TextStyle.BottomRight)
-
 Camera.DoFade(500, Fade.Out)
 wait 500
-Text.ClearSmallPrints()
-Text.ClearPrints()
 
 // TODO: Streaming.RequestModel() for Lee Chong, the van, the gang, and the thief
 // Streaming.LoadAllModelsNow()
 
+// Set the clock to 11:30a (lunch time)
+Clock.SetTimeOfDay(11, 30)
+
 //==================
 // C1: Briefing
 //==================
-// TODO: Lee Chong is character 87
-// TODO: Create Lee Chong at LEE_CHONG_X, LEE_CHONG_Y, LEE_CHONG_Z and face him toward Rosa
+
+// Rosa's boss, Lee Chong
+// Note: Lee's nickname is Chunky
+load_special_character {slotId} 1 {modelName} 'CHUNKY'
+Streaming.LoadAllModelsNow()
+Char.Create(PedType.Special, #SPECIAL01, LEE_CHONG_X, LEE_CHONG_Y, LEE_CHONG_Z, $lee)
+Char.SetPersonality($lee, PedStat.ToughGuy)
+
+// TODO: Face Lee towards Rosa
 // TODO: Fixed camera, like the shop's security camera in Mission 1
 if $skipCutscene == false
 then
@@ -73,7 +81,7 @@ then
   wait 3750
 
   // Lee Chong
-  Text.PrintString("Take the van. Here is $250. Go to SupaSave and buy what I wrote on the list.", 4500)
+  Text.PrintString("Take the van. Here's $250. Go buy what we need.", 4250)
   wait 4750
   // Hand over the cash
   Player.AddScore($player, CASH_GIVEN)
@@ -94,12 +102,15 @@ else
 end
 
 // Spawn Lee Chong's van outside the shop
-// TODO: Pick the van model, e.g. Boxville. Car.Create(#BOXVILLE, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z, $van)
+Streaming.RequestModel(#RUMPO)
+Streaming.LoadAllModelsNow()
+$van = Car.Create(#RUMPO, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
+Car.SetHeading($van, 90)
 $vanBlip = Blip.AddForCar($van)
 
 Player.SetControl($player, true)
 TIMERA = 0
-Text.PrintHelpString("Get in Lee Chong's van and drive to SupaSave.")
+Text.PrintHelpString("Get in the van and drive to SupaSave.")
 
 // Wait for Rosa to get in the van
 while true
@@ -132,7 +143,7 @@ while true
   // QUESTION: Roadblock as a parked car, or as gang members standing in the road?
   if and
     $paidToll == false
-    Player.LocateAnyMeans2D($player, SUPPLY_GANG_X, SUPPLY_GANG_Y, 25, 25, false)
+    Player.LocateAnyMeans2D($player, SUPPLY_GANG_X, SUPPLY_GANG_Y, 25.0, 25.0, false)
   then
     // TODO: Gang leader walks to the van window. Rosa keeps control of the van.
     // Gang Leader
@@ -186,7 +197,9 @@ wait 3750
 
 // TODO: He snatches the cash from Rosa's hand
 $thiefHasCash = true
-// TODO: The homeless man runs. Remove $groceryCash from Rosa: Player.AddScore($player, -$groceryCash)
+// TODO: The homeless man runs.
+// Remove $groceryCash from Rosa
+Player.AddScore($player, -$groceryCash)
 
 // Homeless Man
 Text.PrintString("Thank you! God bless!", 2500)
@@ -199,7 +212,7 @@ wait 2750
 // TODO: Return the camera to Rosa
 Player.SetControl($player, true)
 // Note: TIMERA keeps running through the chase
-Text.PrintHelpString("Chase the thief and get the cash back, or let him go and pay out of your own pocket.")
+Text.PrintHelpString("Chase the thief and get the cash back, or let him go and pay out of pocket.")
 
 // TODO: Rosa's choice. Chasing: he flees on foot. Rosa catches and knocks him down to drop a cash pickup.
 // TODO: Letting go: Rosa walks into SupaSave without the cash and the let-go flag is set.
@@ -226,7 +239,7 @@ Blip.Remove($thiefBlip)
 if $letGo == true
 then
   // Rosa
-  Text.PrintString("Fine. I'll cover it. Lee Chong owes me a favor.", 3500)
+  Text.PrintString("Fine, I'll cover it. Lee Chong owes me a favor.", 3500)
   wait 3750
 else
   // Rosa
@@ -254,7 +267,7 @@ $shopBlip = Blip.AddForCoord(SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
 while true
   wait 0
 
-  // TODO: Failure checks: wasted, busted, van destroyed, wanted level of 2 or more, TIMERA > TIME_LIMIT
+  // TODO: Failure checks: wasted, busted, van destroyed, wanted level, TIMERA > TIME_LIMIT
   // QUESTION: Does the gang return for a second toll on the way back?
 
   if
@@ -265,9 +278,9 @@ while true
   end
 end
 
-//==================
+//============
 // C4: Payoff
-//==================
+//============
 Player.SetControl($player, false)
 // TODO: Fixed camera at Lee Chong, inside Punk Noodles
 
@@ -310,7 +323,6 @@ Camera.Restore()
 
 Mission.Finish()
 $onMission = false
-
 05DC: terminate_custom_thread
 
 {$INCLUDE ../utils/missions.txt}

@@ -2,8 +2,8 @@ const START_MISSION_INDEX = 0
 const MAX_MISSION_INDEX = 2
 
 // Characters
+const CHONG = 87
 const SALVATORE = 100
-// FIXME: const CHONG = 100
 
 // Blips
 const PAYPHONE = 8 // RadarSprite.Diablo

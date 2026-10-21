@@ -37,21 +37,16 @@ const NOODLES_SOUND_Z = 11.073 // One-off sound at the security camera's X and Y
 //--------------------------------
 // Portland: Rosa's Apartment
 //--------------------------------
-// Safehouse: the area behind Rosa's building
-const SAFEHOUSE_X = 1165.0
-const SAFEHOUSE_Y = -398.5
-const SAFEHOUSE_Z = 25.8 // Blip, bribe, and save pickup height
-const SAFEHOUSE_ARRIVE_Z = 26.25 // Mission 0 arrival check
+// Safehouse: the front door of Rosa's building
+const SAFEHOUSE_X = 1170.850
+const SAFEHOUSE_Y = -416.097
+const SAFEHOUSE_Z = 22.93 // Blip, bribe, and save pickup height
+const SAFEHOUSE_ARRIVE_Z = 23.25 // Mission 0 arrival check
 const SAFEHOUSE_ARRIVE_RADIUS = 3.0
-
-// Mission 0 arrival cutscene camera
-const SAFEHOUSE_CAM_X = 1183.0
-const SAFEHOUSE_CAM_Y = -384.4
-const SAFEHOUSE_CAM_Z = 34.0
 
 // Info pickup
 const SAFEHOUSE_INFO_X = 1173.523
-const SAFEHOUSE_INFO_Y = -415.67
+const SAFEHOUSE_INFO_Y = -415.670
 const SAFEHOUSE_INFO_Z = 23.50
 
 // Debug teleport target
@@ -68,22 +63,26 @@ const TENEMENT_Z = 33.28
 // Portland: Payphone
 //--------------------------------
 // Source: missions/1_shady_job.txt
-const PAYPHONE_X = 1168.33
-const PAYPHONE_Y = -414.141 // Ringing, grabbing, and the phone object
-const PAYPHONE_BLIP_Y = -414.841 // Blip and the pick-up trigger
-const PAYPHONE_Z = 22.8
-const PAYPHONE_NEAR_RADIUS = 20 // The ringing trigger zone, in X and Y
-const PAYPHONE_CALL_CAM_X = 1193.55 // Over-the-shoulder camera during the call
-const PAYPHONE_CALL_CAM_Y = -409.2625
-const PAYPHONE_CALL_CAM_Z = 0.89
+// Ringing, grabbing, and the phone object
+const PAYPHONE_X = 1173.523
+const PAYPHONE_Y = -416.670
+const PAYPHONE_BLIP_Y = -414.165
+const PAYPHONE_Z = 22.80
+const PAYPHONE_NEAR_RADIUS = 20.0 // The ringing trigger zone, in X and Y
+// Over-the-shoulder camera during the call
+const PAYPHONE_CALL_CAM_X = 1176.525
+const PAYPHONE_CALL_CAM_Y = -420.0
+const PAYPHONE_CALL_CAM_Z = 25.75
 
 //--------------------------------
 // Mission 1: Easy Money
 //--------------------------------
-const PACKAGE_PICKUP_X = 1316.96 // Docks
+// Docks
+const PACKAGE_PICKUP_X = 1316.96
 const PACKAGE_PICKUP_Y = -1088.5
 const PACKAGE_PICKUP_Z = 11.1705
-const DELIVERY_X = 966.364 // The projects, north side
+// The projects, north side
+const DELIVERY_X = 966.364
 const DELIVERY_Y = -133.515
 const DELIVERY_Z = 3.8
 const DELIVERY_RADIUS = 2.5
@@ -103,10 +102,10 @@ const SUPASAVE_Z = 13.53
 const SUPASAVE_DOOR_X = 1296.64
 const SUPASAVE_DOOR_Y = -592.45
 const SUPASAVE_DOOR_Z = 13.53
-// TODO: Fill in: the van's parking spot outside Punk Noodles
-const SUPPLY_VAN_X = 1031.98
-const SUPPLY_VAN_Y = -660.83
-const SUPPLY_VAN_Z = 14.2
+// The van's parking spot outside Punk Noodles
+const SUPPLY_VAN_X = 1013.277
+const SUPPLY_VAN_Y = -680.853
+const SUPPLY_VAN_Z = 14.014
 // TODO: Fill in: Lee Chong's spot inside Punk Noodles
 const LEE_CHONG_X = 1031.98
 const LEE_CHONG_Y = -660.83
