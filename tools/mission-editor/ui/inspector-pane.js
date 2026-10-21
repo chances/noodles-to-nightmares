@@ -318,8 +318,10 @@ function MissionForm({ doc, edit }) {
           <textarea rows=${Math.max(2, mission.header.length)} placeholder="Comment lines at the top of the generated file." value=${mission.header.join("\n")}
             onInput=${(e) => { const text = e.currentTarget.value; change("Header", (m) => { m.header = lines(text); }, "header"); }}></textarea>
         </label>
-        <${StateSelect} label="Start State" value=${mission.start} states=${states} onChange=${(id) => change("Start State", (m) => { m.start = id; })} />
-        <${StateSelect} label="Fail State" value=${mission.onFail} states=${states} onChange=${(id) => change("Fail State", (m) => { m.onFail = id; })} />
+        <div class="fields mission-state-fields">
+          <${StateSelect} label="Start State" value=${mission.start} states=${states} onChange=${(id) => change("Start State", (m) => { m.start = id; })} />
+          <${StateSelect} label="Fail State" value=${mission.onFail} states=${states} onChange=${(id) => change("Fail State", (m) => { m.onFail = id; })} />
+        </div>
       <//>
 
       <${Section} heading="Constants">

@@ -9,6 +9,7 @@ import { addState } from "./mission-ops.js";
 import { GraphPane } from "./graph-pane.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
+import { loadNodeSelection, saveNodeSelection } from "./node-selection.js";
 import { ProblemsList, ProblemsPanel, ProblemsPill } from "./problems.js";
 import { ProjectMenu } from "./project-menu.js";
 import { KIND_SECTIONS, openOnShow } from "./sections.js";
@@ -31,16 +32,16 @@ const projectName = project?.split(/[\\/]/).filter(Boolean).pop() ?? "";
 const projectQuery = `project=${encodeURIComponent(project ?? "")}`;
 
 /** Loads the mission list once, then the table of the chosen mission. `mission` is { loading } | { error } | { data }. */
-function useMissions() {
+function useMissions(preferredStem = null) {
   const [list, setList] = useState({ loading: true });
-  const [stem, setStem] = useState(null);
+  const [stem, setStem] = useState(preferredStem);
   const [mission, setMission] = useState({ loading: true });
 
   useEffect(() => {
     getJson(`/api/missions?${projectQuery}`).then(
       (missions) => {
         setList({ data: missions });
-        setStem(missions[0]?.stem ?? null);
+        setStem((current) => missions.some((m) => m.stem === current) ? current : missions[0]?.stem ?? null);
         if (!missions.length) setMission({ data: null });
       },
       (error) => {
@@ -197,7 +198,8 @@ function App() {
   const [exporting, setExporting] = useState(false);
   const [showProblems, setShowProblems] = useState(false);
   const [adding, setAdding] = useState(false);
-  const { list, stem, setStem, mission: loadedMission } = useMissions();
+  const [savedSelection] = useState(() => loadNodeSelection(localStorage, project));
+  const { list, stem, setStem, mission: loadedMission } = useMissions(savedSelection?.stem ?? null);
   const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
   // A failed save is listed first, with its reason, beside the mission's own problems.
   const problems = save.state === "error" ? [{ severity: "error", message: `Save failed: ${save.error}` }, ...found] : found;
@@ -208,13 +210,23 @@ function App() {
     : current
       ? { data: { ...current, edges: transitions(current.mission), node: loadedMission.data.node } }
       : loadedMission;
-  const [picked, setSelected] = useState(null);
-  useEffect(() => setSelected(null), [stem]);
+  const [picked, setSelected] = useState(savedSelection?.node ?? null);
+  const previousStem = useRef(stem);
+  useEffect(() => {
+    if (previousStem.current === stem) return;
+    previousStem.current = stem;
+    setSelected(null);
+  }, [stem]);
   // Undo or a delete can remove the picked state; the panes must never see it while the pick catches up.
   const selected = current && picked && !current.mission.states[picked] ? null : picked;
   useEffect(() => {
     if (picked && !selected) setSelected(null);
   }, [picked, selected]);
+  useEffect(() => {
+    if (current && current.stem === stem) {
+      saveNodeSelection(localStorage, project, { stem, node: selected });
+    }
+  }, [current, stem, selected]);
   // The beat the Beat pane edits; a click on the timeline picks it, and a new state starts at its first beat.
   const [beatPick, setBeatPick] = useState(0);
   useEffect(() => setBeatPick(0), [selected]);
@@ -283,7 +295,7 @@ function App() {
     <header>
       <${ProjectMenu} name=${projectName} path=${project} />
       <label class="field">
-        <span>Mission</span>
+        <span class="sr-only">Mission</span>
         <select value=${stem ?? ""} disabled=${!list.data?.length} onChange=${(e) => setStem(e.currentTarget.value)}>
           ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
         </select>

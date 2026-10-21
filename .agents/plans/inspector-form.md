@@ -46,8 +46,8 @@ The Inspector becomes an editable form for the selected state, or for the missio
 
 ## Phasing
 
-- First, built: the skeleton, the Mission form (file comment, start and fail states, constants, fail conditions, monitors, includes), Add State, rename, delete, the problems pill and panel, typed step and condition controls, and the sections the generator already supports (Flow, Fail Check, Enter and Exit Steps, Wait Until, Branches, Notes, Reset Monitors), plus the Beat pane. Kinds only choose default sections.
-- Later, each with generator support: Spawns, Reward, Time Limit (state and mission), Control, Prompt, Spot.
+- Phase 1, complete: the skeleton, the Mission form (file comment, start and fail states, constants, fail conditions, monitors, includes), Add State, rename, delete, the problems pill and panel, typed step and condition controls, all Inspector sections supported by the generator (Flow, Fail Check, Enter and Exit Steps, Wait Until, Branches, Notes, Reset Monitors), and the Beat pane. Kinds only choose default sections.
+- Future feature slices pair generator support with their Inspector sections: Spawns, Reward, Time Limit (state and mission), Control, Prompt, and Spot.
 - Multi-track beats ([multi-track-beats.md](multi-track-beats.md)) change the Beat pane into the column grid once built.
 
 ## Open Items
