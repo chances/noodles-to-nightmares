@@ -216,8 +216,6 @@ Text.PrintString("Pick up the package at the docks, deliver it to the projects o
 wait 4750
 Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
 wait 3750
-Text.PrintString("Get it done soon. Don't fuck this up!", 3000)
-wait 3250
 
 // End the cutscene
 $onCutscene = false
@@ -244,7 +242,7 @@ while true
   then
     Blip.Remove(pickupBlip)
     Pickup.Remove(packagePickup)
-    Text.PrintString("Take the ~bdrugs~n to the dropoff point.", 3000)
+    Text.PrintString("Take the ~bdrugs ~wto the ~pdropoff point~w.", 3000)
     break
   end
 end
@@ -272,9 +270,8 @@ end
 // TODO: Send this text on the pager
 // FIXME: Pager.Send("Here's your cut. There may be more work soon. I'll be in touch.", )
 Text.PrintString("Here's your cut. There may be more work soon. I'll be in touch.", 4000)
-wait 4250
 
-// The player successfully delivered the package, pass the mission
+// The player delivered the package, pass the mission
 Audio.PlayMissionPassedTune(1)
 register_mission_passed 'NooM_1'
 Player.AddScore($player, REWARD)
@@ -288,7 +285,7 @@ $missionIndex = $missionIndex + 1
 05DC: terminate_custom_thread
 
 /// Gracefully remove Sal if he's far away or 7.5 seconds have passed since the cutscene ended
-// A label subroutine, not a `function`: a function has its own locals and cannot see this script's
+// NOTE: A label subroutine, not a `function`: a function has its own locals and cannot see this script's
 :tryRemoveSal
   Char.MarkAsNoLongerNeeded(sal)
 
