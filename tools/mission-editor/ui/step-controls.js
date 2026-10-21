@@ -2,7 +2,8 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
-import { buildCond, buildLines, defaults, formatField, isValid, parseCond, parseLines, reformat } from "./templates.js";
+import { SplitButton } from "./split-button.js";
+import { buildCond, buildLines, buildWhen, defaults, formatField, isValid, parseCond, parseLines, parseWhen, reformat } from "./templates.js";
 
 /** The vocabulary (`steps`, `conds`) and the open mission's monitor ids, which the latch fields offer. */
 export const EditorContext = createContext({ steps: [], conds: [], monitorIds: [] });
@@ -64,7 +65,9 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
   const isCond = kind === "cond";
   const noun = isCond ? "condition" : "step";
   const parsed = isCond ? parseCond(conds, item) : parseLines(steps, item);
-  const raw = sanny || !parsed;
+  const when = isCond || parsed ? null : parseWhen(steps, conds, item);
+  const raw = sanny || (!parsed && !when);
+  const setWhen = (patch) => onChange(buildWhen({ ...when, ...patch }));
 
   const setValue = (name) => (text) => {
     const values = { ...parsed.values, [name]: text };
@@ -74,9 +77,9 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
   return html`
     <li class="item">
       <div class="item-head">
-        <span class="item-label">${parsed ? parsed.descriptor.label : "Custom Sanny"}</span>
+        <span class="item-label">${parsed ? parsed.descriptor.label : when ? "Conditional Steps" : "Custom Sanny"}</span>
         <span class="item-tools">
-          ${parsed && html`<button class="tool" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} onClick=${() => setSanny(!sanny)}>${sanny ? "Show Controls" : "Edit As Sanny"}</button>`}
+          ${(parsed || when) && html`<button class="tool" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} onClick=${() => setSanny(!sanny)}>${sanny ? "Show Controls" : "Edit As Sanny"}</button>`}
           <button class="tool" aria-label=${`Move ${noun} ${n} up`} title="Move Up" onClick=${() => onMove(-1)}>↑</button>
           <button class="tool" aria-label=${`Move ${noun} ${n} down`} title="Move Down" onClick=${() => onMove(1)}>↓</button>
           <button class="tool danger" aria-label=${`Remove ${noun} ${n}`} title=${`Remove ${isCond ? "Condition" : "Step"}`} onClick=${onRemove}>✕</button>
@@ -86,6 +89,15 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
         ? isCond
           ? html`<input class="mono" value=${item.test} spellcheck=${false} aria-label="Sanny Condition" onInput=${(e) => onChange({ ...item, test: e.currentTarget.value })} />`
           : html`<textarea class="mono" rows=${Math.max(1, item.length)} spellcheck=${false} aria-label="Sanny Lines" value=${item.join("\n")} onInput=${(e) => onChange(e.currentTarget.value.split("\n"))}></textarea>`
+        : when ? html`
+          <div class="typed-list">
+            <p class="hint">When all of these hold:</p>
+            <${CondList} conds=${when.conds} emptyText="Add a condition, or the steps below never run." onChange=${(c) => setWhen({ conds: c })} />
+            <p class="hint">Then</p>
+            <${StepList} steps=${when.then} emptyText="Nothing runs yet." onChange=${(list) => setWhen({ then: list })} />
+            <p class="hint">Otherwise</p>
+            <${StepList} steps=${when.otherwise} emptyText="Nothing runs otherwise." onChange=${(list) => setWhen({ otherwise: list })} />
+          </div>`
         : parsed.descriptor.fields.length > 0 && html`
           <div class="fields">
             ${parsed.descriptor.fields.map((f) => html`
@@ -103,13 +115,13 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
   const [generation, setGeneration] = useState(0);
   const groups = [...new Set(descriptors.map((d) => d.group))];
 
-  const add = (e) => {
-    const name = e.currentTarget.value;
-    e.currentTarget.value = "";
+  const add = (name) => {
     if (!name) return;
     const descriptor = descriptors.find((d) => d.name === name);
     const blank = kind === "cond" ? { test: "" } : [""];
-    const fresh = !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds)) : buildLines(descriptor, defaults(descriptor, monitorIds));
+    const first = conds[0];
+    const when = buildWhen({ conds: first ? [buildCond(first, defaults(first, monitorIds))] : [], then: [], otherwise: [] });
+    const fresh = name === "__when" ? when : !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds)) : buildLines(descriptor, defaults(descriptor, monitorIds));
     onChange([...items, fresh]);
   };
   const replace = (i) => (next) => onChange(items.map((item, j) => (j === i ? next : item)));
@@ -133,14 +145,24 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
         <ul class="items">
           ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} onMove=${move(i)} />`)}
         </ul>`}
-      <select class="add" aria-label=${addLabel} value="" onChange=${add}>
-        <option value="">${addLabel}</option>
-        ${groups.map((group) => html`
-          <optgroup key=${group} label=${group}>
-            ${descriptors.filter((d) => d.group === group).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
-          </optgroup>`)}
-        <option value="__sanny">Custom Sanny</option>
-      </select>
+      ${kind === "step"
+        // Most steps are an if/then/else, so the button adds one and the menu holds everything else.
+        ? html`<${SplitButton} label="Add Condition" title="Add Condition" ariaLabel="Add a conditional step to this list" onMain=${() => add("__when")}
+            menuTitle="More Steps" menuAriaLabel="Choose a step to add" onPick=${add}
+            groups=${[
+              ...groups.map((group) => ({ heading: group, items: descriptors.filter((d) => d.group === group).map((d) => ({ value: d.name, label: d.label })) })),
+              // TODO: Add a "JavaScript/TypeScript" item for CLEO JS scripts beside Sanny Builder.
+              { heading: "Custom", items: [{ value: "__sanny", label: "Sanny Builder" }] },
+            ]} />`
+        : html`
+          <select class="add" aria-label=${addLabel} value="" onChange=${(e) => { const name = e.currentTarget.value; e.currentTarget.value = ""; add(name); }}>
+            <option value="">${addLabel}</option>
+            ${groups.map((group) => html`
+              <optgroup key=${group} label=${group}>
+                ${descriptors.filter((d) => d.group === group).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
+              </optgroup>`)}
+            <option value="__sanny">Custom Sanny</option>
+          </select>`}
     </div>
   `;
 }

@@ -1,4 +1,4 @@
-// The Inspector's optional sections and the kinds that choose their defaults. Flow and Fail Check always show.
+// The Script pane's optional sections and the kinds that choose their defaults. Flow and Fail Check always show.
 
 export const KINDS = [
   ["cutscene", "Cutscene"],
@@ -15,22 +15,36 @@ export const SECTIONS = [
   { id: "onEnter", heading: "Enter Steps", field: "onEnter" },
   { id: "until", heading: "Wait Until", field: "until" },
   { id: "branches", heading: "Branches", field: "on" },
-  { id: "beats", heading: "Beats", field: "beats" },
   { id: "onExit", heading: "Exit Steps", field: "onExit" },
   { id: "latches", heading: "Reset Monitors", field: "resetLatches" },
   { id: "notes", heading: "Notes", field: "notes" },
 ];
 
+// Beats live in the Beat pane, so the kinds that script them (cutscene, tutorial, ending) add no section here.
 // Spawns, Reward, Control, Prompt, and Spot join these when the generator supports them.
 export const KIND_SECTIONS = {
-  cutscene: ["beats"],
-  tutorial: ["beats"],
+  cutscene: [],
+  tutorial: [],
   objective: ["onEnter", "until"],
   interaction: ["until"],
   encounter: ["onEnter", "branches"],
   choice: ["branches"],
-  ending: ["beats"],
+  ending: [],
 };
+
+// Sections a state should open on its first render, keyed by state name: set by Add State, taken by the form.
+const pending = new Map();
+
+export function openOnShow(id, sectionIds) {
+  pending.set(id, sectionIds);
+}
+
+/** The section ids waiting to open for `id`, as the form's `opened` map; they open once. */
+export function takeOpened(id) {
+  const ids = pending.get(id) ?? [];
+  pending.delete(id);
+  return Object.fromEntries(ids.map((s) => [`${id}:${s}`, true]));
+}
 
 /** Whether the state holds data for `section`. An emptied section stays open until it is removed. */
 export function hasData(state, section) {

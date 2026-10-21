@@ -27,6 +27,11 @@ export function problems(mission: Mission): Problem[] {
   const steps = (list: Step[] | undefined, message: string, state?: string) => {
     for (const s of list ?? []) {
       if (!s.some((line) => line.trim())) error(message, state);
+      // A conditional with no test line would emit an `if` Sanny cannot compile.
+      const ifAt = s.findIndex((line) => /^if( and)?$/.test(line));
+      if (ifAt !== -1 && s[ifAt + 1] === "then") {
+        error("A conditional step has no condition", state);
+      }
     }
   };
 

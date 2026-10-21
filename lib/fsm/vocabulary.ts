@@ -69,6 +69,48 @@ export const cond = {
     test: `health < ${amount}`,
     locals: ["health"],
   }),
+  playerNear2D: (spot: [x: Expr, y: Expr], radius: Expr): Cond => ({
+    test: `Player.LocateAnyMeans2D($player, ${
+      spot.join(", ")
+    }, ${radius}, ${radius}, false)`,
+  }),
+  playerOnFootNear3D: (spot: Spot, radius: Expr): Cond => ({
+    test: `Player.LocateOnFoot3D($player, ${
+      spot.join(", ")
+    }, ${radius}, ${radius}, ${radius}, true)`,
+  }),
+  playerOnFootNear2D: (spot: [x: Expr, y: Expr], radius: Expr): Cond => ({
+    test: `Player.LocateOnFoot2D($player, ${
+      spot.join(", ")
+    }, ${radius}, ${radius}, false)`,
+  }),
+  playerStoppedNear3D: (spot: Spot, radius: Expr): Cond => ({
+    test: `Player.LocateStoppedOnFoot3D($player, ${
+      spot.join(", ")
+    }, ${radius}, ${radius}, ${radius}, true)`,
+  }),
+  playerInThisCar: (car: Expr): Cond => ({
+    test: `Player.IsInCar($player, ${car})`,
+  }),
+  playerLiftingPhone: (): Cond => ({ test: "Player.IsLiftingAPhone($player)" }),
+  playerCanStartMission: (): Cond => ({
+    test: "Player.CanStartMission($player)",
+  }),
+  keyPressed: (key: string): Cond => ({
+    test: `Pad.IsKeyPressed(KeyCode.${key})`,
+  }),
+  carUpsideDown: (car: Expr): Cond => ({ test: `Car.IsUpsidedown(${car})` }),
+  carInWater: (car: Expr): Cond => ({ test: `Car.IsInWater(${car})` }),
+  pickupCollected: (pickup: Expr): Cond => ({
+    test: `Pickup.HasBeenCollected(${pickup})`,
+  }),
+  charSpottedPlayer: (char: Expr): Cond => ({
+    test: `Char.HasSpottedPlayer(${char}, $player)`,
+  }),
+  saveFinished: (): Cond => ({ test: "Game.HasSaveGameFinished()" }),
+  modelLoaded: (model: Expr): Cond => ({
+    test: `Streaming.IsModelLoaded(${model})`,
+  }),
   latchSet: (id: string): Cond => cmp(latchLocal(id), "==", "true"),
   latchClear: (id: string): Cond => cmp(latchLocal(id), "==", "false"),
 };

@@ -11,6 +11,7 @@ import type { Cond, Step } from "@noodles/fsm";
 import {
   buildCond,
   buildLines,
+  buildWhen,
   defaults,
   formatField,
   formatName,
@@ -18,6 +19,7 @@ import {
   isValid,
   parseCond,
   parseLines,
+  parseWhen,
 } from "./ui/templates.js";
 
 const missions = fromFileUrl(new URL("../../missions", import.meta.url));
@@ -77,6 +79,36 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
       cond.playerNear3D(["X", "Y", "Z"], "R"),
     ],
     ["healthBelow", { amount: "45" }, cond.healthBelow(45)],
+    [
+      "playerNear2D",
+      { x: "X", y: "Y", radius: "R" },
+      cond.playerNear2D(["X", "Y"], "R"),
+    ],
+    [
+      "playerOnFootNear3D",
+      { x: "X", y: "Y", z: "Z", radius: "R" },
+      cond.playerOnFootNear3D(["X", "Y", "Z"], "R"),
+    ],
+    [
+      "playerOnFootNear2D",
+      { x: "X", y: "Y", radius: "R" },
+      cond.playerOnFootNear2D(["X", "Y"], "R"),
+    ],
+    [
+      "playerStoppedNear3D",
+      { x: "X", y: "Y", z: "Z", radius: "R" },
+      cond.playerStoppedNear3D(["X", "Y", "Z"], "R"),
+    ],
+    ["playerInThisCar", { car: "$myCar" }, cond.playerInThisCar("$myCar")],
+    ["playerLiftingPhone", {}, cond.playerLiftingPhone()],
+    ["playerCanStartMission", {}, cond.playerCanStartMission()],
+    ["keyPressed", { key: "Space" }, cond.keyPressed("Space")],
+    ["carUpsideDown", { car: "$myCar" }, cond.carUpsideDown("$myCar")],
+    ["carInWater", { car: "$myCar" }, cond.carInWater("$myCar")],
+    ["pickupCollected", { pickup: "$p" }, cond.pickupCollected("$p")],
+    ["charSpottedPlayer", { char: "sal" }, cond.charSpottedPlayer("sal")],
+    ["saveFinished", {}, cond.saveFinished()],
+    ["modelLoaded", { model: "827" }, cond.modelLoaded(827)],
     ["latchSet", { id: "driveHint" }, cond.latchSet("driveHint")],
     ["latchClear", { id: "driveHint" }, cond.latchClear("driveHint")],
   ];
@@ -149,7 +181,10 @@ Deno.test("mission 0's steps and conditions all read as typed controls, except t
   const untyped: string[] = [];
   const steps = (list: Step[] = []) => {
     for (const s of list) {
-      if (!parseLines(stepDescriptors, s)) untyped.push(s[0]);
+      if (
+        !parseLines(stepDescriptors, s) &&
+        !parseWhen(stepDescriptors, condDescriptors, s)
+      ) untyped.push(s[0]);
     }
   };
   const conds = (list: Cond[] = []) => {
@@ -172,5 +207,38 @@ Deno.test("mission 0's steps and conditions all read as typed controls, except t
       steps(beat.do);
     }
   }
-  assertEquals(untyped, ["if"]);
+  assertEquals(untyped, []);
+});
+
+Deno.test("a conditional step reads back into conditions, a then body, and an else body", () => {
+  const lines = step.when(
+    [cond.healthBelow(45), cond.latchClear("driveHint")],
+    [step.help("A"), step.fade(750, "Out")],
+    [step.when([cond.playerDead()], [step.help("B")]), ["wait 0"]],
+  );
+  const parsed = parseWhen(stepDescriptors, condDescriptors, lines)!;
+  assertEquals(parsed.conds.map((c: Cond) => c.test), [
+    "health < 45",
+    "latchDriveHint == false",
+  ]);
+  assertEquals(parsed.then, [step.help("A"), step.fade(750, "Out")]);
+  assertEquals(parsed.otherwise, [
+    step.when([cond.playerDead()], [step.help("B")]),
+    ["wait 0"],
+  ]);
+  assertEquals(buildWhen(parsed), lines);
+});
+
+Deno.test("lines that are not a conditional the editor wrote stay untyped", () => {
+  assertEquals(parseWhen(stepDescriptors, condDescriptors, ["wait 0"]), null);
+  assertEquals(
+    parseWhen(stepDescriptors, condDescriptors, [
+      "mystery = 1",
+      "if",
+      "  mystery == 1",
+      "then",
+      "end",
+    ]),
+    null,
+  );
 });

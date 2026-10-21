@@ -47,6 +47,20 @@ Deno.test("empty conditions and steps are errors", () => {
   ]);
 });
 
+Deno.test("a conditional step with no condition is an error", () => {
+  const broken = {
+    ...ok,
+    states: {
+      ...ok.states,
+      A: { next: "WIN", onEnter: [["if and", "then", "end"]] },
+    },
+  };
+  assertEquals(
+    problems(broken)[0].message,
+    "A conditional step has no condition",
+  );
+});
+
 Deno.test("warnings: stranded, unreachable, and no finish", () => {
   const warned = {
     ...ok,

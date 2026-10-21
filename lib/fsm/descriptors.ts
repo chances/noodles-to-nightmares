@@ -37,7 +37,7 @@ export interface StepDescriptor extends Descriptor {
 }
 
 export interface CondDescriptor extends Descriptor {
-  group: "Player" | "Monitors";
+  group: "Player" | "Position" | "Input" | "Vehicles" | "World" | "Monitors";
   /** Lines that run before the `if`; `lines` holds the test. */
   pre?: string[];
   locals?: string[];
@@ -222,6 +222,13 @@ export const stepDescriptors: StepDescriptor[] = [
   },
 ];
 
+const radius: Field = {
+  name: "radius",
+  label: "Radius",
+  type: "expr",
+  default: "2.0",
+};
+
 export const condDescriptors: CondDescriptor[] = [
   {
     name: "playerDead",
@@ -253,8 +260,8 @@ export const condDescriptors: CondDescriptor[] = [
   },
   {
     name: "playerNear3D",
-    label: "Player is near",
-    group: "Player",
+    label: "Player is near (3D)",
+    group: "Position",
     lines: [
       "Player.LocateAnyMeans3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
     ],
@@ -276,6 +283,122 @@ export const condDescriptors: CondDescriptor[] = [
       type: "number",
       default: "45",
     }],
+  },
+  {
+    name: "playerNear2D",
+    label: "Player is near (2D)",
+    group: "Position",
+    lines: [
+      "Player.LocateAnyMeans2D($player, {x}, {y}, {radius}, {radius}, false)",
+    ],
+    fields: [...spot().slice(0, 2), radius],
+  },
+  {
+    name: "playerOnFootNear3D",
+    label: "Player is on foot near (3D)",
+    group: "Position",
+    lines: [
+      "Player.LocateOnFoot3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
+    ],
+    fields: [...spot(), radius],
+  },
+  {
+    name: "playerOnFootNear2D",
+    label: "Player is on foot near (2D)",
+    group: "Position",
+    lines: [
+      "Player.LocateOnFoot2D($player, {x}, {y}, {radius}, {radius}, false)",
+    ],
+    fields: [...spot().slice(0, 2), radius],
+  },
+  {
+    name: "playerStoppedNear3D",
+    label: "Player has stopped on foot near",
+    group: "Position",
+    lines: [
+      "Player.LocateStoppedOnFoot3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
+    ],
+    fields: [...spot(), radius],
+  },
+  {
+    name: "playerInThisCar",
+    label: "Player is in a given car",
+    group: "Player",
+    lines: ["Player.IsInCar($player, {car})"],
+    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+  },
+  {
+    name: "playerLiftingPhone",
+    label: "Player is lifting a phone",
+    group: "Player",
+    lines: ["Player.IsLiftingAPhone($player)"],
+    fields: [],
+  },
+  {
+    name: "playerCanStartMission",
+    label: "Player can start a mission",
+    group: "Player",
+    lines: ["Player.CanStartMission($player)"],
+    fields: [],
+  },
+  {
+    name: "keyPressed",
+    label: "Key is pressed",
+    group: "Input",
+    lines: ["Pad.IsKeyPressed(KeyCode.{key})"],
+    fields: [{ name: "key", label: "Key", type: "name", default: "Space" }],
+  },
+  {
+    name: "carUpsideDown",
+    label: "Car is upside down",
+    group: "Vehicles",
+    lines: ["Car.IsUpsidedown({car})"],
+    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+  },
+  {
+    name: "carInWater",
+    label: "Car is in water",
+    group: "Vehicles",
+    lines: ["Car.IsInWater({car})"],
+    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+  },
+  {
+    name: "pickupCollected",
+    label: "Pickup has been collected",
+    group: "World",
+    lines: ["Pickup.HasBeenCollected({pickup})"],
+    fields: [{
+      name: "pickup",
+      label: "Pickup",
+      type: "expr",
+      default: "$pickup",
+    }],
+  },
+  {
+    name: "charSpottedPlayer",
+    label: "Character has spotted the player",
+    group: "World",
+    lines: ["Char.HasSpottedPlayer({char}, $player)"],
+    fields: [{
+      name: "char",
+      label: "Character",
+      type: "expr",
+      default: "$char",
+    }],
+  },
+  {
+    name: "saveFinished",
+    label: "Game save has finished",
+    group: "World",
+    lines: ["Game.HasSaveGameFinished()"],
+    fields: [],
+  },
+  {
+    name: "modelLoaded",
+    label: "Model is loaded",
+    group: "World",
+    lines: ["Streaming.IsModelLoaded({model})"],
+    fields: [{ name: "model", label: "Model", type: "expr", default: "0" }],
   },
   {
     name: "latchSet",

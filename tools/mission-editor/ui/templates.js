@@ -141,6 +141,89 @@ export function parseLines(descriptors, lines) {
   return null;
 }
 
+const INDENT = "  ";
+
+/**
+ * Splits flat Sanny lines back into steps. A known step (or a conditional, from its `if` to its `end`) is one
+ * step; any other line is a step of its own. Joining the result gives the same lines.
+ */
+export function splitSteps(steps, conds, lines) {
+  const longest = Math.max(1, ...steps.map((d) => d.lines.length));
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    // Nested blocks are indented, so the first unindented `end` closes this `if`.
+    const end = /^if( and)?$/.test(lines[i]) ? lines.indexOf("end", i) : -1;
+    const block = end === -1 ? null : lines.slice(i, end + 1);
+    if (block && parseWhen(steps, conds, block)) {
+      out.push(block);
+      i = end + 1;
+      continue;
+    }
+    let size = longest;
+    while (
+      size > 1 &&
+      !(i + size <= lines.length && parseLines(steps, lines.slice(i, i + size)))
+    ) size--;
+    out.push(lines.slice(i, i + size));
+    i += size;
+  }
+  return out;
+}
+
+/**
+ * A conditional step as `{ conds, then, otherwise }`, or null for lines that are not one the editor wrote.
+ * Condition `pre` lines come before the `if`, and the bodies are indented under `then` and `else`.
+ */
+export function parseWhen(steps, conds, lines) {
+  if (lines.at(-1) !== "end") return null;
+  const ifAt = lines.findIndex((l) => /^if( and)?$/.test(l));
+  const thenAt = lines.indexOf("then");
+  if (ifAt === -1 || thenAt < ifAt) return null;
+  const elseAt = lines.indexOf("else", thenAt);
+  const tests = lines.slice(ifAt + 1, thenAt);
+  if ((lines[ifAt] === "if") !== (tests.length === 1)) return null;
+  if (!tests.every((t) => t.startsWith(INDENT))) return null;
+
+  const pre = lines.slice(0, ifAt);
+  const parsed = [];
+  let used = 0;
+  for (const raw of tests) {
+    const test = raw.slice(INDENT.length);
+    const candidates = conds.filter((d) =>
+      !d.pre || same(d.pre, pre.slice(used, used + d.pre.length))
+    );
+    const found = parseLines(candidates, [test]);
+    if (found?.descriptor.pre) used += found.descriptor.pre.length;
+    parsed.push(found ? buildCond(found.descriptor, found.values) : { test });
+  }
+  if (used !== pre.length) return null;
+
+  const body = (from, to) => {
+    const part = lines.slice(from, to);
+    return part.every((l) => !l || l.startsWith(INDENT))
+      ? splitSteps(steps, conds, part.map((l) => l.slice(INDENT.length)))
+      : null;
+  };
+  const then = body(thenAt + 1, elseAt === -1 ? lines.length - 1 : elseAt);
+  const otherwise = elseAt === -1 ? [] : body(elseAt + 1, lines.length - 1);
+  return then && otherwise ? { conds: parsed, then, otherwise } : null;
+}
+
+/** The Sanny lines of a conditional step; the inverse of `parseWhen`. */
+export function buildWhen({ conds, then, otherwise }) {
+  const body = (list) => list.flat().map((l) => (l ? INDENT + l : l));
+  return [
+    ...conds.flatMap((c) => c.pre ?? []),
+    conds.length === 1 ? "if" : "if and",
+    ...conds.map((c) => INDENT + c.test),
+    "then",
+    ...body(then),
+    ...(otherwise.length ? ["else", ...body(otherwise)] : []),
+    "end",
+  ];
+}
+
 const same = (a = [], b = []) =>
   a.length === b.length && a.every((line, i) => line === b[i]);
 

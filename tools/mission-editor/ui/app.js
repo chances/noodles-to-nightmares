@@ -2,12 +2,16 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
+import { AddStateDialog, Plus } from "./add-state.js";
+import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
+import { addState } from "./mission-ops.js";
 import { GraphPane } from "./graph-pane.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
 import { ProblemsList, ProblemsPanel, ProblemsPill } from "./problems.js";
 import { ProjectMenu } from "./project-menu.js";
+import { KIND_SECTIONS, openOnShow } from "./sections.js";
 import { StatesPane } from "./states-pane.js";
 import { EditorContext } from "./step-controls.js";
 import { TimelinePane, TimelineSummary } from "./timeline-pane.js";
@@ -184,9 +188,15 @@ function ExportDialog({ problems, onSelect, onClose }) {
 
 const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
 
+/** Gives the step and condition controls inside it the vocabulary and the mission's monitors. */
+function Vocabulary({ vocabulary, mission, children }) {
+  return html`<${EditorContext.Provider} value=${{ ...vocabulary, monitorIds: (mission.monitors ?? []).map((x) => x.id) }}>${children}<//>`;
+}
+
 function App() {
   const [exporting, setExporting] = useState(false);
   const [showProblems, setShowProblems] = useState(false);
+  const [adding, setAdding] = useState(false);
   const { list, stem, setStem, mission: loadedMission } = useMissions();
   const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
   // A failed save is listed first, with its reason, beside the mission's own problems.
@@ -205,6 +215,10 @@ function App() {
   useEffect(() => {
     if (picked && !selected) setSelected(null);
   }, [picked, selected]);
+  // The beat the Beat pane edits; a click on the timeline picks it, and a new state starts at its first beat.
+  const [beatPick, setBeatPick] = useState(0);
+  useEffect(() => setBeatPick(0), [selected]);
+  const beat = current && selected ? activeBeat(current, selected, beatPick) : -1;
   const [vocabulary, setVocabulary] = useState(null);
   useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [] })); }, []);
 
@@ -301,14 +315,15 @@ function App() {
       <${Splitter}
         side="right"
         pane=${panes.right}
-        label="Resize the Inspector sidebar"
+        label="Resize the Script and Beat sidebars"
         value=${measured.right}
         measure=${measure}
         onResize=${resize("right")}
         onReset=${reset}
       />
       <aside class="left" ref=${panes.left}>
-        <${Pane} title="States">
+        <${Pane} title="States"
+          trail=${html`<button class="icon" aria-label="Add a state to this mission" title="Add State" disabled=${!mission.data} onClick=${() => setAdding(true)}><${Plus} /></button>`}>
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to list its states."
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
         <//>
@@ -321,22 +336,32 @@ function App() {
         <//>
       </div>
       <aside class="right" ref=${panes.right}>
-        <${Pane} title="Inspector"
+        <${Pane} title="Script"
           trail=${mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
           bar=${mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
-          <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to inspect its states."
+          <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
             ready=${(m) => html`
-              <${EditorContext.Provider} value=${{ ...vocabulary, monitorIds: (m.mission.monitors ?? []).map((x) => x.id) }}>
+              <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission}>
                 <${InspectorPane} doc=${m} edges=${m.edges} problems=${problems} selected=${selected} onSelect=${setSelected} edit=${edit} />
               <//>`} />
         <//>
       </aside>
       </div>
-      <${Pane} title="Timeline" hideTitle class="timeline" innerRef=${panes.timeline}
-        bar=${mission.data && selected && html`<${TimelineSummary} doc=${mission.data} selected=${selected} />`}>
-        <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to see its beats."
-          ready=${(m) => html`<${TimelinePane} doc=${m} selected=${selected} />`} />
-      <//>
+      <div class="lower">
+        <${Pane} title="Timeline" hideTitle class="timeline" innerRef=${panes.timeline}
+          bar=${mission.data && selected && html`<${TimelineSummary} doc=${mission.data} selected=${selected} />`}>
+          <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to see its beats."
+            ready=${(m) => html`<${TimelinePane} doc=${m} selected=${selected} beat=${beat} onSelectBeat=${setBeatPick} />`} />
+        <//>
+        <aside class="beat">
+          <${Pane} title="Beat"
+            trail=${mission.data && html`<${BeatAdd} selected=${selected} index=${beat} edit=${edit} onPick=${setBeatPick} />`}
+            bar=${mission.data && selected && html`<${BeatBar} doc=${mission.data} selected=${selected} index=${beat} edit=${edit} onPick=${setBeatPick} />`}>
+            <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to edit its beats."
+              ready=${(m) => html`<${Vocabulary} vocabulary=${vocabulary} mission=${m.mission}><${BeatPane} doc=${m} selected=${selected} index=${beat} edit=${edit} /><//>`} />
+          <//>
+        </aside>
+      </div>
       <${Splitter}
         side="timeline"
         pane=${panes.timeline}
@@ -347,6 +372,13 @@ function App() {
         onReset=${reset}
       />
     </main>
+    ${adding && mission.data && html`
+      <${AddStateDialog} mission=${mission.data.mission} selected=${selected} onClose=${() => setAdding(false)}
+        onCreate=${(values) => {
+          edit("Add State", (d) => addState(d, values, mission.data.node));
+          openOnShow(values.name, KIND_SECTIONS[values.kind]);
+          setSelected(values.name);
+        }} />`}
     ${exporting && html`<${ExportDialog} problems=${problems} onSelect=${setSelected} onClose=${() => setExporting(false)} />`}
   `;
 }

@@ -2,12 +2,13 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, useEffect, useRef, useState } from "/vendor/preact.js";
+import { Plus } from "./add-state.js";
 import { deleteState, inboundTo, nameError, renameState } from "./document.js";
-import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS } from "./sections.js";
+import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS, takeOpened } from "./sections.js";
 import { missionLabel } from "./mission-label.js";
 import { formatName, formatNumber, reformat } from "./templates.js";
 import { roleKey, roles } from "./states-pane.js";
-import { CondList, FieldInput, NumberField, StepList } from "./step-controls.js";
+import { CondList, FieldInput, StepList } from "./step-controls.js";
 
 const lines = (text) => text.split("\n");
 
@@ -15,11 +16,7 @@ function StateLink({ id, onSelect }) {
   return html`<button class="link" title=${`Select ${id}`} onClick=${() => onSelect(id)}>${id}</button>`;
 }
 
-function Plus() {
-  return html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14" /></svg>`;
-}
-
-/** `action` is a control for the heading row, such as Add Beat; it sits beside the remove button. */
+/** `action` is a control for the heading row, such as Add Branch; it sits beside the remove button. */
 function Section({ heading, action = null, onRemove, children }) {
   return html`
     <section class="detail">
@@ -91,7 +88,7 @@ function RenameField({ id, mission, onCommit, onCancel }) {
 
 /** The mission's name beside the Inspector heading while a state is selected; it returns to the mission form. */
 export function InspectorCrumb({ doc, onSelect }) {
-  return html`<button class="link" title="Show The Mission Form" onClick=${() => onSelect(null)}>${missionLabel(doc.stem)}</button>`;
+  return html`<button class="link" title="Show The Mission Script" onClick=${() => onSelect(null)}>${missionLabel(doc.stem)}</button>`;
 }
 
 /**
@@ -154,49 +151,6 @@ function StateSelect({ label, value, states, none, onChange }) {
   `;
 }
 
-function BeatsForm({ beats, onChange }) {
-  const [generation, setGeneration] = useState(0);
-  const replace = (i, patch) => onChange(beats.map((beat, j) => (j === i ? { ...beat, ...patch } : beat)));
-  const move = (i, by) => {
-    const to = i + by;
-    if (to < 0 || to >= beats.length) return;
-    const next = [...beats];
-    [next[i], next[to]] = [next[to], next[i]];
-    setGeneration(generation + 1);
-    onChange(next);
-  };
-  const remove = (i) => {
-    setGeneration(generation + 1);
-    onChange(beats.filter((_, j) => j !== i));
-  };
-  const total = beats.reduce((sum, beat) => sum + (beat.wait ?? 0), 0);
-
-  return html`
-    <div class="typed-list">
-      <p class="hint">${beats.length ? `${beats.length} ${beats.length === 1 ? "beat" : "beats"} over ${(total / 1000).toFixed(1)}s. Each runs its steps once, then waits.` : "No beats. Add one with + to script this state."}</p>
-      <ol class="items beats">
-        ${beats.map((beat, i) => html`
-          <li class="item" key=${`${generation}-${i}`}>
-            <div class="item-head">
-              <span class="item-label">Beat ${i + 1}</span>
-              <span class="item-tools">
-                <button class="tool" aria-label=${`Move beat ${i + 1} up`} title="Move Up" onClick=${() => move(i, -1)}>↑</button>
-                <button class="tool" aria-label=${`Move beat ${i + 1} down`} title="Move Down" onClick=${() => move(i, 1)}>↓</button>
-                <button class="tool danger" aria-label=${`Remove beat ${i + 1}`} title="Remove Beat" onClick=${() => remove(i)}>✕</button>
-              </span>
-            </div>
-            <${NumberField} label="Duration (ms)" value=${beat.wait ?? 0} onCommit=${(wait) => replace(i, { wait })} />
-            <p class="hint">Only if all of these hold:</p>
-            <${CondList} conds=${beat.when ?? []} emptyText="Always runs." onChange=${(when) => replace(i, { when })} />
-            <p class="hint">Steps</p>
-            <${StepList} steps=${beat.do ?? []} emptyText="No steps." onChange=${(list) => replace(i, { do: list })} />
-            ${beat.notes?.length > 0 && html`<ul class="notes">${beat.notes.map((n, k) => html`<li key=${k}>${n}</li>`)}</ul>`}
-          </li>`)}
-      </ol>
-    </div>
-  `;
-}
-
 /** Branches: the first rule whose conditions hold picks the next state. */
 function BranchesForm({ rules, states, onChange }) {
   const [generation, setGeneration] = useState(0);
@@ -229,7 +183,6 @@ function SectionBody({ id, state, states, change }) {
     case "branches": return html`
       <p class="hint">After the beats, the first branch whose conditions hold picks the next state.</p>
       <${BranchesForm} rules=${state.on ?? []} states=${states} onChange=${(v) => change("Branches", (s) => { s.on = v; })} />`;
-    case "beats": return html`<${BeatsForm} beats=${state.beats ?? []} onChange=${(v) => change("Beats", (s) => { s.beats = v; })} />`;
     case "latches": return html`<p>Every monitor can fire again after this state is entered.</p>`;
     case "notes": return html`<textarea rows=${Math.max(2, (state.notes ?? []).length)} aria-label="Notes" value=${(state.notes ?? []).join("\n")}
       onInput=${(e) => { const text = e.currentTarget.value; change("Notes", (s) => { s.notes = lines(text); }, "notes"); }}></textarea>`;
@@ -241,7 +194,7 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
   const { mission } = doc;
   const state = mission.states[id];
   const states = Object.keys(mission.states);
-  const [opened, setOpened] = useState({});
+  const [opened, setOpened] = useState(() => takeOpened(id));
   const isOpen = (section) => opened[`${id}:${section.id}`] || hasData(state, section);
 
   useEffect(() => {
@@ -298,9 +251,7 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
 
       ${SECTIONS.filter(isOpen).map((section) => html`
         <${Section} key=${`${id}:${section.id}`} heading=${section.heading} onRemove=${remove(section)}
-          action=${section.id === "beats"
-            ? html`<button class="icon" aria-label="Add a beat to this state" title="Add Beat" onClick=${() => change("Add Beat", (s) => { s.beats = [...(s.beats ?? []), { wait: 1000 }]; })}><${Plus} /></button>`
-            : section.id === "branches" && html`<button class="icon" aria-label="Add a branch to this state" title="Add Branch" onClick=${() => change("Add Branch", (s) => { s.on = [...(s.on ?? []), { when: [], goto: states[0] }]; })}><${Plus} /></button>`}>
+          action=${section.id === "branches" && html`<button class="icon" aria-label="Add a branch to this state" title="Add Branch" onClick=${() => change("Add Branch", (s) => { s.on = [...(s.on ?? []), { when: [], goto: states[0] }]; })}><${Plus} /></button>`}>
           <${SectionBody} id=${section.id} state=${state} states=${states} change=${change} />
         <//>`)}
 
@@ -363,7 +314,7 @@ function MissionForm({ doc, edit }) {
   return html`
     <div class="inspector">
       <${Section} heading="Identity">
-        <label class="mini"><span>File Comment</span>
+        <label class="mini"><span>Description</span>
           <textarea rows=${Math.max(2, mission.header.length)} placeholder="Comment lines at the top of the generated file." value=${mission.header.join("\n")}
             onInput=${(e) => { const text = e.currentTarget.value; change("Header", (m) => { m.header = lines(text); }, "header"); }}></textarea>
         </label>

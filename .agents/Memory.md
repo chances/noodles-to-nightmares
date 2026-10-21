@@ -122,6 +122,11 @@
 ## Story Scripts
 - **Layout**: Each mission has `missions/<stem>.md` beside its `.txt`. YAML front matter holds the technical metadata (status, location, trigger, reward, context, objectives, win, fail, teaching points, map considerations). The body holds GFM `## Script Requirements` and `## Completion Checklist` checklists, then `## Script`, a screenplay with `[GAMEPLAY]` beats. `story/act-one.md` links to the scripts and keeps the arc, narrative flow, and design notes. The side-mission scripts hold only beats taken from their objectives.
 
+## Mission Editor
+- **Plans**: [`plans/mission-editor.md`](plans/mission-editor.md) and [`plans/inspector-form.md`](plans/inspector-form.md) hold the decisions; the Script pane, Beat pane, and States pane `+` are built.
+- **Data**: a `.fsm.json` wins over a `.states.ts`; the editor writes one on a mission's first edit. `deno task build` still reads only `.states.ts`.
+- **Checking the UI**: serve `createApp` on a spare port (not 8000, which may be the user's) against a throwaway project seeded by a `PUT`, never the repo's `missions/`. Run tests with `deno task --cwd tools/mission-editor test`, which grants `--allow-run`.
+
 ## Teaching Lessons
 - **Lesson HTML**: standards for `.agents/lessons/*.html` (light and dark themes, quiz answers, preview server) are in [`.agents/rules/lesson-html.md`](rules/lesson-html.md).
 

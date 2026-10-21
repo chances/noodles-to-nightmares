@@ -2,22 +2,13 @@
 // table) with the previous document kept as its memento, so undo and redo swap documents. Edits autosave.
 
 import { useEffect, useRef, useState } from "/vendor/preact.js";
+import { transitions } from "./mission-ops.js";
 
 const SAVE_DELAY = 400;
 // Edits to the same field within this window share one undo step.
 const MERGE_WINDOW = 1000;
 
-/** Edges of the graph: a state's `next`, then its `on` branches. */
-export function transitions(mission) {
-  const edges = [];
-  for (const [from, state] of Object.entries(mission.states)) {
-    if (state.next) edges.push({ from, to: state.next, kind: "next" });
-    for (const rule of state.on ?? []) {
-      edges.push({ from, to: rule.goto, kind: "on" });
-    }
-  }
-  return edges;
-}
+export { transitions };
 
 /** Empty lists and false flags mean nothing to the generator, and an empty `until` would emit a broken `if`. */
 function normalize(mission) {
@@ -45,7 +36,7 @@ function normalize(mission) {
 
 /** The error to show under a state-name field, or "" when `name` can be used for `from`. */
 export function nameError(name, mission, from) {
-  if (!name) return "A state needs a name.";
+  if (!name) return "Enter a name for the state.";
   if (name !== from && name in mission.states) {
     return `A state named ${name} already exists.`;
   }

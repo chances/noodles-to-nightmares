@@ -9,8 +9,9 @@ const PX_PER_SECOND = 48;
 const PAD = 10;
 const LABEL_EVERY = 5;
 const MIN_SECONDS = 5;
-/** Beats that wait no time share a start with the next beat; each earlier one is drawn this far left of it. */
-const STACK_NUDGE = 7;
+/** The narrowest a beat's card is drawn, in pixels, so a beat that waits no time can still be clicked. */
+const MIN_CARD = 64;
+const CARD_GAP = 3;
 
 const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`;
 
@@ -54,31 +55,35 @@ export function TimelineSummary({ doc, selected }) {
  * The beats of the selected state on one track, like a Flash timeline: a time axis on top, a keyframe where each
  * beat starts, and a card spanning the time it waits. A beat that waits no time is only a keyframe.
  */
-export function TimelinePane({ doc, selected }) {
+export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
   if (!selected) {
     return html`<${Status} heading="No State Selected">Select a state in the list or the graph to see its beats.<//>`;
   }
   const beats = doc.mission.states[selected].beats ?? [];
   if (!beats.length) {
-    return html`<${Status} heading="No Beats">${selected} has no beats.<//>`;
+    return html`<${Status} heading="No Beats">${selected} has no beats. Add one with + on the Beat pane.<//>`;
   }
 
+  const x = (ms) => PAD + (ms / 1000) * PX_PER_SECOND;
+  // Every beat is a card at least MIN_CARD wide, so a beat that waits no time can still be picked. A card never
+  // overlaps the one before it; after a short beat the cards drift right of their true time (the tooltip has it).
   let start = 0;
+  let cursor = PAD;
   const placed = beats.map((beat, index) => {
-    const item = { beat, index, at: start };
-    start += beat.wait ?? 0;
+    const wait = beat.wait ?? 0;
+    const left = Math.max(x(start), cursor);
+    const width = Math.max((wait / 1000) * PX_PER_SECOND, MIN_CARD);
+    cursor = left + width + CARD_GAP;
+    const item = { beat, index, at: start, left, width };
+    start += wait;
     return item;
   });
-  // Each beat is nudged left by the number of later beats that start at the same moment.
-  for (const item of placed) {
-    item.nudge = placed.filter((other) => other.index > item.index && other.at === item.at).length * STACK_NUDGE;
-  }
   const totalSeconds = Math.max(MIN_SECONDS, Math.ceil(start / 1000));
   const labels = Array.from({ length: Math.floor(totalSeconds / LABEL_EVERY) + 1 }, (_, i) => i * LABEL_EVERY);
-  const x = (ms) => PAD + (ms / 1000) * PX_PER_SECOND;
+  const spanPx = Math.max(x(totalSeconds * 1000), cursor) + PAD;
 
   return html`
-    <div class="timeline-grid" role="table" aria-label=${`Beats of ${selected}`} style=${`--span: ${x(totalSeconds * 1000) + PAD}px`}>
+    <div class="timeline-grid" role="table" aria-label=${`Beats of ${selected}`} style=${`--span: ${spanPx}px`}>
       <div role="row">
         <div class="tl-corner" role="columnheader"></div>
         <div class="tl-ruler" role="columnheader" aria-label="Time in seconds">
@@ -91,20 +96,21 @@ export function TimelinePane({ doc, selected }) {
           <span>${beats.length} · ${seconds(start)}</span>
         </div>
         <div class="tl-track" role="cell">
-          ${placed.map(({ beat, index, at, nudge }) => {
+          ${placed.map(({ beat, index, at, left, width }) => {
             const steps = beat.do ?? [];
             const wait = beat.wait ?? 0;
+            const pick = () => onSelectBeat(index);
+            const key = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } };
+            const press = { role: "button", tabindex: 0, "aria-pressed": shown === index, "aria-label": `Edit beat ${index + 1}`, onClick: pick, onKeyDown: key };
             return html`
               <span key=${index} title=${tooltip(beat, index, at)}>
-                ${wait > 0 && html`
-                  <span class="kf-card" data-conditional=${beat.when?.length ? "" : undefined}
-                    style=${`inset-inline-start: ${x(at)}px; inline-size: ${(wait / 1000) * PX_PER_SECOND}px`}>
-                    <strong>${index + 1} · ${steps.length ? describe(steps[0]) : "Wait"}</strong>
-                    <span>${details(beat)}</span>
-                  </span>
-                  <span class="kf-end" style=${`inset-inline-start: ${x(at + wait)}px`}></span>
-                `}
-                <span class="kf-start" style=${`inset-inline-start: ${x(at) - nudge}px`}></span>
+                <span class="kf-card" data-conditional=${beat.when?.length ? "" : undefined} data-instant=${wait === 0 ? "" : undefined} ...${press}
+                  style=${`inset-inline-start: ${left}px; inline-size: ${width}px`}>
+                  <strong>${index + 1} · ${steps.length ? describe(steps[0]) : "Wait"}</strong>
+                  <span>${details(beat)}</span>
+                </span>
+                ${wait > 0 && html`<span class="kf-end" style=${`inset-inline-start: ${left + width}px`}></span>`}
+                <span class="kf-start" aria-hidden="true" onClick=${pick} style=${`inset-inline-start: ${left}px`}></span>
               </span>
             `;
           })}

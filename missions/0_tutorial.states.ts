@@ -8,7 +8,6 @@ const SAFEHOUSE = ["SAFEHOUSE_X", "SAFEHOUSE_Y", "SAFEHOUSE_Z"] as [
 
 export default defineMission({
   header: [
-    "Mission 0: Car Tutorial",
     "Teach the player how to follow instructions",
   ],
   consts: { REWARD: [250, "Rosa's paycheck"] },
