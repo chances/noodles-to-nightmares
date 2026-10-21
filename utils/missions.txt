@@ -28,9 +28,23 @@ end
 
 /// Ensure the player's safehouse blip is shown, if they've completed the tutorial.
 function ensureSafehouseBlip()
-  if $missionIndex > 0
+  if and
+    $missionIndex > 0
+    $SafeBlip == 0 // Only create the blip if it doesn't already exist
   then
     $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  end
+end
+
+/// Ensure Lee's van blip is shown.
+function ensureVanBlip()
+  if and
+    $VanBlip == 0 // Only create the blip if it doesn't already exist
+    $missionIndex > 0
+    $myCar > 0
+    $myCarModel == #RUMPO // Only show the blip for the van model
+  then
+    $VanBlip = Blip.AddForCar($myCar)
   end
 end
 

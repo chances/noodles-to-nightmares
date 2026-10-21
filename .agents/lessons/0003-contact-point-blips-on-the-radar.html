@@ -28,7 +28,7 @@ button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); b
 <p class="sub">Mission: show the payphone on the minimap while Rosa is on mission 1. Targets <code>missions/1_shady_job.txt</code> line 103.</p>
 
 <h2>1. Why the Radar Shows Nothing</h2>
-<p>The library describes <code>Blip.AddSpriteForContactPoint</code> (opcode <code>02A7</code>) as adding "a long range sprite blip and sphere to the contact point that is not displayed while on mission" (<a href="https://library.sannybuilder.com/#/gta3/default/02A7">02A7</a>). The mission script sets <code>$onMission = true</code> on line 13, so the library text predicts this blip stays hidden. No source read for this lesson confirms the engine code behind that.</p>
+<p>The library describes <code>Blip.AddSpriteForContactPoint</code> (opcode <code>02A7</code>) as adding "a long range sprite blip and sphere to the contact point that is not displayed while on mission" (<a href="https://library.sannybuilder.com/#/gta3/default/02A7">02A7</a>). The mission script sets <code>$onMission = true</code>, so the library text predicted this blip stays hidden. That prediction was not the cause here: the van, payphone, and pickup blips were all missing, and none of them is a contact point blip. Section 5 shows the real cause.</p>
 <blockquote class="callout" data-variant="warning">The blip carries its own sphere, so the orb is not only the draw flag on the locate check.</blockquote>
 
 <h2>2. The Two Commands</h2>
@@ -86,13 +86,24 @@ Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)</pre>
 <h3>Option B: Use a Plain Coordinate Blip</h3>
 <p>This uses the command behind <code>$SafeBlip</code> in <code>main.txt</code>. The library does not describe it as hidden on mission:</p>
 <pre>$payphoneBlip = Blip.AddSpriteForCoord(1168.33, -414.841, 22.8, PAYPHONE)</pre>
-<blockquote class="callout" data-variant="warning"><code>018B</code> does not override the hiding, so Option A fails. Option B is untested. If it also shows nothing, the cause is not the contact point command.</blockquote>
+<blockquote class="callout" data-variant="warning"><code>018B</code> does not override the hiding, so Option A fails. Option B is in the mission now and also showed nothing, so the cause is not the contact point command. Section 5 explains why.</blockquote>
 
-<h2>5. Check Yourself</h2>
-<p>Per the library, why is the payphone missing on the radar?</p>
-<button data-ok="1">The contact point blip hides while a mission runs.</button>
-<button>The sprite constant eight points at a missing icon.</button>
-<button>The blip handle gets overwritten before the radar draws.</button>
+<h2>5. The Real Cause: a Full Blip Pool</h2>
+<p>The mission logged each blip handle to <code>CLEO\debug.ini</code> right after the call that created it:</p>
+<table>
+<tr><th>Key</th><th>Value</th><th>Meaning</th></tr>
+<tr><td><code>Van</code>, <code>Payphone</code>, <code>Pickup</code></td><td><code>-1</code></td><td>The blip call failed</td></tr>
+<tr><td><code>VanHandle</code></td><td><code>11010</code></td><td>The car existed</td></tr>
+<tr><td><code>PlayerHandle</code></td><td><code>0</code></td><td>The mission read the right global slot</td></tr>
+</table>
+<p>Every <code>Blip.Add*</code> command returns <code>-1</code> when the blip pool has no free slot. <code>main.txt</code> called <code>ensureSafehouseBlip()</code> on every frame off mission, and each call added another blip and overwrote <code>$SafeBlip</code>, so the old handles leaked. The fix is a <code>$SafeBlip == 0</code> guard. Details: <code>.agents/reports/bugs/blip-pool-exhausted-by-safehouse-blip.md</code>.</p>
+<blockquote class="callout" data-variant="tip">When a blip is missing, log the handle the add command returns before changing any display settings.</blockquote>
+
+<h2>6. Check Yourself</h2>
+<p>Which reading in <code>debug.ini</code> showed that the blips never existed?</p>
+<button>The player handle was zero after the van spawned.</button>
+<button data-ok="1">The blip handles came back as negative one each.</button>
+<button>The van handle was a large number instead of zero.</button>
 <p id="result" aria-live="polite"></p>
 
 <h2>Next</h2>
@@ -102,8 +113,8 @@ Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)</pre>
 document.querySelectorAll("button").forEach(function (b) {
   b.addEventListener("click", function () {
     document.getElementById("result").textContent = b.dataset.ok
-      ? "Correct, per the 02A7 library description."
-      : "Not that one. Section 1 quotes the 02A7 description, which names the cause.";
+      ? "Correct. Every Blip.Add* command returns -1 when the pool is full."
+      : "Not that one. The table in section 5 shows which reading is the failed call.";
   });
 });
 </script>

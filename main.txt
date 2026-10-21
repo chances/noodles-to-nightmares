@@ -146,6 +146,17 @@ while true
     ensureSafehouseBlip()
   end
 
+  // Hide the van blip when inside it
+  if and
+    $VanBlip > 0
+    $myCar > 0
+    $myCarModel == #RUMPO
+    Player.IsInCar($player, $myCar)
+  then
+    Blip.Remove($VanBlip)
+    $VanBlip = 0
+  end
+
   // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
   // Note: Punk Noodles is 10.8m by 29.54m
   // TODO: Refactor this into a function: avoidObstacles()
@@ -183,6 +194,8 @@ while true
 
   // FIXME: These shortcuts don't work immediately. We found a race condition!😱
   //---------------------------------------
+  // Skip a cutscene
+  monitorShortcutKey_SkipCutscene()
   // P: Quickly open the save screen
   monitorShortcutKey_P()
   // T: Teleport the player
@@ -196,6 +209,9 @@ function tryTriggerMission()
     $missionIndex < MAX_MISSION_INDEX
     Player.CanStartMission($player)
   then
+    // Reset mission state
+    $skipCutscene = false
+
     // Try to trigger the next mission
     switch $missionIndex
       case 0
@@ -242,6 +258,23 @@ end
 //================================
 //------- Functions: Hotkeys -----
 //================================
+
+function monitorShortcutKey_SkipCutscene()
+  if and
+    $onMission == true
+    $onCutscene == true
+  then
+    if or
+      Pad.IsKeyPressed(KeyCode.Return)
+      Pad.IsKeyPressed(KeyCode.Space)
+      // TODO: Also listen for gamepad keys
+    then
+      Text.PrintHelpString("Skipping cutscene...")
+      $skipCutscene = true
+      Camera.DoFade(500, Fade.Out)
+    end
+  end
+end
 
 function monitorShortcutKey_P()
   if or

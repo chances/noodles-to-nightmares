@@ -12,9 +12,9 @@
 const REWARD = 800 // Fee for the job
 
 $onMission = true
+$onCutscene = true
 $isDying = false
 $isWanted = false
-$skipCutscene = false
 $isSalNearby = false
 
 Player.SetControl($player, false)
@@ -79,7 +79,6 @@ then
   wait 3750
 
   // Rosa (_Huh? Who's talking to me?_)
-  // QUESTION: Is Rosa mute?
   // Face the characters toward each other
   $salHeading = Char.GetHeading($sal)
   $faceSalHeading = invertHeading($salHeading)
@@ -97,7 +96,7 @@ then
 
   // Sal
   // TODO: Char.SetSay()
-  Text.PrintString("I'll call you later.", 4000)
+  Text.PrintString("I'll call you soon.", 4000)
   wait 2250
 
   // Watch Sal leave (without paying 😏)
@@ -106,7 +105,7 @@ then
   Char.SetObjGotoCoordOnFoot($sal, ROSA_SPAWN_X, ROSA_SPAWN_Y)
   Camera.SetInterpolationParameters(0, {time} 750)
   Camera.PointAtChar($sal, CameraMode.Fixed, SwitchType.Interpolation)
-  wait 4500
+  wait 2750
 
   Camera.DoFade(500, Fade.Out)
   Player.StopLooking($player)
@@ -119,21 +118,38 @@ then
 end
 
 // End cutscene
+$onCutscene = false
 Camera.SetInterpolationParameters(0, {time} 0)
 Camera.SetBehindPlayer()
 Camera.Restore()
 Camera.DoFade(500, Fade.In)
 wait 525
 
+// Ensure the neighborhood is visible
+Streaming.RequestModel(333)
+Streaming.RequestModel(343)
+Streaming.RequestModel(444)
+Streaming.RequestModel(445)
+Streaming.RequestModel(453)
+Streaming.RequestModel(1405)
+Streaming.RequestModel(1428)
+
 // Spawn Lee Chong's van outside the shop
 request_model {modelId} #RUMPO
 load_all_models_now
-$van = Car.Create(#RUMPO, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
-Car.SetHeading($van, 270)
-$vanBlip = Blip.AddForCar($van)
+$myCar = Car.Create(#RUMPO, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
+$myCarModel = #RUMPO
+Car.SetHeading($myCar, 270)
+ensureVanBlip()
 
 // Show a payphone waypoint blip
+// FIXME: I don't see the phone blip on the HUD
 $payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)
+
+debugLogInt(DEBUG_PLAYER, $player)
+debugLogInt(DEBUG_VAN, $myCar)
+debugLogInt(DEBUG_VAN_BLIP, $VanBlip)
+debugLogInt(DEBUG_PAYPHONE_BLIP, $payphoneBlip)
 
 TIMERA = 0
 Player.SetControl($player, true)
@@ -145,16 +161,8 @@ while true
   if
     Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_NEAR_RADIUS, PAYPHONE_NEAR_RADIUS, false)
   then
+    wait 2500 // Wait a beat
     Text.PrintString("Must be Sal calling.", 4000)
-
-    // Ensure the neighborhood is visible
-    Streaming.RequestModel(333)
-    Streaming.RequestModel(343)
-    Streaming.RequestModel(444)
-    Streaming.RequestModel(445)
-    Streaming.RequestModel(453)
-    Streaming.RequestModel(1405)
-    Streaming.RequestModel(1428)
 
     // Ring the payphone
     Phone.Grab(PAYPHONE_X, PAYPHONE_Y, $payphone)
@@ -176,25 +184,25 @@ while true
     // Note: Player.IsLiftingAPhone($player) is true here
     Blip.Remove($payphoneBlip)
     Phone.TurnOff($payphone)
-
-    // Start a custom cutscene
-    Player.SetControl($player, false)
-    wait 375 // Player "picks up" the phone
-
-    // FIXME: Crash to desktop, here
-    // See https://gtamods.com/wiki/0372
-    // Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)
-
-    // Move the camera, over-the-shoulder above the street
-    // TODO: Extract this into a new function: animateCameraTo(1193.55, -409.2625, 0.89)
-    Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
-    Camera.SetInterpolationParameters(0, {time} 1250)
-    Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
-    Camera.SetGenerateCarsAround(true)
-
     break
   end
 end
+
+// Start a cutscene
+$onCutscene = true
+Player.SetControl($player, false)
+wait 375 // Player "picks up" the phone
+
+// See https://gtamods.com/wiki/0372
+// FIXME: Crash to desktop
+// Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)
+
+// Move the camera, over-the-shoulder above the street
+// TODO: Extract this into a new function: animateCameraTo(x, y, z)
+Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
+Camera.SetInterpolationParameters(0, {time} 1250)
+Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
+Camera.SetGenerateCarsAround(false)
 
 Text.PrintString("Pick up the package at the docks, deliver it to the projects on the north side.", 4500)
 wait 4750
@@ -204,11 +212,11 @@ Text.PrintString("Get it done soon. Don't fuck this up!", 3000)
 wait 3250
 
 // End the cutscene
+$onCutscene = false
 Camera.DoFade(500, Fade.Out)
 wait 525
 Camera.RestoreJumpcut()
-// QUESTION: Will this prevent Rosa from finding a car?
-// Camera.SetGenerateCarsAround(false)
+Camera.SetGenerateCarsAround(true)
 Camera.DoFade(500, Fade.In)
 wait 375
 Player.SetControl($player, true)
@@ -217,7 +225,9 @@ Player.SetControl($player, true)
 
 // Spawn the drugs pickup
 $package = Pickup.Create(1321, PickupType.OnStreet, PACKAGE_PICKUP_X, PACKAGE_PICKUP_Y, PACKAGE_PICKUP_Z)
+// FIXME: I don't see this blip on the HUD, either, ugh
 $pickupBlip = Blip.AddForPickup($package)
+debugLogInt(DEBUG_PICKUP_BLIP, $pickupBlip)
 // Wait for the package to be picked up
 while true
   wait 0
@@ -287,3 +297,4 @@ function tryRemoveSal()
 end
 
 {$INCLUDE ../utils/missions.txt}
+{$INCLUDE ../utils/debug.txt}

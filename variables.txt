@@ -8,48 +8,59 @@
 
 var
   $missionIndex: int
+  $onCutscene: int
   $player: Player
   $playerChar: Char
   $sal: Char
   $myCar: Car
+  $myCarModel: int
   $isCameraAvoidingObstacle: int
+  $isCarInWater: int
   //====================//
   $SafeBlip: Blip
   $PunkNoodles: Pickup
   $NoodlesBlip: Blip
+  $VanBlip: Blip
   $ApartmentGarage: Garage
 end
 
 // Shared by main and the missions
 Alloc($missionIndex, 4400)
-Alloc($player, 4401)
-Alloc($playerChar, 4402)
-Alloc($sal, 4403)
-Alloc($myCar, 4404)
-Alloc($isCameraAvoidingObstacle, 4405)
+Alloc($onCutscene, 4401)
+Alloc($player, 4402)
+Alloc($playerChar, 4403)
+Alloc($sal, 4404)
+Alloc($myCar, 4405)
+Alloc($myCarModel, 4408)
+Alloc($isCameraAvoidingObstacle, 4406)
+Alloc($isCarInWater, 4407)
 
 // Main
-Alloc($SafeBlip, 4406)
-Alloc($PunkNoodles, 4407)
-Alloc($NoodlesBlip, 4408)
-Alloc($ApartmentGarage, 4409)
-Alloc($isCarInWater, 4410)
-Alloc($SafeInfo, 4412)
-Alloc($Bribe, 4413)
-Alloc($SavePickup, 4414)
-Alloc($Canyonero, 4415)
-Alloc($KurumaGen, 4416)
-Alloc($gen_car3, 4417)
-Alloc($tempPickup, 4418)
+Alloc($SafeBlip, 4501)
+Alloc($PunkNoodles, 4502)
+Alloc($NoodlesBlip, 4503)
+Alloc($VanBlip, 4404)
+Alloc($ApartmentGarage, 4505)
+Alloc($SafeInfo, 4506)
+Alloc($Bribe, 4507)
+Alloc($SavePickup, 4508)
+Alloc($Canyonero, 4509)
+Alloc($KurumaGen, 4510)
+Alloc($gen_car3, 4511)
+Alloc($tempPickup, 4512)
 
 // Missions
-Alloc($isDying, 4419)
-Alloc($isWanted, 4420)
-Alloc($isDriving, 4421)
-Alloc($health, 4422)
-Alloc($isSalNearby, 4423)
-Alloc($payphone, 4424)
-Alloc($payphoneBlip, 4425)
-Alloc($package, 4426)
-Alloc($pickupBlip, 4427)
-Alloc($deliveryBlip, 4428)
+// QUESTION: Why can't mission-specific allocations just live in the CLEO mission scripts?
+Alloc($isDying, 4513)
+Alloc($isWanted, 4514)
+Alloc($isDriving, 4515)
+Alloc($health, 4516)
+Alloc($isSalNearby, 4517)
+Alloc($payphone, 4518)
+Alloc($payphoneBlip, 4519)
+Alloc($package, 4520)
+Alloc($pickupBlip, 4521)
+Alloc($deliveryBlip, 4522)
+Alloc($skipCutscene, 4523)
+Alloc($salHeading, 4524)
+Alloc($faceSalHeading, 4525)

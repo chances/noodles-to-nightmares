@@ -31,6 +31,16 @@ function debugLogInt(point: int, value: int)
       IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "Heading")
     case DEBUG_SAL_FACE_HEADING
       IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "FaceHeading")
+    case DEBUG_VAN_BLIP
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Van")
+    case DEBUG_PAYPHONE_BLIP
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Payphone")
+    case DEBUG_PICKUP_BLIP
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Pickup")
+    case DEBUG_VAN
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "VanHandle")
+    case DEBUG_PLAYER
+      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "PlayerHandle")
   end
 end
 
