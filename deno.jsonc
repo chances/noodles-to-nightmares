@@ -1,15 +1,19 @@
 {
   "workspace": ["./lib/fsm", "./tools/mission-editor"],
   "tasks": {
-    "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts",
+    "clean": "deno run --allow-read --allow-write scripts/clean.ts",
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
     "install": "deno task build && deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install.ts",
     "run": "deno task install && deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts",
-    "probe": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install-probe.ts",
-    "clean": "deno run --allow-read --allow-write scripts/clean.ts",
+    "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts",
+    // Mission Editor
+    // FIXME: HMR is innefectual in desktop app; fix tools/mission-editor/deno.json dev task
     "editor": "deno task --cwd tools/mission-editor dev",
+    "editor:serve": "deno task --cwd tools/mission-editor serve",
     "editor:build": "deno task --cwd tools/mission-editor build",
-    "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts"
+    // Utilities
+    "probe": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install-probe.ts",
+    "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts"
   },
   "imports": {
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.3.1",
