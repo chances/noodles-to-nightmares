@@ -66,7 +66,7 @@ while true
   // QUESTION: Why is Rosa's apartment collision not correct?
   if Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
   then
-    Camera.SetFixedPosition(SAFEHOUSE_CAM_X, SAFEHOUSE_CAM_Y, SAFEHOUSE_CAM_Z, 0, 0, 0)
+    Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
     Camera.SetInterpolationParameters(0, {time} 1250)
     Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
 
@@ -86,18 +86,28 @@ while true
     Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
     wait 5500
 
-    Camera.DoFade(750, Fade.Out)
-    Hud.LoadSplash('SPLASH1')
-    wait 800
-    Camera.RestoreJumpcut()
-    Camera.DoFade(750, Fade.In)
-    wait 1000
-
-    Text.PrintString("TGIF! I really needed that rent money.", {time} 3250)
-
     break
   end
 end
+
+// Payphone and front-door tutorial
+Text.PrintHelpString("This is your home.")
+wait 3000
+Text.PrintHelpString("Come back here anytime to save the game.")
+wait 4000
+
+// All done!
+Camera.DoFade(750, Fade.Out)
+Hud.LoadSplash('SPLASH1')
+wait 1250
+
+// TODO: Model and then teleport to Rosa's apartment unit
+
+Camera.RestoreJumpcut()
+Camera.DoFade(750, Fade.In)
+wait 1000
+
+Text.PrintString("TGIF! I really needed that rent money.", {time} 3250)
 
 wait 7500
 
