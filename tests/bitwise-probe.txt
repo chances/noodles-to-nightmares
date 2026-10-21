@@ -1,0 +1,129 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini, bitwise}
+nop
+
+// DEBUG: Bare-bones probe for the CLEO bitwise opcodes (0B10 and up) on GTA III.
+// Writes each result to CLEO\bitwise-probe.ini in the GTA3 folder. The key names carry the expected value.
+// A missing key after "00_started" means the game stopped at that opcode.
+
+var
+  $player: Player
+  $a: int
+  $b: int
+  $r: int
+  $flags: int
+  $mask: int
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+IniFile.WriteInt(1, "CLEO\bitwise-probe.ini", "Bitwise", "00_started")
+
+$a = 12
+$b = 10
+
+// 1: 0b1100 & 0b1010
+$r = $a & $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "01_and_12_10_expect_8")
+
+// 2: 0b1100 | 0b1010
+$r = $a | $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "02_or_12_10_expect_14")
+
+// 3: 0b1100 ^ 0b1010
+$r = $a ^ $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "03_xor_12_10_expect_6")
+
+// 4: ~12
+$r = ~$a
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "04_not_12_expect_minus13")
+
+// 5: 17 % 5
+$a = 17
+$b = 5
+$r = $a % $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "05_mod_17_5_expect_2")
+
+// 6: 1 << 4
+$a = 1
+$b = 4
+$r = $a << $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "06_shl_1_4_expect_16")
+
+// 7: 256 >> 4
+$a = 256
+$r = $a >> $b
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "07_shr_256_4_expect_16")
+
+// 8: Latch pattern. Set bits 0 and 3, test bit 3, clear bit 3, test bit 3 again.
+$flags = 0
+$mask = 1
+$flags |= $mask
+$mask = 8
+$flags |= $mask
+IniFile.WriteInt($flags, "CLEO\bitwise-probe.ini", "Bitwise", "08_set_bits_0_and_3_expect_9")
+
+$r = $flags & $mask
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "09_test_bit_3_expect_8")
+
+$mask = ~$mask
+$flags &= $mask
+IniFile.WriteInt($flags, "CLEO\bitwise-probe.ini", "Bitwise", "10_clear_bit_3_expect_1")
+
+$mask = 8
+$r = $flags & $mask
+IniFile.WriteInt($r, "CLEO\bitwise-probe.ini", "Bitwise", "11_test_bit_3_after_clear_expect_0")
+
+// 9: Compound shift and xor
+$a = 3
+$b = 2
+$a <<= $b
+IniFile.WriteInt($a, "CLEO\bitwise-probe.ini", "Bitwise", "12_shl_compound_3_2_expect_12")
+$a ^= $b
+IniFile.WriteInt($a, "CLEO\bitwise-probe.ini", "Bitwise", "13_xor_compound_12_2_expect_14")
+
+IniFile.WriteInt(1, "CLEO\bitwise-probe.ini", "Bitwise", "99_done")
+
+while true
+  wait 1000
+end

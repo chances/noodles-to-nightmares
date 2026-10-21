@@ -118,6 +118,8 @@
 
 ## Known Issues & Open Bugs
 - Open: buildings and vehicles pop in and out. See [`reports/bugs/building-vehicle-pop-cycle.md`](reports/bugs/building-vehicle-pop-cycle.md).
+- Bitwise opcodes (`{$USE bitwise}`, `0B10` and up) compile but crash the game: this install's CLEO does not register them. Use one local per flag. See [`reports/bugs/bitwise-opcodes-unsupported.md`](reports/bugs/bitwise-opcodes-unsupported.md).
+- Open: the bitwise probe's player falls through the world after spawning at 1144.0, -596.0, 14.97.
 - Resolved bugs live in [`.agents/reports/bugs/`](reports/bugs/).
 
 ## Host Disk Constraints

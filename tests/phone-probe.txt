@@ -6,9 +6,10 @@ DEFINE OBJECT LOD_LAND014
 DEFINE MISSIONS 0
 
 {$USE CLEO}
+{$USE ini}
 nop
 
-{$INCLUDE ../../../utils/geography.txt}
+{$INCLUDE ../utils/geography.txt}
 
 // DEBUG: Bare-bones probe for the stock payphone. Remove once the phone plugin replaces it.
 // Writes every step to CLEO\phone-probe.ini in the GTA3 folder.
@@ -30,8 +31,8 @@ set_deatharrest_state 0
 Clock.SetTimeOfDay(12, 0)
 Streaming.LoadCollision(0)
 
-// Spawn at the front door of Rosa's building
-$player = Player.Create(0, SAFEHOUSE_TELEPORT_X, SAFEHOUSE_TELEPORT_Y, SAFEHOUSE_TELEPORT_Z)
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
 Player.SetHeading($player, 0.0)
 $playerChar = Player.GetChar($player)
 Camera.SetBehindPlayer
@@ -39,7 +40,7 @@ Weather.ForceNow(WeatherType.Sunny)
 Stat.SetIndustrialPassed
 Stat.SetCommercialPassed
 
-Streaming.LoadScene(SAFEHOUSE_TELEPORT_X, SAFEHOUSE_TELEPORT_Y, SAFEHOUSE_TELEPORT_Z)
+Streaming.LoadScene(1144.0, -596.0, 14.97)
 Streaming.RequestModel(827)
 Streaming.LoadAllModelsNow()
 
@@ -95,7 +96,7 @@ while true
 
   // 5: Log the moment the player stands at the phone
   if
-    Player.LocateOnFoot2D($player, PAYPHONE_X, PAYPHONE_BLIP_Y, 2, 2, false)
+    Player.LocateOnFoot2D($player, PAYPHONE_X, PAYPHONE_BLIP_Y, 2.0, 2.0, false)
   then
     IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "5_at_phone_at_step")
     if
