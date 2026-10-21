@@ -24,6 +24,9 @@
 - All automation, diagnostic, texture unwrapping, and data scripts belong in `./scripts/` (e.g. `scripts/unwrap-billboard.py`).
 - Always use kebab-case for script filenames (`script-name.py`).
 - Never run inline multi-line Python scripts via `python -c`; save them to `./scripts/` and invoke the file.
+- **Script Output**: Every script CLI prints through `scripts/log.ts` (`say.heading`, `info`, `done`, `skip`, `warn`, `fail`, `text`; `pass`, `error`, and `wait` for major steps). Routine lines use color only; emoji mark only compile pass or fail, waiting for the game, and final results. No `[+]` or `[-]` tag bullets.
+- **Probes**: `deno task probe [name]` compiles `tests/<name>-probe.txt` (suffix and extension inferred; no name opens a picker), moves every installed `main.scm` to `<GTA3>/.main-backup/<stamp>/`, installs the probe, launches the game, waits for exit, restores the backups, and writes `tests/results/<name>-<stamp>.md` (git-ignored). A probe key named `..._expect_N` or `_expect_minusN` is checked against the value the game wrote. A probe needs `{$USE ini}` for `IniFile` commands and an `{$INCLUDE}` path relative to its own folder (`../utils/geography.txt` from `tests/`).
+- **Clean**: `deno task clean [--dry-run]` removes everything in `dist/`, compiled `data/txd/*.txd`, and `tests/results/`. Root `main.scm` and `tests/*.scm` stay.
 
 ## Texture Perspective Rectification
 - When unwrapping perspective mockups (billboards, signs) into flat game textures, match Photoshop's Perspective Crop Tool.
@@ -90,6 +93,7 @@
 - **Main Loop Versus Missions**: `main.txt` runs every frame while a mission thread runs. Its camera-avoidance block checks `$onMission == false` in its `if and`, and its `else` branch (`Camera.Restore()`) is nested in a second `$onMission == false` check; a per-frame block that touches the camera or the player's heading must stay inside that guard. See [`reports/bugs/mission-facing-camera-interference.md`](reports/bugs/mission-facing-camera-interference.md).
 - **SCRLog**: The game's `scrlog.log` kept only the last frames before exit in this setup (the cutscene was missing), so it cannot capture a mid-session event. The game's `scrlog.ini` currently has `FLUSH_TIME=FLUSH_ON_WRITE`. Its last frames still show which commands ran per frame, which found the repeated-removal crash.
 - **One-Shot Entity Removal**: Calling `Char.RemoveElegantly` on the same handle every frame crashes the game. Guard removal so it runs once. See [`reports/bugs/repeated-remove-elegantly-crash.md`](reports/bugs/repeated-remove-elegantly-crash.md).
+- **Missing Includes**: An `{$INCLUDE}` path that resolves to no file is skipped without an error, so its constants are undefined and a later line fails with a misleading message (e.g. "Not enough actual parameters"). Write include paths relative to the script's own folder.
 - **Blips and Spheres**: `Blip.AddSpriteForContactPoint` (`02A7`) is documented as hidden while on mission, and `Blip.ChangeDisplay(..., BlipDisplay.Both)` did not make it appear in a user test during mission 1. The payphone blip uses `Blip.AddSpriteForCoord`. Every `Blip.Add*` command returns `-1` when the blip pool is full, so never create a blip from a per-frame block without a `== 0` guard on its handle, and log the returned handle with `debugLogInt` when a blip is missing. See [`reports/bugs/blip-pool-exhausted-by-safehouse-blip.md`](reports/bugs/blip-pool-exhausted-by-safehouse-blip.md). The full command list is in [`lessons/0003-contact-point-blips-on-the-radar.html`](lessons/0003-contact-point-blips-on-the-radar.html).
 
 ## Game Log Monitoring (MCP)
@@ -120,6 +124,7 @@
 - Open: buildings and vehicles pop in and out. See [`reports/bugs/building-vehicle-pop-cycle.md`](reports/bugs/building-vehicle-pop-cycle.md).
 - Bitwise opcodes (`{$USE bitwise}`, `0B10` and up) compile but crash the game: this install's CLEO does not register them. Use one local per flag. See [`reports/bugs/bitwise-opcodes-unsupported.md`](reports/bugs/bitwise-opcodes-unsupported.md).
 - Open: the bitwise probe's player falls through the world after spawning at 1144.0, -596.0, 14.97.
+- Open: the phone probe crashed (access violation `0xC0000005`) while waiting on `IsCollisionInMemory` after spawning at `SAFEHOUSE_TELEPORT_*`; with the spawn changed to 1144.0, -596.0, 14.97 it ran to a pass. Cause not isolated.
 - Resolved bugs live in [`.agents/reports/bugs/`](reports/bugs/).
 
 ## Host Disk Constraints

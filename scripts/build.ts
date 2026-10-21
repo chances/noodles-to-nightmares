@@ -25,52 +25,7 @@ import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { lintOrExit } from "./lint-scripts.ts";
 import { capitalCase } from "change-case";
-import {
-  blue,
-  cyan,
-  green,
-  magenta,
-  red,
-  setColorEnabled,
-  yellow,
-} from "@std/fmt/colors";
-
-// Color the `[+]` / `[=]` / `[*]` / `[~]` / `[-]` indicators when the stream is a TTY
-const tagColors: Record<string, (s: string) => string> = {
-  "+": green,
-  "=": cyan,
-  "*": blue,
-  "~": magenta,
-  "-": yellow,
-};
-
-/** Wraps a console method so line-leading `[x]` indicators are colored, only for terminals. */
-function colorizeTags(
-  method: "log" | "warn" | "error",
-  stream: { isTerminal(): boolean },
-) {
-  if (!stream.isTerminal() || Deno.noColor) return;
-  setColorEnabled(true);
-  const original = console[method].bind(console);
-  console[method] = (...data: unknown[]) => {
-    original(
-      ...data.map((d) =>
-        typeof d === "string"
-          ? d.replace(
-            /^(\s*)\[([+=*~-])\]/gm,
-            (_, indent: string, tag: string) =>
-              `${indent}${
-                (method === "error" ? red : tagColors[tag])(`[${tag}]`)
-              }`,
-          )
-          : d
-      ),
-    );
-  };
-}
-colorizeTags("log", Deno.stdout);
-colorizeTags("warn", Deno.stderr);
-colorizeTags("error", Deno.stderr);
+import { say } from "./log.ts";
 
 // Bisection / filtering arguments
 const args = Deno.args;
@@ -146,16 +101,17 @@ async function compile(inputPath: string, outputPath: string) {
   });
   const { success } = await command.output();
   if (!success) {
-    console.error(`Failed to compile: ${inputPath}`);
+    say.error(`Failed to compile: ${inputPath}`);
     Deno.exit(1);
   }
   if (await logStamp() !== before) {
     const log = (await Deno.readTextFile(logPath)).trim();
     if (log.toLowerCase().includes(basename(inputPath).toLowerCase())) {
-      console.error(`Failed to compile: ${inputPath}\n${log}`);
+      say.error(`Failed to compile: ${inputPath}\n${log}`);
       Deno.exit(1);
     }
   }
+  say.pass(`Compiled ${basename(inputPath)}`);
 }
 
 /** Hex SHA-256 of a string or bytes. */
@@ -231,7 +187,7 @@ async function compileIfChanged(
   if (
     !forceArg && await allExist([outputPath]) && hashCache[inputPath] === hash
   ) {
-    console.log(`  [=] Up to date: ${basename(inputPath)}`);
+    say.skip(`  Up to date: ${basename(inputPath)}`);
     return;
   }
 
@@ -295,7 +251,7 @@ async function syncPositions() {
     const coords = (await Deno.readTextFile(join(folderPath, posFile)))
       .trim().split(/[\s,]+/).map(Number);
     if (coords.length < 3 || coords.slice(0, 3).some(Number.isNaN)) {
-      console.warn(`  [-] Warning: ${posFile} is not "x y z"; skipped`);
+      say.warn(`  Warning: ${posFile} is not "x y z"; skipped`);
       continue;
     }
     const [x, y, z] = coords.map((n) => n.toFixed(6));
@@ -309,7 +265,7 @@ async function syncPositions() {
       const synced = `${m[1]}${x}${m[3]}${y}${m[4]}${z}${m[5]}`;
       if (synced !== iplLines[i]) {
         iplLines[i] = synced;
-        console.log(`  [~] custom.ipl ${modelName} <- ${posFile}`);
+        say.info(`  custom.ipl ${modelName} <- ${posFile}`);
       }
     }
   }
@@ -346,7 +302,7 @@ await ensureDir(stagingDir);
 try {
   const stat = await Deno.stat(dragDropZip);
   if (stat.isFile) {
-    console.log("Preserving existing zip assets from Drag-N-Drop.zip...");
+    say.info("Preserving existing zip assets from Drag-N-Drop.zip...");
     const cmd = new Deno.Command("tar", {
       args: ["-xf", dragDropZip, "-C", stagingDir],
     });
@@ -372,7 +328,7 @@ await ensureDir(noodlesStagingDir);
 
 // Step 1: Main Script
 if (shouldRun(1, "main")) {
-  console.log("Step 1 (main): Compiling main script...");
+  say.heading("Step 1 (main): Compiling main script...");
   const mainInput = join(cwd, "main.txt");
   const mainOutput = join(cwd, "main.scm");
   await compileIfChanged(mainInput, mainOutput);
@@ -380,12 +336,12 @@ if (shouldRun(1, "main")) {
   const dataStagingDir = join(noodlesStagingDir, "data");
   await ensureDir(dataStagingDir);
   await Deno.copyFile(mainOutput, join(dataStagingDir, "main.scm"));
-  console.log("  [+] Packaged modloader/Noodles/data/main.scm");
+  say.done("  Packaged modloader/Noodles/data/main.scm");
 }
 
 // Step 2: Missions
 if (shouldRun(2, "missions")) {
-  console.log("Step 2 (missions): Compiling missions...");
+  say.heading("Step 2 (missions): Compiling missions...");
   const missionsDir = join(cwd, "missions");
   const cleoStagingDir = join(noodlesStagingDir, "cleo");
   await ensureDir(cleoStagingDir);
@@ -402,16 +358,16 @@ if (shouldRun(2, "missions")) {
     const missionName = basename(entry.name, ".txt");
     const outputPath = join(missionsDir, `${missionName}.cm`);
 
-    console.log(`  [*] ${entryName}`);
+    say.info(`  ${entryName}`);
     await compileIfChanged(inputPath, outputPath, [join(cwd, "main.txt")]);
     await Deno.copyFile(outputPath, join(cleoStagingDir, `${missionName}.cm`));
   }
-  console.log("  [+] Packaged modloader/Noodles/cleo/*.cm");
+  say.done("  Packaged modloader/Noodles/cleo/*.cm");
 }
 
 // Step 3: Models (Compiles manifested models from Blender via export-blend-models.py and packages overrides)
 if (shouldRun(3, "models")) {
-  console.log(
+  say.heading(
     "Step 3 (models): Compiling and packaging manifested model overrides...",
   );
   const modelsDir = join(cwd, "models");
@@ -456,19 +412,19 @@ if (shouldRun(3, "models")) {
           if (
             hashCache[blendPath] === blendHash && await allExist(outputs)
           ) {
-            console.log(`  [=] Up to date: ${dirEntry.name}`);
+            say.skip(`  Up to date: ${dirEntry.name}`);
             continue;
           }
-          console.log(
-            `  [*] Compiling model from Blender: ${dirEntry.name}...`,
+          say.info(
+            `  Compiling model from Blender: ${dirEntry.name}...`,
           );
           const cmd = new Deno.Command(pythonExe, {
             args: [exportScript, blendPath, folderPath],
           });
           const { success, stderr } = await cmd.output();
           if (!success) {
-            console.warn(
-              `  [-] Warning: Blender export failed for ${dirEntry.name}:`,
+            say.warn(
+              `  Warning: Blender export failed for ${dirEntry.name}:`,
               new TextDecoder().decode(stderr),
             );
           } else {
@@ -498,7 +454,7 @@ if (shouldRun(3, "models")) {
     }
 
     if (entry.dff && !shouldPackageAsset(entry.name, "dff")) {
-      console.log(`  [-] Skipped DFF: ${entry.dff} (${entry.name})`);
+      say.skip(`  Skipped DFF: ${entry.dff} (${entry.name})`);
     } else if (entry.dff) {
       // Staged under the IDE model name so it overrides the stock gta3.img entry
       const stagedDff = `${entry.name}.dff`;
@@ -506,47 +462,47 @@ if (shouldRun(3, "models")) {
         join(folderPath, entry.dff),
         join(imgStagingDir, stagedDff),
       );
-      console.log(`  [+] Packaged DFF: ${entry.dff} as ${stagedDff}`);
+      say.done(`  Packaged DFF: ${entry.dff} as ${stagedDff}`);
       count++;
     }
     if (entry.txd && !shouldPackageAsset(entry.name, "txd")) {
-      console.log(`  [-] Skipped TXD: ${entry.txd} (${entry.name})`);
+      say.skip(`  Skipped TXD: ${entry.txd} (${entry.name})`);
     } else if (entry.txd) {
       await Deno.copyFile(
         join(folderPath, entry.txd),
         join(imgStagingDir, entry.txd),
       );
-      console.log(`  [+] Packaged TXD: ${entry.txd}`);
+      say.done(`  Packaged TXD: ${entry.txd}`);
       count++;
     }
     if (entry.col && !shouldPackageAsset(entry.name, "col")) {
-      console.log(`  [-] Skipped COL: ${entry.col} (${entry.name})`);
+      say.skip(`  Skipped COL: ${entry.col} (${entry.name})`);
     } else if (entry.col) {
       // Staged under the IDE model name, matching data/maps/noodles/col/<name>.col
       const stagedCol = `${entry.name}.col`;
       const srcCol = join(folderPath, entry.col);
       try {
         await Deno.copyFile(srcCol, join(colStagingDir, stagedCol));
-        console.log(`  [+] Packaged COL: ${entry.col} as ${stagedCol}`);
+        say.done(`  Packaged COL: ${entry.col} as ${stagedCol}`);
         count++;
       } catch {
         const dataCol = join(cwd, "data", "maps", "noodles", "col", stagedCol);
         try {
           await Deno.copyFile(dataCol, join(colStagingDir, stagedCol));
-          console.log(`  [+] Packaged COL: ${stagedCol} (from data/maps)`);
+          say.done(`  Packaged COL: ${stagedCol} (from data/maps)`);
           count++;
         } catch {
-          console.warn(`  [-] Warning: COL not found for ${entry.col}`);
+          say.warn(`  Warning: COL not found for ${entry.col}`);
         }
       }
     }
   }
-  console.log(`  [+] Packaged ${count} manifested model assets`);
+  say.done(`  Packaged ${count} manifested model assets`);
 }
 
 // Step 4: Maps
 if (shouldRun(4, "maps")) {
-  console.log("Step 4 (maps): Packaging custom map files...");
+  say.heading("Step 4 (maps): Packaging custom map files...");
   await syncPositions();
   const mapsSrc = join(cwd, "data", "maps");
   const mapsDest = join(noodlesStagingDir, "data", "maps");
@@ -555,7 +511,7 @@ if (shouldRun(4, "maps")) {
     if (stat.isDirectory) {
       await ensureDir(mapsDest);
       await copyFollowingSymlinks(mapsSrc, mapsDest);
-      console.log("  [+] Packaged modloader/Noodles/data/maps/");
+      say.done("  Packaged modloader/Noodles/data/maps/");
     }
   } catch {
     // Optional
@@ -629,8 +585,8 @@ if (shouldRun(4, "maps")) {
       return skipped && !line.startsWith("#") ? `# ${line}` : line;
     }).join("\n");
     await Deno.writeTextFile(manifestDest, stagedTxtContent);
-    console.log(
-      "  [+] Synchronized and packaged modloader/Noodles/noodles_custom.txt",
+    say.done(
+      "  Synchronized and packaged modloader/Noodles/noodles_custom.txt",
     );
   } catch {
     // Fallback if manifest files not present
@@ -638,13 +594,13 @@ if (shouldRun(4, "maps")) {
       manifestDest,
       "COLFILE 0 data/maps/noodles/col/rosa_apartment.col\nIDE data/maps/noodles/custom.ide\nIPL data/maps/noodles/custom.ipl\n",
     );
-    console.log("  [+] Created modloader/Noodles/noodles_custom.txt");
+    say.done("  Created modloader/Noodles/noodles_custom.txt");
   }
 }
 
 // Step 5: TXD UI/Splash Overrides
 if (shouldRun(5, "txd")) {
-  console.log(
+  say.heading(
     "Step 5 (txd): Packaging TXD overrides into modloader/Noodles/txd/...",
   );
   const txdDir = join(cwd, "data", "txd");
@@ -674,7 +630,7 @@ if (shouldRun(5, "txd")) {
     if (hashCache[cacheKey] === hash && await allExist([outputPath])) {
       continue;
     }
-    console.log(`  [*] Building ${row.txd} from ${row.source}...`);
+    say.info(`  Building ${row.txd} from ${row.source}...`);
     const { success, stderr } = await new Deno.Command(
       Deno.env.get("PYTHON") || "python",
       {
@@ -693,7 +649,7 @@ if (shouldRun(5, "txd")) {
       },
     ).output();
     if (!success) {
-      console.error(
+      say.error(
         `Failed to build ${row.txd}:`,
         new TextDecoder().decode(stderr),
       );
@@ -712,7 +668,7 @@ if (shouldRun(5, "txd")) {
       txdCount++;
     }
   }
-  console.log(`  [+] Packaged ${txdCount} TXDs to modloader/Noodles/txd/`);
+  say.done(`  Packaged ${txdCount} TXDs to modloader/Noodles/txd/`);
 }
 
 // Step 6: Text Strings
@@ -721,12 +677,12 @@ if (shouldRun(6, "text")) {
   try {
     const stat = await Deno.stat(fxtSrc);
     if (stat.isFile) {
-      console.log("Step 6 (text): Packaging text strings (UL_TEXT.fxt)...");
+      say.heading("Step 6 (text): Packaging text strings (UL_TEXT.fxt)...");
       const cleoTextDir = join(noodlesStagingDir, "cleo", "cleo_text");
       await ensureDir(cleoTextDir);
       await Deno.copyFile(fxtSrc, join(cleoTextDir, "UL_TEXT.fxt"));
-      console.log(
-        "  [+] Packaged modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt",
+      say.done(
+        "  Packaged modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt",
       );
     }
   } catch {
@@ -735,7 +691,7 @@ if (shouldRun(6, "text")) {
 }
 
 // Packaging archive into dist/Drag-N-Drop.zip
-console.log("Packaging dist/Drag-N-Drop.zip...");
+say.heading("Packaging dist/Drag-N-Drop.zip...");
 await ensureDir(distDir);
 const topLevelEntries: string[] = [];
 for await (const entry of Deno.readDir(stagingDir)) {
@@ -743,7 +699,7 @@ for await (const entry of Deno.readDir(stagingDir)) {
 }
 
 if (topLevelEntries.length === 0) {
-  console.error("[-] No assets in staging directory to package.");
+  say.error("No assets in staging directory to package.");
   Deno.exit(1);
 }
 
@@ -752,8 +708,8 @@ const tarCmd = new Deno.Command("tar", {
 });
 const { success: tarSuccess, stderr: tarStderr } = await tarCmd.output();
 if (!tarSuccess) {
-  console.error(
-    "[-] Failed to create Drag-N-Drop.zip:",
+  say.error(
+    "Failed to create Drag-N-Drop.zip:",
     new TextDecoder().decode(tarStderr),
   );
   Deno.exit(1);
@@ -766,4 +722,4 @@ try {
   // Ignored
 }
 
-console.log("  [+] dist/Drag-N-Drop.zip successfully built!");
+say.pass("dist/Drag-N-Drop.zip built");

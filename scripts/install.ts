@@ -8,13 +8,14 @@
 
 import { join } from "@std/path";
 import { lintOrExit } from "./lint-scripts.ts";
+import { say } from "./log.ts";
 
 // Refuse to install sources whose variable slots would misbehave in game
 await lintOrExit(Deno.cwd());
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {
-  console.error("Error: GTA3 environment variable is not set in .env.");
+  say.error("GTA3 environment variable is not set in .env");
   Deno.exit(1);
 }
 
@@ -27,19 +28,19 @@ try {
     throw new Error("Not a file");
   }
 } catch {
-  console.error(
-    `Error: Drag-N-Drop archive not found at ${dragDropZip}. Run 'deno task build' first.`,
+  say.error(
+    `Drag-N-Drop archive not found at ${dragDropZip}. Run 'deno task build' first.`,
   );
   Deno.exit(1);
 }
 
-console.log(`Installing mod from ${dragDropZip} into ${gta3Base}...`);
+say.heading(`Installing mod from ${dragDropZip} into ${gta3Base}...`);
 
 // Clean existing modloader/Noodles directory before extraction
 const noodlesDestDir = join(gta3Base, "modloader", "Noodles");
 try {
   await Deno.remove(noodlesDestDir, { recursive: true });
-  console.log("  [+] Cleaned existing modloader/Noodles directory");
+  say.done("  Cleaned existing modloader/Noodles directory");
 } catch {
   // Ignored if directory doesn't exist
 }
@@ -49,13 +50,13 @@ const cmd = new Deno.Command("tar", {
 });
 const { success, stderr } = await cmd.output();
 if (!success) {
-  console.error(
-    "[-] Failed to extract Drag-N-Drop.zip via tar:",
+  say.error(
+    "Failed to extract Drag-N-Drop.zip via tar:",
     new TextDecoder().decode(stderr),
   );
   Deno.exit(1);
 }
-console.log("  [+] Extracted Drag-N-Drop package assets into game directory");
+say.done("  Extracted Drag-N-Drop package assets into game directory");
 
 /**
  * Lints for loose copies of packaged scripts in `[gta3]/CLEO`. CLEO loads that
@@ -98,13 +99,11 @@ const shadowedFiles = [
   ),
 ];
 if (shadowedFiles.length > 0) {
-  console.error(
-    "[-] Conflict: these files in [gta3]/CLEO duplicate packaged modloader/Noodles files and may be stale:",
+  say.error(
+    "Conflict: these files in [gta3]/CLEO duplicate packaged modloader/Noodles files and may be stale:",
   );
-  for (const file of shadowedFiles) console.error(`      ${file}`);
-  console.error(
-    "    Remove them so the modloader copies are the ones that run.",
-  );
+  for (const file of shadowedFiles) say.fail(`      ${file}`);
+  say.fail("    Remove them so the modloader copies are the ones that run.");
   Deno.exit(1);
 }
 
@@ -116,10 +115,10 @@ try {
 } catch {
   try {
     await Deno.link(gtaExe, runnerExe);
-    console.log("  [+] Created runner link gta3-game.exe (bypasses UAC)");
+    say.done("  Created runner link gta3-game.exe (bypasses UAC)");
   } catch {
     // Ignore if link unsupported
   }
 }
 
-console.log("Noodles to Nightmares mod installation complete!");
+say.pass("Noodles to Nightmares mod installation complete");

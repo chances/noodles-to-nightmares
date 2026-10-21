@@ -1,20 +1,58 @@
 // Converts Markdown headings to Title Case. Dry run by default; pass --write to apply.
 // Usage: deno run --allow-read --allow-write scripts/title-case-headings.ts [--write]
 
+import { green, red, say } from "./log.ts";
+
 const SKIP_DIRS = new Set([".git", "node_modules", ".remember", "dist"]);
 
 // Short articles, conjunctions, and prepositions stay lowercase unless first.
 const SMALL = new Set([
-  "a", "an", "and", "as", "at", "but", "by", "for", "in", "of", "on", "or",
-  "the", "to", "vs", "via", "nor", "so", "yet",
+  "a",
+  "an",
+  "and",
+  "as",
+  "at",
+  "but",
+  "by",
+  "for",
+  "in",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "vs",
+  "via",
+  "nor",
+  "so",
+  "yet",
 ]);
 
 // Words that stay as written (proper nouns, product names, code keywords).
 const KEEP = new Set([
-  "Rosa", "Chang", "Portland", "Staunton", "Island", "Shoreside", "Vale",
-  "Blender", "Sanny", "Builder", "ModLoader", "RenderWare", "Liberty",
-  "Noodles", "Nightmares", "Punk", "Cycles", "Drag-N-Drop", "GTAMods", "Wiki",
-  "Gosub", "Goto", "Prelit",
+  "Rosa",
+  "Chang",
+  "Portland",
+  "Staunton",
+  "Island",
+  "Shoreside",
+  "Vale",
+  "Blender",
+  "Sanny",
+  "Builder",
+  "ModLoader",
+  "RenderWare",
+  "Liberty",
+  "Noodles",
+  "Nightmares",
+  "Punk",
+  "Cycles",
+  "Drag-N-Drop",
+  "GTAMods",
+  "Wiki",
+  "Gosub",
+  "Goto",
+  "Prelit",
 ]);
 
 // Prefixes whose trailing text is a proper title and stays as written.
@@ -39,7 +77,9 @@ function convertWord(word: string, first: boolean): string {
   if (/^[A-Z]$/.test(core)) return word;
   const lower = core.toLowerCase();
   if (!first && SMALL.has(lower)) return word.replace(core, lower);
-  const titled = lower.split("-").map((p) => p ? p[0].toUpperCase() + p.slice(1) : p).join("-");
+  const titled = lower.split("-").map((p) =>
+    p ? p[0].toUpperCase() + p.slice(1) : p
+  ).join("-");
   return word.replace(core, titled);
 }
 
@@ -100,10 +140,10 @@ for await (const path of walk(".")) {
     if (next !== line) {
       touched = true;
       changed++;
-      console.log(`${path}\n  - ${line}\n  + ${next}`);
+      say.text(`${path}\n${red(`  - ${line}`)}\n${green(`  + ${next}`)}`);
     }
     return next;
   }).join(eol);
   if (write && touched) await Deno.writeTextFile(path, out);
 }
-console.log(`${changed} heading(s) ${write ? "rewritten" : "would change"}`);
+say.pass(`${changed} heading(s) ${write ? "rewritten" : "would change"}`);

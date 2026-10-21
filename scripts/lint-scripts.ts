@@ -12,6 +12,7 @@
  */
 
 import { basename, join } from "@std/path";
+import { say } from "./log.ts";
 
 export const MAX_GLOBAL_INDEX = 0x3fff;
 export const MIN_GLOBAL_INDEX = 2;
@@ -172,15 +173,15 @@ export async function lintProject(root: string): Promise<string[]> {
 export async function lintOrExit(root: string): Promise<void> {
   const problems = await lintProject(root);
   if (problems.length === 0) {
-    console.log("  [=] Script lint: variable slots OK");
+    say.skip("  Script lint: variable slots OK");
     return;
   }
-  console.error("[-] Script lint failed:");
-  for (const problem of problems) console.error(`      ${problem}`);
+  say.error("Script lint failed:");
+  for (const problem of problems) say.fail(`      ${problem}`);
   Deno.exit(1);
 }
 
 if (import.meta.main) {
   await lintOrExit(Deno.cwd());
-  console.log(`Linted ${basename(Deno.cwd())}`);
+  say.pass(`Linted ${basename(Deno.cwd())}`);
 }

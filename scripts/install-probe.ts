@@ -5,8 +5,8 @@
 // Usage: deno task probe [name]   (installs tests/<name>-probe.txt; no name opens a picker)
 
 import { Select } from "@cliffy/prompt/select";
-import { bold, cyan, dim, green, red, yellow } from "@std/fmt/colors";
 import { basename, dirname, join, relative, resolve } from "@std/path";
+import { say } from "./log.ts";
 
 let name = Deno.args[0];
 if (!name) {
@@ -17,11 +17,11 @@ if (!name) {
     }
   }
   if (probes.length === 0) {
-    console.error("No tests/*-probe.txt sources found");
+    say.error("No tests/*-probe.txt sources found");
     Deno.exit(1);
   }
   if (!Deno.stdin.isTerminal()) {
-    console.error(
+    say.fail(
       `Usage: deno task probe <name>   (one of: ${probes.sort().join(", ")})`,
     );
     Deno.exit(1);
@@ -38,14 +38,14 @@ const input = join(
 try {
   await Deno.stat(input);
 } catch {
-  console.error(`No probe source at ${input}`);
+  say.error(`No probe source at ${input}`);
   Deno.exit(1);
 }
 
 const sanny = Deno.env.get("SANNY") || "sanny.exe";
 const gta3 = Deno.env.get("GTA3");
 if (!gta3) {
-  console.error("GTA3 is not set in .env");
+  say.error("GTA3 is not set in .env");
   Deno.exit(1);
 }
 
@@ -68,10 +68,10 @@ const log = (await stampOf()) !== before
   ? (await Deno.readTextFile(logPath)).trim()
   : "";
 if (log.toLowerCase().includes(basename(source).toLowerCase())) {
-  console.error(red(`❌ Compile failed\n${log}`));
+  say.error(`Compile failed\n${log}`);
   Deno.exit(1);
 }
-console.log(green(`✅ Compiled ${basename(scm)}`));
+say.pass(`Compiled ${basename(scm)}`);
 
 // Find every installed main script
 const installed: string[] = [join(gta3, "data", "main.scm")];
@@ -96,9 +96,7 @@ for (const path of installed) {
   await Deno.mkdir(dirname(dest), { recursive: true });
   await Deno.rename(path, dest);
   moved.push({ from: path, to: dest });
-  console.log(
-    yellow(`Moved ${relative(gta3, path)} to ${relative(gta3, dest)}`),
-  );
+  say.info(`Moved ${relative(gta3, path)} to ${relative(gta3, dest)}`);
 }
 
 // Move the previous run's output aside so the findings only hold this run
@@ -107,7 +105,7 @@ const probeIni = join(gta3, "CLEO", `${probeName}-probe.ini`);
 try {
   await Deno.stat(probeIni);
   await Deno.rename(probeIni, join(backupDir, `${probeName}-probe.ini`));
-  console.log(yellow(`Moved stale ${probeName}-probe.ini to the backup`));
+  say.info(`Moved stale ${probeName}-probe.ini to the backup`);
 } catch {
   // No earlier output
 }
@@ -115,7 +113,7 @@ try {
 // Install the probe as the only main script
 const mainPath = join(gta3, "data", "main.scm");
 await Deno.copyFile(scm, mainPath);
-console.log(green("Installed data/main.scm"));
+say.done("Installed data/main.scm");
 
 // Launch the game and wait for it to exit; prefer the unflagged runner, as scripts/run.ts does
 let exe = join(gta3, "gta3.exe");
@@ -125,8 +123,8 @@ try {
 } catch {
   // Fall back to gta3.exe
 }
-console.log(dim(`Launching ${exe}`));
-console.log(bold(cyan("⏳ Waiting for the game to exit")));
+say.skip(`Launching ${exe}`);
+say.wait("Waiting for the game to exit");
 const startedAt = Date.now();
 let exitCode = -1;
 try {
@@ -137,7 +135,7 @@ try {
   for (const { from, to } of moved) {
     await Deno.mkdir(dirname(from), { recursive: true });
     await Deno.rename(to, from);
-    console.log(green(`Restored ${relative(gta3, from)}`));
+    say.done(`Restored ${relative(gta3, from)}`);
   }
 }
 const seconds = Math.round((Date.now() - startedAt) / 1000);
@@ -222,11 +220,11 @@ ${scrLog.split(/\r?\n/).slice(-30).join("\n")}
 await Deno.mkdir(join("tests", "results"), { recursive: true });
 const reportPath = join("tests", "results", `${probeName}-${stamp}.md`);
 await Deno.writeTextFile(reportPath, report);
-console.log(dim(`Findings written to ${reportPath}`));
+say.skip(`Findings written to ${reportPath}`);
 if (passed) {
-  console.log(bold(green("✅ Probe passed")));
+  say.pass("Probe passed");
 } else {
-  console.log(bold(red("❌ Probe failed")));
-  for (const failure of failures) console.log(red(`  ${failure}`));
+  say.error("Probe failed");
+  for (const failure of failures) say.fail(`  ${failure}`);
   Deno.exitCode = 1;
 }

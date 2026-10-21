@@ -2,8 +2,8 @@
 // and old probe results in tests/results/.
 // Usage: deno task clean [--dry-run]
 
-import { dim, green, yellow } from "@std/fmt/colors";
 import { join } from "@std/path";
+import { say } from "./log.ts";
 
 const dryRun = Deno.args.includes("--dry-run");
 
@@ -36,16 +36,12 @@ for (const { label, dir, match } of targets) {
     if (!(error instanceof Deno.errors.NotFound)) throw error;
   }
   removed += count;
-  console.log(
-    (count ? yellow : dim)(
-      `${dryRun ? "Would remove" : "Removed"} ${count} from ${label} (${dir})`,
-    ),
+  (count ? say.info : say.skip)(
+    `${dryRun ? "Would remove" : "Removed"} ${count} from ${label} (${dir})`,
   );
 }
-console.log(
-  green(
-    `${dryRun ? "Dry run: " : ""}${removed} entries ${
-      dryRun ? "would be " : ""
-    }deleted`,
-  ),
+say.pass(
+  `${dryRun ? "Dry run: " : ""}${removed} entries ${
+    dryRun ? "would be " : ""
+  }deleted`,
 );

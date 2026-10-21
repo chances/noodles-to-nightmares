@@ -5,10 +5,11 @@
  */
 
 import { join } from "@std/path";
+import { say } from "./log.ts";
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {
-  console.error("Error: GTA3 environment variable is not set in .env.");
+  say.error("GTA3 environment variable is not set in .env");
   Deno.exit(1);
 }
 
@@ -20,7 +21,7 @@ try {
     throw new Error("Not a file");
   }
 } catch {
-  console.error(`Error: Executable not found at ${exePath}`);
+  say.error(`Executable not found at ${exePath}`);
   Deno.exit(1);
 }
 
@@ -35,7 +36,7 @@ try {
   // Fall back to gta3.exe
 }
 
-console.log(`Launching Grand Theft Auto III: ${targetExe}`);
+say.info(`Launching Grand Theft Auto III: ${targetExe}`);
 
 const command = new Deno.Command(targetExe, {
   cwd: gta3Base,

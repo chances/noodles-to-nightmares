@@ -3,6 +3,7 @@
 // Usage: deno run --allow-all --env-file=.env scripts/check-compile.ts <script.txt>...
 
 import { basename, dirname, join, resolve } from "@std/path";
+import { say } from "./log.ts";
 
 const sanny = Deno.env.get("SANNY") || "sanny.exe";
 const logPath = join(dirname(sanny), "compile.log");
@@ -30,6 +31,10 @@ for (const arg of Deno.args) {
     : "";
   const failedHere = log.toLowerCase().includes(basename(input).toLowerCase());
   failed ||= failedHere;
-  console.log(`${basename(input)}: ${failedHere ? log : "compiled"}`);
+  if (failedHere) {
+    say.error(`${basename(input)}: ${log}`);
+  } else {
+    say.pass(`${basename(input)} compiled`);
+  }
 }
 Deno.exit(failed ? 1 : 0);
