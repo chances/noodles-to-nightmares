@@ -45,6 +45,7 @@ function ensureVanBlip()
     $myCarModel == #RUMPO // Only show the blip for the van model
   then
     $VanBlip = Blip.AddForCar($myCar)
+    Car.MakeABitStronger($myCar, true)
   end
 end
 

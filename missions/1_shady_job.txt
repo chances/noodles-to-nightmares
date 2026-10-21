@@ -147,7 +147,7 @@ request_model {modelId} #RUMPO
 load_all_models_now
 $myCar = Car.Create(#RUMPO, SUPPLY_VAN_X, SUPPLY_VAN_Y, SUPPLY_VAN_Z)
 $myCarModel = #RUMPO
-Car.SetHeading($myCar, 270)
+Car.TurnToFaceCoord($myCar, PAYPHONE_X, PAYPHONE_BLIP_Y)
 ensureVanBlip()
 
 // Show a payphone waypoint blip
@@ -244,12 +244,18 @@ while true
   then
     Blip.Remove(pickupBlip)
     Pickup.Remove(packagePickup)
+    Text.PrintString("Take the ~bdrugs~n to the dropoff point.", 3000)
     break
   end
 end
 
-// Wait for the player to "deliver" the package to the projects
+// Flash the radar to draw attention to the dropoff point
 deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)
+Hud.FlashObject(HudObject.Radar)
+wait 3000
+Hud.FlashObject(0)
+
+// Wait for the player to "deliver" the package to the projects
 while true
   wait 0
 
@@ -263,17 +269,17 @@ end
 
 // TODO: Refactor above from no-wanted-level to here into a main mission loop
 
+// TODO: Send this text on the pager
+// FIXME: Pager.Send("Here's your cut. There may be more work soon. I'll be in touch.", )
+Text.PrintString("Here's your cut. There may be more work soon. I'll be in touch.", 4000)
+wait 4250
+
 // The player successfully delivered the package, pass the mission
 Audio.PlayMissionPassedTune(1)
 register_mission_passed 'NooM_1'
 Player.AddScore($player, REWARD)
 Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
 wait 5500
-
-// TODO: Send this text on the pager
-// FIXME: Pager.Send("Here's your cut. There may be more work soon. I'll be in touch.", )
-Text.PrintString("Here's your cut. There may be more work soon. I'll be in touch.", 4000)
-wait 4250
 
 Mission.Finish()
 $onMission = false
