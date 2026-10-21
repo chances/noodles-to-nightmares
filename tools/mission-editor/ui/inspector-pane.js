@@ -52,14 +52,15 @@ function DeleteDialog({ id, mission, onConfirm, onClose }) {
     <dialog ref=${open} onClose=${(e) => { if (e.currentTarget.returnValue === "delete") onConfirm(); onClose(); }}>
       <h2>Delete ${id}?</h2>
       ${blocked
-        ? html`<p>${id} is ${blocked}. Make another state the ${isStart ? "start" : "fail"} state in the Mission form first.</p>`
+        ? html`<p>${id} is ${blocked}. Pick another ${isStart ? "start" : "fail"} state in the mission form, then delete it.</p>`
         : edges.length
-          ? html`<p>These transitions lose their target:</p>
+          ? html`<p>These states will lose their link to ${id}:</p>
               <ul class="notes">${edges.map((e, i) => html`<li key=${i}>${e.from}: ${e.kind === "next" ? "Next state is cleared" : "Branch is removed"}</li>`)}</ul>`
           : html`<p>Nothing leads to ${id}.</p>`}
+      ${!blocked && html`<p class="hint">Undo (Ctrl+Z) brings it back.</p>`}
       <form method="dialog" class="actions">
-        <button value="cancel" autofocus>Cancel</button>
-        <button value="delete" class="danger-fill" disabled=${Boolean(blocked)}>Delete</button>
+        <button value="cancel" autofocus>Keep State</button>
+        <button value="delete" class="danger-fill" disabled=${Boolean(blocked)}>Delete State</button>
       </form>
     </dialog>
   `;
@@ -124,16 +125,16 @@ export function InspectorTitle({ doc, selected, edit, onSelect }) {
       : html`
         <h3 class="state-name">${selected}</h3>
         ${roles(doc, selected).map((role) => html`<span class="chip" key=${role} data-role=${roleKey(role)}>${role}</span>`)}
-        <button class="icon" aria-label="Rename State" title="Rename State" onClick=${() => setRenaming(true)}><${Pencil} /></button>`}
+        <button class="icon" aria-label=${`Rename state ${selected}`} title="Rename State" onClick=${() => setRenaming(true)}><${Pencil} /></button>`}
     <span class="title-tools">
       <label class="mini kind">
         <span class="sr-only">Kind</span>
         <select value=${kindOf(state)} onChange=${setKind}>
-          ${!kindOf(state) && html`<option value="">No Kind</option>`}
+          ${!kindOf(state) && html`<option value="">Choose a kind</option>`}
           ${KINDS.map(([id, label]) => html`<option key=${id} value=${id}>${label}</option>`)}
         </select>
       </label>
-      <button class="icon danger" aria-label="Delete State" title="Delete State" onClick=${() => setDeleting(true)}><${Trash} /></button>
+      <button class="icon danger" aria-label=${`Delete state ${selected}`} title="Delete State" onClick=${() => setDeleting(true)}><${Trash} /></button>
     </span>
     ${deleting && html`
       <${DeleteDialog} id=${selected} mission=${doc.mission}
@@ -172,22 +173,22 @@ function BeatsForm({ beats, onChange }) {
 
   return html`
     <div class="typed-list">
-      <p class="hint">${beats.length ? `${beats.length} ${beats.length === 1 ? "beat" : "beats"} over ${(total / 1000).toFixed(1)}s. Each runs its steps once, then waits.` : "No beats."}</p>
+      <p class="hint">${beats.length ? `${beats.length} ${beats.length === 1 ? "beat" : "beats"} over ${(total / 1000).toFixed(1)}s. Each runs its steps once, then waits.` : "No beats. Add one with + to script this state."}</p>
       <ol class="items beats">
         ${beats.map((beat, i) => html`
           <li class="item" key=${`${generation}-${i}`}>
             <div class="item-head">
               <span class="item-label">Beat ${i + 1}</span>
               <span class="item-tools">
-                <button class="tool" aria-label="Move Up" title="Move Up" onClick=${() => move(i, -1)}>↑</button>
-                <button class="tool" aria-label="Move Down" title="Move Down" onClick=${() => move(i, 1)}>↓</button>
-                <button class="tool danger" aria-label="Remove Beat" title="Remove Beat" onClick=${() => remove(i)}>✕</button>
+                <button class="tool" aria-label=${`Move beat ${i + 1} up`} title="Move Up" onClick=${() => move(i, -1)}>↑</button>
+                <button class="tool" aria-label=${`Move beat ${i + 1} down`} title="Move Down" onClick=${() => move(i, 1)}>↓</button>
+                <button class="tool danger" aria-label=${`Remove beat ${i + 1}`} title="Remove Beat" onClick=${() => remove(i)}>✕</button>
               </span>
             </div>
-            <${NumberField} label="Wait (ms)" value=${beat.wait ?? 0} onCommit=${(wait) => replace(i, { wait })} />
+            <${NumberField} label="Duration (ms)" value=${beat.wait ?? 0} onCommit=${(wait) => replace(i, { wait })} />
             <p class="hint">Only if all of these hold:</p>
             <${CondList} conds=${beat.when ?? []} emptyText="Always runs." onChange=${(when) => replace(i, { when })} />
-            <p class="hint">Steps:</p>
+            <p class="hint">Steps</p>
             <${StepList} steps=${beat.do ?? []} emptyText="No steps." onChange=${(list) => replace(i, { do: list })} />
             ${beat.notes?.length > 0 && html`<ul class="notes">${beat.notes.map((n, k) => html`<li key=${k}>${n}</li>`)}</ul>`}
           </li>`)}
@@ -207,14 +208,13 @@ function BranchesForm({ rules, states, onChange }) {
           <li class="item" key=${`${generation}-${i}`}>
             <div class="item-head">
               <span class="item-label">Branch ${i + 1}</span>
-              <span class="item-tools"><button class="tool danger" aria-label="Remove Branch" title="Remove Branch" onClick=${() => { setGeneration(generation + 1); onChange(rules.filter((_, j) => j !== i)); }}>✕</button></span>
+              <span class="item-tools"><button class="tool danger" aria-label=${`Remove branch ${i + 1}`} title="Remove Branch" onClick=${() => { setGeneration(generation + 1); onChange(rules.filter((_, j) => j !== i)); }}>✕</button></span>
             </div>
-            <${StateSelect} label="Go To" value=${rule.goto} states=${states} onChange=${(goto) => replace(i, { goto })} />
+            <${StateSelect} label="Go To State" value=${rule.goto} states=${states} onChange=${(goto) => replace(i, { goto })} />
             <p class="hint">When all of these hold:</p>
             <${CondList} conds=${rule.when} onChange=${(when) => replace(i, { when })} />
           </li>`)}
       </ol>
-      <button onClick=${() => onChange([...rules, { when: [], goto: states[0] }])}>Add Branch</button>
     </div>
   `;
 }
@@ -225,12 +225,12 @@ function SectionBody({ id, state, states, change }) {
     case "onExit": return html`<${StepList} steps=${state.onExit ?? []} emptyText="Nothing runs on exit." onChange=${(v) => change("Exit Steps", (s) => { s.onExit = v; })} />`;
     case "until": return html`
       <p class="hint">After the beats, wait until all of these hold, then go to Next.</p>
-      <${CondList} conds=${state.until ?? []} onChange=${(v) => change("Wait Until", (s) => { s.until = v; })} />`;
+      <${CondList} conds=${state.until ?? []} emptyText="Add a condition to hold this state until it is true." onChange=${(v) => change("Wait Until", (s) => { s.until = v; })} />`;
     case "branches": return html`
       <p class="hint">After the beats, the first branch whose conditions hold picks the next state.</p>
       <${BranchesForm} rules=${state.on ?? []} states=${states} onChange=${(v) => change("Branches", (s) => { s.on = v; })} />`;
     case "beats": return html`<${BeatsForm} beats=${state.beats ?? []} onChange=${(v) => change("Beats", (s) => { s.beats = v; })} />`;
-    case "latches": return html`<p>Every monitor fires again after this state is entered.</p>`;
+    case "latches": return html`<p>Every monitor can fire again after this state is entered.</p>`;
     case "notes": return html`<textarea rows=${Math.max(2, (state.notes ?? []).length)} aria-label="Notes" value=${(state.notes ?? []).join("\n")}
       onInput=${(e) => { const text = e.currentTarget.value; change("Notes", (s) => { s.notes = lines(text); }, "notes"); }}></textarea>`;
   }
@@ -281,7 +281,7 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
           <dt>Entered From</dt>
           <dd>${enteredFrom.length ? enteredFrom.map((from) => html`<span key=${from}>${link(from)} </span>`) : "Nothing"}${mission.start === id ? " (mission start)" : ""}</dd>
         </dl>
-        <${StateSelect} label="Next" value=${state.next} states=${states} none="No Next State"
+        <${StateSelect} label="Next State" value=${state.next} states=${states} none="No Next State"
           onChange=${(next) => change("Next State", (s) => { if (next) s.next = next; else delete s.next; })} />
         <label class="check">
           <input type="checkbox" checked=${Boolean(state.finish)} onChange=${(e) => { const on = e.currentTarget.checked; change("Finish Mission", (s) => { s.finish = on; }); }} />
@@ -298,7 +298,9 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
 
       ${SECTIONS.filter(isOpen).map((section) => html`
         <${Section} key=${`${id}:${section.id}`} heading=${section.heading} onRemove=${remove(section)}
-          action=${section.id === "beats" && html`<button class="icon" aria-label="Add Beat" title="Add Beat" onClick=${() => change("Add Beat", (s) => { s.beats = [...(s.beats ?? []), { wait: 1000 }]; })}><${Plus} /></button>`}>
+          action=${section.id === "beats"
+            ? html`<button class="icon" aria-label="Add a beat to this state" title="Add Beat" onClick=${() => change("Add Beat", (s) => { s.beats = [...(s.beats ?? []), { wait: 1000 }]; })}><${Plus} /></button>`
+            : section.id === "branches" && html`<button class="icon" aria-label="Add a branch to this state" title="Add Branch" onClick=${() => change("Add Branch", (s) => { s.on = [...(s.on ?? []), { when: [], goto: states[0] }]; })}><${Plus} /></button>`}>
           <${SectionBody} id=${section.id} state=${state} states=${states} change=${change} />
         <//>`)}
 
@@ -356,21 +358,21 @@ function MissionForm({ doc, edit }) {
   });
   const patchMonitor = (i, patch, key) => change("Monitor", (m) => { m.monitors = monitors.map((x, j) => (j === i ? { ...x, ...patch } : x)); }, key);
   const [newConst, setNewConst] = useState("");
-  const constError = newConst in (mission.consts ?? {}) ? "That constant exists." : "";
+  const constError = newConst in (mission.consts ?? {}) ? `A constant named ${newConst} already exists.` : "";
 
   return html`
     <div class="inspector">
       <${Section} heading="Identity">
-        <label class="mini"><span>Header</span>
-          <textarea rows=${Math.max(2, mission.header.length)} value=${mission.header.join("\n")}
+        <label class="mini"><span>File Comment</span>
+          <textarea rows=${Math.max(2, mission.header.length)} placeholder="Comment lines at the top of the generated file." value=${mission.header.join("\n")}
             onInput=${(e) => { const text = e.currentTarget.value; change("Header", (m) => { m.header = lines(text); }, "header"); }}></textarea>
         </label>
-        <${StateSelect} label="Start" value=${mission.start} states=${states} onChange=${(id) => change("Start State", (m) => { m.start = id; })} />
-        <${StateSelect} label="On Fail" value=${mission.onFail} states=${states} onChange=${(id) => change("Fail State", (m) => { m.onFail = id; })} />
+        <${StateSelect} label="Start State" value=${mission.start} states=${states} onChange=${(id) => change("Start State", (m) => { m.start = id; })} />
+        <${StateSelect} label="Fail State" value=${mission.onFail} states=${states} onChange=${(id) => change("Fail State", (m) => { m.onFail = id; })} />
       <//>
 
       <${Section} heading="Constants">
-        ${consts.length === 0 && html`<p class="hint">No constants.</p>`}
+        ${consts.length === 0 && html`<p class="hint">No constants. Add one to name a number such as a reward.</p>`}
         <ul class="items">
           ${consts.map(([name, value]) => html`
             <${ConstRow} key=${name} name=${name} value=${value} onChange=${setConst}
@@ -385,16 +387,17 @@ function MissionForm({ doc, edit }) {
 
       <${Section} heading="Fail Conditions">
         <p class="hint">Any one of these sends the mission to ${mission.onFail}, in every state that checks.</p>
-        <${CondList} conds=${mission.fail} onChange=${(v) => change("Fail Conditions", (m) => { m.fail = v; })} />
+        <${CondList} conds=${mission.fail} emptyText="No fail conditions, so this mission cannot fail." onChange=${(v) => change("Fail Conditions", (m) => { m.fail = v; })} />
       <//>
 
-      <${Section} heading="Monitors">
+      <${Section} heading="Monitors"
+        action=${html`<button class="icon" aria-label="Add a monitor to this mission" title="Add Monitor" onClick=${addMonitor}><${Plus} /></button>`}>
         <p class="hint">A monitor runs in every state and fires its steps once, the first time its conditions hold.</p>
         <ul class="items">
           ${monitors.map((monitor, i) => html`
             <li class="item" key=${i}>
               <div class="item-head">
-                <span class="item-label">Monitor ${i + 1}</span>
+                <span class="item-label">${monitor.id}</span>
                 <span class="item-tools"><button class="tool danger" aria-label=${`Remove ${monitor.id}`} title="Remove Monitor" onClick=${() => change("Remove Monitor", (m) => { m.monitors = monitors.filter((_, j) => j !== i); })}>✕</button></span>
               </div>
               <label class="mini"><span>Name</span>
@@ -402,18 +405,17 @@ function MissionForm({ doc, edit }) {
               </label>
               <p class="hint">When all of these hold:</p>
               <${CondList} conds=${monitor.when} onChange=${(when) => patchMonitor(i, { when })} />
-              <p class="hint">Fire once:</p>
+              <p class="hint">Then, once:</p>
               <${StepList} steps=${monitor.once} onChange=${(once) => patchMonitor(i, { once })} />
             </li>`)}
         </ul>
-        <button onClick=${addMonitor}>Add Monitor</button>
       <//>
 
       <${Section} heading="Includes">
         <p class="hint">${mission.includes ? "Sanny files included after the generated code, one path per line." : "The default, ../utils/missions.txt, is included."}</p>
         <textarea rows=${3} aria-label="Includes" value=${(mission.includes ?? ["../utils/missions.txt"]).join("\n")}
           onInput=${(e) => { const text = e.currentTarget.value; change("Includes", (m) => { m.includes = lines(text); }, "includes"); }}></textarea>
-        ${mission.includes && html`<button onClick=${() => change("Default Includes", (m) => { delete m.includes; })}>Use Default</button>`}
+        ${mission.includes && html`<button onClick=${() => change("Default Includes", (m) => { delete m.includes; })}>Use Default Include</button>`}
       <//>
     </div>
   `;

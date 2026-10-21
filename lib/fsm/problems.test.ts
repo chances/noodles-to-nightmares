@@ -43,7 +43,7 @@ Deno.test("empty conditions and steps are errors", () => {
   ) => p.message);
   assertEquals(messages, [
     "The mission's fail list has an empty condition",
-    "A's enter steps has an empty step",
+    "A has an empty enter step",
   ]);
 });
 
@@ -73,6 +73,6 @@ Deno.test("monitor and constant names must be identifiers, and unique", () => {
   const messages = problems(broken).map((p) => p.message);
   assertEquals(messages, [
     "Two monitors are named hint",
-    'Constant "bad name" needs a name made of letters, digits, and underscores',
+    'Constant "bad name" needs a name that starts with a letter',
   ]);
 });

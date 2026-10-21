@@ -17,7 +17,7 @@ export const SECTIONS = [
   { id: "branches", heading: "Branches", field: "on" },
   { id: "beats", heading: "Beats", field: "beats" },
   { id: "onExit", heading: "Exit Steps", field: "onExit" },
-  { id: "latches", heading: "Monitor Latches", field: "resetLatches" },
+  { id: "latches", heading: "Reset Monitors", field: "resetLatches" },
   { id: "notes", heading: "Notes", field: "notes" },
 ];
 

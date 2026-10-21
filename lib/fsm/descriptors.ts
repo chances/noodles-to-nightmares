@@ -18,6 +18,8 @@ export interface Field {
   type: FieldType;
   /** The allowed values of a `choice`. */
   options?: string[];
+  /** What the editor shows for an option whose Sanny value reads poorly; the value itself is unchanged. */
+  labels?: Record<string, string>;
   default?: string;
 }
 
@@ -43,7 +45,7 @@ export interface CondDescriptor extends Descriptor {
 
 const ms: Field = {
   name: "ms",
-  label: "Milliseconds",
+  label: "Duration (ms)",
   type: "number",
   default: "3000",
 };
@@ -72,6 +74,7 @@ export const stepDescriptors: StepDescriptor[] = [
       label: "Position",
       type: "choice",
       options: ["Middle", "BottomRight", "Bottom"],
+      labels: { BottomRight: "Bottom right" },
       default: "Middle",
     }],
   },
@@ -104,9 +107,14 @@ export const stepDescriptors: StepDescriptor[] = [
       "{handle} = Blip.AddSpriteForCoord({x}, {y}, {z}, RadarSprite.{sprite})",
     ],
     fields: [
-      { name: "handle", label: "Handle", type: "handle", default: "$Blip" },
+      {
+        name: "handle",
+        label: "Blip Variable",
+        type: "handle",
+        default: "$Blip",
+      },
       ...spot(),
-      { name: "sprite", label: "Sprite", type: "name", default: "Savehouse" },
+      { name: "sprite", label: "Map Icon", type: "name", default: "Savehouse" },
     ],
   },
   {
@@ -134,9 +142,10 @@ export const stepDescriptors: StepDescriptor[] = [
     lines: ["Camera.DoFade({ms}, Fade.{direction})"],
     fields: [{ ...ms, default: "750" }, {
       name: "direction",
-      label: "Direction",
+      label: "Effect",
       type: "choice",
       options: ["In", "Out"],
+      labels: { In: "Fade in", Out: "Fade out" },
       default: "Out",
     }],
   },
@@ -166,7 +175,7 @@ export const stepDescriptors: StepDescriptor[] = [
     lines: ["register_mission_passed '{id}'"],
     fields: [{
       name: "id",
-      label: "Mission Id",
+      label: "Mission Name Key",
       type: "name",
       default: "NooM_0",
     }],

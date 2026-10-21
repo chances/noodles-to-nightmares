@@ -7,6 +7,15 @@ import { buildCond, buildLines, defaults, formatField, isValid, parseCond, parse
 /** The vocabulary (`steps`, `conds`) and the open mission's monitor ids, which the latch fields offer. */
 export const EditorContext = createContext({ steps: [], conds: [], monitorIds: [] });
 
+// What an empty or unfinished field asks for; formatting has already removed everything else that could be wrong.
+const EMPTY = {
+  text: "Enter some text.",
+  number: "Enter a number.",
+  expr: "Enter a number or a name.",
+  handle: "Enter a variable name.",
+  name: "Enter a name.",
+};
+
 /** One typed field. Typing is rewritten into the field's format; an empty or unfinished value is not saved. */
 export function FieldInput({ field, value, onCommit }) {
   const { monitorIds } = useContext(EditorContext);
@@ -25,7 +34,7 @@ export function FieldInput({ field, value, onCommit }) {
   };
   if (field.type === "choice" || field.type === "latch") {
     const options = field.type === "choice" ? field.options : [...new Set([...monitorIds, value])];
-    return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${o}</option>`)}</select>`;
+    return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${field.labels?.[o] ?? o}</option>`)}</select>`;
   }
 
   const valid = isValid(field, draft);
@@ -39,7 +48,7 @@ export function FieldInput({ field, value, onCommit }) {
   };
   return html`
     <input value=${draft} aria-invalid=${!valid} spellcheck=${field.type === "text"} onInput=${input} />
-    ${!valid && html`<small class="error">Enter a value.</small>`}
+    ${!valid && html`<small class="error">${EMPTY[field.type]}</small>`}
   `;
 }
 
@@ -49,10 +58,11 @@ export function NumberField({ label, value, onCommit }) {
   return html`<label class="mini"><span>${label}</span><${FieldInput} field=${field} value=${String(value ?? 0)} onCommit=${(text) => onCommit(Number(text))} /></label>`;
 }
 
-function Row({ item, kind, onChange, onRemove, onMove }) {
+function Row({ item, kind, n, onChange, onRemove, onMove }) {
   const { steps, conds } = useContext(EditorContext);
   const [sanny, setSanny] = useState(false);
   const isCond = kind === "cond";
+  const noun = isCond ? "condition" : "step";
   const parsed = isCond ? parseCond(conds, item) : parseLines(steps, item);
   const raw = sanny || !parsed;
 
@@ -64,12 +74,12 @@ function Row({ item, kind, onChange, onRemove, onMove }) {
   return html`
     <li class="item">
       <div class="item-head">
-        <span class="item-label">${parsed ? parsed.descriptor.label : "Sanny Lines"}</span>
+        <span class="item-label">${parsed ? parsed.descriptor.label : "Custom Sanny"}</span>
         <span class="item-tools">
-          ${parsed && html`<button class="tool" aria-pressed=${sanny} title="Edit As Sanny" onClick=${() => setSanny(!sanny)}>Sanny</button>`}
-          <button class="tool" aria-label="Move Up" title="Move Up" onClick=${() => onMove(-1)}>↑</button>
-          <button class="tool" aria-label="Move Down" title="Move Down" onClick=${() => onMove(1)}>↓</button>
-          <button class="tool danger" aria-label="Remove" title="Remove" onClick=${onRemove}>✕</button>
+          ${parsed && html`<button class="tool" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} onClick=${() => setSanny(!sanny)}>${sanny ? "Show Controls" : "Edit As Sanny"}</button>`}
+          <button class="tool" aria-label=${`Move ${noun} ${n} up`} title="Move Up" onClick=${() => onMove(-1)}>↑</button>
+          <button class="tool" aria-label=${`Move ${noun} ${n} down`} title="Move Down" onClick=${() => onMove(1)}>↓</button>
+          <button class="tool danger" aria-label=${`Remove ${noun} ${n}`} title=${`Remove ${isCond ? "Condition" : "Step"}`} onClick=${onRemove}>✕</button>
         </span>
       </div>
       ${raw
@@ -121,7 +131,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
       ${items.length === 0 && html`<p class="hint">${emptyText}</p>`}
       ${items.length > 0 && html`
         <ul class="items">
-          ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} onChange=${replace(i)} onRemove=${remove(i)} onMove=${move(i)} />`)}
+          ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} onMove=${move(i)} />`)}
         </ul>`}
       <select class="add" aria-label=${addLabel} value="" onChange=${add}>
         <option value="">${addLabel}</option>
@@ -129,7 +139,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
           <optgroup key=${group} label=${group}>
             ${descriptors.filter((d) => d.group === group).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
           </optgroup>`)}
-        <option value="__sanny">Sanny Lines</option>
+        <option value="__sanny">Custom Sanny</option>
       </select>
     </div>
   `;

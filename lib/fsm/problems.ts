@@ -20,21 +20,18 @@ export function problems(mission: Mission): Problem[] {
   const warn = (message: string, state?: string) =>
     found.push({ severity: "warning", message, state });
 
-  const conds = (list: Cond[] | undefined, where: string, state?: string) => {
-    for (const c of list ?? []) {
-      if (!c.test.trim()) error(`${where} has an empty condition`, state);
-    }
+  // `message` is the whole sentence, so each caller can phrase its subject in the right number.
+  const conds = (list: Cond[] | undefined, message: string, state?: string) => {
+    for (const c of list ?? []) if (!c.test.trim()) error(message, state);
   };
-  const steps = (list: Step[] | undefined, where: string, state?: string) => {
+  const steps = (list: Step[] | undefined, message: string, state?: string) => {
     for (const s of list ?? []) {
-      if (!s.some((line) => line.trim())) {
-        error(`${where} has an empty step`, state);
-      }
+      if (!s.some((line) => line.trim())) error(message, state);
     }
   };
 
   const states = Object.entries(mission.states) as [string, State][];
-  conds(mission.fail, "The mission's fail list");
+  conds(mission.fail, "The mission's fail list has an empty condition");
   if (mission.fail.length === 0) {
     warn("The mission has no fail conditions, so it can never fail");
   }
@@ -42,21 +39,17 @@ export function problems(mission: Mission): Problem[] {
   const seen = new Set<string>();
   for (const monitor of mission.monitors ?? []) {
     if (!NAME.test(monitor.id)) {
-      error(
-        `Monitor "${monitor.id}" needs a name made of letters, digits, and underscores`,
-      );
+      error(`Monitor "${monitor.id}" needs a name that starts with a letter`);
     } else if (seen.has(monitor.id)) {
       error(`Two monitors are named ${monitor.id}`);
     }
     seen.add(monitor.id);
-    conds(monitor.when, `Monitor ${monitor.id}`);
-    steps(monitor.once, `Monitor ${monitor.id}`);
+    conds(monitor.when, `Monitor ${monitor.id} has an empty condition`);
+    steps(monitor.once, `Monitor ${monitor.id} has an empty step`);
   }
   for (const name of Object.keys(mission.consts ?? {})) {
     if (!NAME.test(name)) {
-      error(
-        `Constant "${name}" needs a name made of letters, digits, and underscores`,
-      );
+      error(`Constant "${name}" needs a name that starts with a letter`);
     }
   }
 
@@ -65,14 +58,16 @@ export function problems(mission: Mission): Problem[] {
     if (state.until && !state.next) {
       error(`${id} waits on a condition but has no Next state`, id);
     }
-    conds(state.until, `${id}'s wait`, id);
-    for (const rule of state.on ?? []) conds(rule.when, `${id}'s branch`, id);
-    for (const beat of state.beats ?? []) {
-      conds(beat.when, `A beat in ${id}`, id);
-      steps(beat.do, `A beat in ${id}`, id);
+    conds(state.until, `${id}'s wait has an empty condition`, id);
+    for (const rule of state.on ?? []) {
+      conds(rule.when, `A branch in ${id} has an empty condition`, id);
     }
-    steps(state.onEnter, `${id}'s enter steps`, id);
-    steps(state.onExit, `${id}'s exit steps`, id);
+    for (const beat of state.beats ?? []) {
+      conds(beat.when, `A beat in ${id} has an empty condition`, id);
+      steps(beat.do, `A beat in ${id} has an empty step`, id);
+    }
+    steps(state.onEnter, `${id} has an empty enter step`, id);
+    steps(state.onExit, `${id} has an empty exit step`, id);
 
     if (!state.next && !state.on?.length && !state.finish) {
       warn(`${id} has no way out and does not finish the mission`, id);

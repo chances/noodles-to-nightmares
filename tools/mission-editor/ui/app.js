@@ -188,7 +188,9 @@ function App() {
   const [exporting, setExporting] = useState(false);
   const [showProblems, setShowProblems] = useState(false);
   const { list, stem, setStem, mission: loadedMission } = useMissions();
-  const { doc, edit, undo, redo, canUndo, canRedo, problems, save } = useDocument(loadedMission.data ?? null, projectQuery);
+  const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
+  // A failed save is listed first, with its reason, beside the mission's own problems.
+  const problems = save.state === "error" ? [{ severity: "error", message: `Save failed: ${save.error}` }, ...found] : found;
   // The document follows the loaded mission one render late; until it catches up the mission is still loading.
   const current = loadedMission.data && doc?.stem === loadedMission.data.stem ? doc : null;
   const mission = loadedMission.data && !current
@@ -273,8 +275,8 @@ function App() {
             ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
           </select>
         </label>
-        <span class="save-status" role="status" data-state=${save.state} title=${save.error ?? ""}>
-          ${save.state === "error" ? "Save Failed" : SAVE_TEXT[save.state] ?? ""}
+        <span class="save-status" role="status" data-state=${save.state}>
+          ${save.state === "error" ? "Save failed" : SAVE_TEXT[save.state] ?? ""}
         </span>
         <button disabled=${!canUndo} onClick=${undo} title="Undo (Ctrl+Z)">Undo</button>
         <button disabled=${!canRedo} onClick=${redo} title="Redo (Ctrl+Y)">Redo</button>
