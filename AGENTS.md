@@ -60,6 +60,7 @@ end
 - **Format**: `.txt` CLEO files, one per mission
 - **Header**: `{$CLEO .cm}` directive required
 - **Naming**: `{index}_{name}.txt` (e.g., `0_tutorial.txt`, `1_robbery.txt`)
+- **Story Script**: A sibling `{index}_{name}.md` beside each mission holds its screenplay-style story script (e.g., `0_tutorial.md`): the technical details are YAML front matter, the requirement and completion checklists are GFM checklists in the body, followed by the screenplay. Act-level arcs stay in `story/`, which links to these scripts
 
 ### Mission Launch
 

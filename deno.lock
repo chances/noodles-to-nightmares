@@ -26,6 +26,7 @@
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/streams@^1.1.2": "1.1.2",
     "jsr:@std/text@^1.0.19": "1.1.0",
+    "jsr:@std/yaml@*": "1.3.0",
     "npm:change-case@*": "5.4.4",
     "npm:change-case@^5.4.4": "5.4.4"
   },
@@ -135,6 +136,9 @@
     },
     "@std/text@1.1.0": {
       "integrity": "3db511996317f63e35b76fe18fe35249723ae0ff6f8305398c78dd64ffa809a7"
+    },
+    "@std/yaml@1.3.0": {
+      "integrity": "b250103854378b8b36cbff0fe95aec017d3d9ce86b489c67605180c602fb4922"
     }
   },
   "npm": {

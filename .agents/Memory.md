@@ -117,6 +117,9 @@
 - **Inspection Tooling**: Use `scripts/inspect-dff.py <model.dff>` to inspect RW version, clump frame hierarchy, geometry vertex/triangle bounds, prelit alpha ranges, texture references, and atomic flags.
 - **DragonFF Material Mapping**: Image texture nodes must have clean `node.label` values matching texture names to prevent DragonFF's `clear_extension` from truncating `.txd` prefixes into model texture names. Sampler properties must be set to `tex_filters = 6` (Linear Mipmap Linear) and `tex_u_addr = tex_v_addr = 1` (Wrap).
 
+## Story Scripts
+- **Layout**: Each mission has `missions/<stem>.md` beside its `.txt`. YAML front matter holds the technical metadata (status, location, trigger, reward, context, objectives, win, fail, teaching points, map considerations). The body holds GFM `## Script Requirements` and `## Completion Checklist` checklists, then `## Script`, a screenplay with `[GAMEPLAY]` beats. `story/act-one.md` links to the scripts and keeps the arc, narrative flow, and design notes. The side-mission scripts hold only beats taken from their objectives.
+
 ## Teaching Lessons
 - **Lesson HTML**: standards for `.agents/lessons/*.html` (light and dark themes, quiz answers, preview server) are in [`.agents/rules/lesson-html.md`](rules/lesson-html.md).
 

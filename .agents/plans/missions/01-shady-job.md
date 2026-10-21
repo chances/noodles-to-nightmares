@@ -204,13 +204,15 @@ break
 
 | Purpose | Candidate Coord | Notes |
 |---|---|---|
-| Payphone | `(1168.33, -414.141, 22.8)` | Specified in act-one.md |
+| Payphone | `(1168.33, -414.141, 22.8)` | Specified in [`missions/1_shady_job.md`](../../../missions/1_shady_job.md) |
 | Package pickup | `(1340.0, -695.0, 14.0)` | Portland docks alley; verify in-engine |
 | Delivery zone | `(880.0, -880.0, 14.0)` | South Portland industrial; verify |
 
 ---
 
-## Checklist (Mirrors act-one.md)
+## Checklist (Mirrors the Mission Script)
+
+See [`missions/1_shady_job.md`](../../../missions/1_shady_job.md) for the story script and its completion checklist.
 
 - [ ] Opening dialogue + title card
 - [ ] Payphone ring sound at correct coord

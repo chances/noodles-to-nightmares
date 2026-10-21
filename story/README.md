@@ -50,7 +50,7 @@ tutorials, encounters)
 
 ---
 
-## [Act 1: The Setup](./story/act-one.md)
+## [Act 1: The Setup](./act-one.md)
 
 ### Mission 0: Car Tutorial
 
@@ -59,6 +59,7 @@ tutorials, encounters)
   car and what a safehouse is.
 - **Current State**: Framework exists in `0_tutorial.txt`. Rosa's first
   safehouse is her apartment in north Portland.
+- **Script**: [`missions/0_tutorial.md`](../missions/0_tutorial.md)
 - **Status**: To be completed
 
 ### Mission 1: The Shady Job
@@ -68,6 +69,7 @@ tutorials, encounters)
   Punk Noodles; discovers it involves moving contraband
 - **Key Mechanic**: Stealth delivery (avoid police/gangs during transport)
 - **Outcome**: Sets Rosa on the path to organized crime
+- **Script**: [`missions/1_shady_job.md`](../missions/1_shady_job.md)
 
 ### Mission 2: Proving Herself
 
@@ -76,6 +78,7 @@ tutorials, encounters)
   confronting a rival gang or earning respect from a crime boss
 - **Key Mechanic**: Driving + combat encounter
 - **Outcome**: Earns Rosa a seat at the table; transition to Staunton Island
+- **Script**: [`missions/2_proving_herself.md`](../missions/2_proving_herself.md)
 
 ---
 
