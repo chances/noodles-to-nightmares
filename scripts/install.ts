@@ -7,6 +7,10 @@
  */
 
 import { join } from "@std/path";
+import { lintOrExit } from "./lint-scripts.ts";
+
+// Refuse to install sources whose variable slots would misbehave in game
+await lintOrExit(Deno.cwd());
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {

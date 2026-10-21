@@ -27,10 +27,12 @@ button.opt { display:block; inline-size:100%; text-align:start; margin-block:.4r
 button.opt.ok { border-color:#2e8b57; background:rgba(46,139,87,.15); }
 button.opt.bad { border-color:#c0392b; background:rgba(192,57,43,.15); }
 .fb { min-block-size:1.5rem; color:var(--accent); }
+.fb.ok { color:#2e8b57; font-weight:bold; }
+.fb.bad { color:#c0392b; font-weight:bold; }
 </style>
 </head>
 <body>
-<button id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<button id="theme" type="button" aria-label="Toggle light or dark theme">Toggle Theme</button>
 <h1>Candle 2DFX in GTA III</h1>
 <p class="sub">Lesson 2. Mission: put a candle light (corona, point light, ground shadow) on a diner prop. Follows <a href="0001-color-temperature-in-blender.html">Lesson 1</a>.</p>
 
@@ -70,12 +72,12 @@ GTA III and Vice City define lights in a text <code>2dfx</code> section of an ID
 <tr><td>Shadow Size</td><td>none documented</td><td>InnerRange is a different description</td></tr>
 <tr><td>Shadow Color Multiplier</td><td>ShadowIntensity</td><td>Likely counterpart; unconfirmed</td></tr>
 <tr><td>Shadow Z Distance</td><td>none documented</td><td>No III column named</td></tr>
-<tr><td>Corona and Shadow Textures</td><td>Corona, Shadow</td><td>Names from <code>particle.txd</code>, in quotes</td></tr>
+<tr><td>Corona and Shadow Textures</td><td>Corona, Shadow</td><td>Texture names from <code>particle.txd</code>, written in quotes</td></tr>
 <tr><td>Flags, View Vector</td><td>Flags</td><td>Different bit layout; no view vector in III</td></tr>
 </table>
 
 <h2>4. Try It: Build a Candle Line</h2>
-<blockquote class="callout" data-variant="warning">The output follows the column order on the 2DFX IDE wiki page. The corona and shadow names are the wiki's typical values, so check them against <code>particle.txd</code>.</blockquote>
+<blockquote class="callout" data-variant="warning">The output follows the column order on the 2DFX IDE wiki page. The corona and shadow names (<code>coronastar</code>, <code>shad_exp</code>) are the wiki's typical values. To list the names in <code>particle.txd</code>, open the file in <a href="https://github.com/andrenanninga/mashed/blob/master/tools/rw-analyze/ReadMe.txt">RW Analyze</a> and press F4 (Tools, Texture List). Its ReadMe says it was tested on GTA III and Vice City files. The <a href="https://gtamods.com/wiki/Particle_(VC)">GTAMods Particle (VC)</a> list also contains both names.</blockquote>
 <blockquote class="callout" data-variant="tip">Your field values save to session storage while the tab stays open.</blockquote>
 <div class="grid">
 <div><label for="id">Model ID</label><input id="id" type="text" value="MODEL_ID"></div>
@@ -116,7 +118,7 @@ GTA III and Vice City define lights in a text <code>2dfx</code> section of an ID
 <p class="fb" id="fb" role="status"></p>
 
 <h2>Next</h2>
-<p>Add a <code>2dfx</code> section to <code>custom.ide</code> with your candle line, rebuild, and compare Flash 0 against Flash 2 in game. Ask your teacher (this agent) about anything unclear. These sources leave open which panel fields GTA III reads from the DFF, so ask there first.</p>
+<p>Add a <code>2dfx</code> section to <code>custom.ide</code> with your candle line, rebuild, and compare Flash 0 against Flash 2 in game. Ask your teacher (this agent) about anything unclear. Open question: which panel fields GTA III reads from the DFF. These sources do not say, so ask in the session first.</p>
 <p><small>Primary source: <a href="https://gtamods.com/wiki/2DFX">GTAMods Wiki, 2DFX (IDE Section)</a>.</small></p>
 
 <script>
@@ -148,6 +150,7 @@ render();
 document.querySelectorAll('#q .opt').forEach(b=>b.addEventListener('click',()=>{
   const ok=b.dataset.ok==='1';
   b.classList.add(ok?'ok':'bad');
+  document.getElementById('fb').className = 'fb ' + (ok ? 'ok' : 'bad');
   document.getElementById('fb').textContent = ok ? 'Correct: InnerRange is the ground range.' : 'Not that one. Recall the column table on the IDE wiki page, then try again.';
 }));
 </script>

@@ -12,6 +12,7 @@
  *
  * Supports interactive bisection and step filtering via:
  * --bisect, -b, --step=<N>, --only=<name>, --skip=<name>
+ * and recompiles every Sanny script, ignoring the hash cache, with --force.
  *
  * Model assets are bisected with --skip-asset=<asset|model|model:asset>[,...]
  * where <asset> is dff, txd, or col (e.g. --skip-asset=dinerind:col,dff), and a
@@ -22,6 +23,7 @@
 
 import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
+import { lintOrExit } from "./lint-scripts.ts";
 import { capitalCase } from "change-case";
 import {
   blue,
@@ -73,6 +75,7 @@ colorizeTags("error", Deno.stderr);
 // Bisection / filtering arguments
 const args = Deno.args;
 const isBisect = args.includes("--bisect") || args.includes("-b");
+const forceArg = args.includes("--force");
 const onlyArg = args.find((a) => a.startsWith("--only="))?.slice(7)?.split(",");
 const skipArg = args.find((a) => a.startsWith("--skip="))?.slice(7)?.split(",");
 const stepArg = args.find((a) => a.startsWith("--step="))?.slice(7)?.split(",")
@@ -120,6 +123,16 @@ function shouldRun(stepNum: number, stepName: string): boolean {
 /** Compiles a script using the Sanny Builder CLI. */
 async function compile(inputPath: string, outputPath: string) {
   const sannyExe = Deno.env.get("SANNY") || "sanny.exe";
+  // The CLI exits 0 on a compile error and writes it to compile.log beside sanny.exe instead
+  const logPath = join(dirname(sannyExe), "compile.log");
+  const logStamp = async () => {
+    try {
+      return (await Deno.stat(logPath)).mtime?.getTime();
+    } catch {
+      return undefined;
+    }
+  };
+  const before = await logStamp();
   const command = new Deno.Command(sannyExe, {
     args: [
       "--no-splash",
@@ -135,6 +148,13 @@ async function compile(inputPath: string, outputPath: string) {
   if (!success) {
     console.error(`Failed to compile: ${inputPath}`);
     Deno.exit(1);
+  }
+  if (await logStamp() !== before) {
+    const log = (await Deno.readTextFile(logPath)).trim();
+    if (log.toLowerCase().includes(basename(inputPath).toLowerCase())) {
+      console.error(`Failed to compile: ${inputPath}\n${log}`);
+      Deno.exit(1);
+    }
   }
 }
 
@@ -208,7 +228,9 @@ async function compileIfChanged(
     (await Promise.all([inputPath, ...dependsOn].map((p) => hashScript(p))))
       .join("\n"),
   );
-  if (await allExist([outputPath]) && hashCache[inputPath] === hash) {
+  if (
+    !forceArg && await allExist([outputPath]) && hashCache[inputPath] === hash
+  ) {
     console.log(`  [=] Up to date: ${basename(inputPath)}`);
     return;
   }
@@ -308,6 +330,9 @@ const distDir = join(cwd, "dist");
 const stagingDir = join(distDir, ".staging");
 const noodlesStagingDir = join(stagingDir, "modloader", "Noodles");
 const dragDropZip = join(distDir, "Drag-N-Drop.zip");
+
+// Fail early on variable slot problems (duplicate pins, unpinned mission globals, more than 16 locals)
+await lintOrExit(cwd);
 
 // Ensure clean staging directory
 try {

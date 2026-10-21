@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Streaming Class</title>
 <link rel="stylesheet" href="assets/callout.css">
+<link rel="stylesheet" href="assets/quiz.css">
 <style>
 :root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
@@ -72,13 +73,8 @@ Streaming.MarkModelAsNoLongerNeeded(#MALE01)</pre>
 </table>
 <blockquote class="callout" data-variant="danger"><code>Streaming.LoadModel</code> and <code>Streaming.IsModelLoaded</code> appear in <code>main.txt</code> and the mission file. Neither name is in the library's <code>gta3.json</code> on GitHub master, and neither string appears in the Sanny install's <code>data</code> folder. The library names are <code>RequestModel</code> and <code>HasModelLoaded</code>. Where the project names come from is not established, so the semantics of those lines are unverified.</blockquote>
 
-<h2>4. Open Questions for Your Pop-Cycle Bug</h2>
-<h3>Question A: Is Collision Level 0 Valid?</h3>
-<p>The enum lists 1, 2, 3. The Sanny template <code>stripped.txt</code> also writes 0, so it is a suspect to test by itself, not a proven cause.</p>
-<h3>Question B: Does Anything Release Models?</h3>
-<p>The cycle ends with <code>MarkModelAsNoLongerNeeded</code>. Requests without releases hold memory, which the library page for <code>0249</code> describes as "freeing game memory".</p>
-<h3>Question C: Does Switch Matter?</h3>
-<p><code>Streaming.Switch</code> toggles streaming of "additional models like peds, cars, and maps". No script here calls it. Whether a call changes your symptom needs a one-change test.</p>
+<h2>4. Where the Cycle Can Go Wrong</h2>
+<p>Three details of the library data matter when streaming misbehaves: the <code>LevelName</code> enum has no value 0, a request that is never followed by <code>MarkModelAsNoLongerNeeded</code> keeps its memory, and <code>Streaming.Switch</code> toggles streaming of "additional models like peds, cars, and maps". The open pop-in bug and its test plan live in <a href="../reports/bugs/building-vehicle-pop-cycle.md">building-vehicle-pop-cycle.md</a>.</p>
 
 <h2>5. Check Yourself</h2>
 <p>Per the library, which command reports that a requested model can be used to create an entity?</p>
@@ -88,11 +84,11 @@ Streaming.MarkModelAsNoLongerNeeded(#MALE01)</pre>
 <button type="button">Streaming.ModelIsLoaded</button>
 </div>
 <p class="result" aria-live="polite"></p>
-<p>Per the library, which command removes LOD textures while loading around a point?</p>
+<p>Per the library, which command loads any requested models synchronously?</p>
 <div class="quiz">
-<button type="button">Streaming.LoadCollision</button>
 <button type="button">Streaming.LoadSpecialModel</button>
-<button type="button" data-correct="1">Streaming.LoadScene</button>
+<button type="button">Streaming.HasModelLoaded</button>
+<button type="button" data-correct="1">Streaming.LoadAllModelsNow</button>
 </div>
 <p class="result" aria-live="polite"></p>
 
@@ -104,7 +100,10 @@ document.querySelectorAll(".quiz").forEach(function (q) {
   var out = q.nextElementSibling;
   q.querySelectorAll("button").forEach(function (b) {
     b.addEventListener("click", function () {
-      out.textContent = b.dataset.correct
+      var ok = !!b.dataset.correct;
+      b.classList.add(ok ? "ok" : "bad");
+      out.className = "result " + (ok ? "ok" : "bad");
+      out.textContent = ok
         ? "Correct. Section 1 lists this one under Models."
         : "Not that one. The Section 1 table gives each command's library description.";
     });

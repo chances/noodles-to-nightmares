@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Contact Point Blips on the Radar</title>
 <link rel="stylesheet" href="assets/callout.css">
+<link rel="stylesheet" href="assets/quiz.css">
 <style>
 :root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
-@media (prefers-color-scheme: dark) { :root { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; }
+:root[data-theme="light"] { color-scheme:light; }
 body { background:var(--bg); color:var(--fg); font:17px/1.6 Georgia, serif; max-inline-size:46rem; margin-inline:auto; padding-inline:1rem; padding-block:2rem; }
 h1 { font-size:1.8rem; margin-block-end:.2rem; }
 h2 { font-size:1.15rem; margin-block-start:2rem; border-block-end:1px solid var(--line); padding-block-end:.2rem; }
@@ -21,15 +24,17 @@ pre { padding:.7rem .9rem; overflow-x:auto; }
 a { color:var(--accent); }
 button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.3rem; padding:.4rem .7rem; margin-block:.25rem; cursor:pointer; display:block; text-align:start; }
 #result { min-block-size:1.6rem; }
+#theme { position:fixed; inset-block-start:.6rem; inset-inline-end:.6rem; }
 </style>
 </head>
 <body>
+<button id="theme" type="button" aria-label="Toggle light or dark theme">Toggle Theme</button>
 <h1>Contact Point Blips on the Radar</h1>
 <p class="sub">Mission: show the payphone on the minimap while Rosa is on mission 1. Targets <code>missions/1_shady_job.txt</code> line 103.</p>
 
 <h2>1. Why the Radar Shows Nothing</h2>
-<p>The library describes <code>Blip.AddSpriteForContactPoint</code> (opcode <code>02A7</code>) as adding "a long range sprite blip and sphere to the contact point that is not displayed while on mission" (<a href="https://library.sannybuilder.com/#/gta3/default/02A7">02A7</a>). The mission script sets <code>$onMission = true</code>, so the library text predicted this blip stays hidden. That prediction was not the cause here: the van, payphone, and pickup blips were all missing, and none of them is a contact point blip. Section 5 shows the real cause.</p>
-<blockquote class="callout" data-variant="warning">The blip carries its own sphere, so the orb is not only the draw flag on the locate check.</blockquote>
+<p>The library describes <code>Blip.AddSpriteForContactPoint</code> (opcode <code>02A7</code>) as adding "a long range sprite blip and sphere to the contact point that is not displayed while on mission" (<a href="https://library.sannybuilder.com/#/gta3/default/02A7">02A7</a>). A mission sets <code>$onMission = true</code>, so this blip type stays hidden for the whole mission. The library does not describe <code>Blip.AddSpriteForCoord</code> (<code>02A8</code>) as hidden on mission.</p>
+<blockquote class="callout" data-variant="warning">The contact point blip draws its own sphere, separate from the <code>drawSphere</code> flag on locate commands.</blockquote>
 
 <h2>2. The Two Commands</h2>
 <table>
@@ -79,44 +84,58 @@ button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); b
 </table>
 <blockquote class="callout" data-variant="warning">The library does not say whether <code>03A1</code> must run every frame. Test it in a loop before relying on it. <code>03BC</code> is the documented static option.</blockquote>
 
-<h2>4. Two Candidate Edits</h2><h3>Option A: Force the Radar Icon On</h3>
-<p>This keeps the contact point. Tested in game: no blip appears on the minimap, even beside the payphone.</p>
+<h2>4. Two Ways to Mark the Payphone</h2><h3>Option A: Keep the Contact Point</h3>
+<p>This keeps the contact point blip and its sphere. The blip stays hidden while on mission, and <code>Blip.ChangeDisplay</code> is not documented as overriding that.</p>
 <pre>Blip.AddSpriteForContactPoint(1168.33, -414.841, 22.8, PAYPHONE, $payphoneBlip)
 Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)</pre>
 <h3>Option B: Use a Plain Coordinate Blip</h3>
 <p>This uses the command behind <code>$SafeBlip</code> in <code>main.txt</code>. The library does not describe it as hidden on mission:</p>
 <pre>$payphoneBlip = Blip.AddSpriteForCoord(1168.33, -414.841, 22.8, PAYPHONE)</pre>
-<blockquote class="callout" data-variant="warning"><code>018B</code> does not override the hiding, so Option A fails. Option B is in the mission now and also showed nothing, so the cause is not the contact point command. Section 5 explains why.</blockquote>
 
-<h2>5. The Real Cause: a Full Blip Pool</h2>
-<p>The mission logged each blip handle to <code>CLEO\debug.ini</code> right after the call that created it:</p>
+<h2>5. The Blip Pool Has a Limit</h2>
+<p>Every blip occupies one slot in a fixed pool. The <a href="https://docs.sannybuilder.com/scm-documentation/gta-limits.md">GTA Limits</a> table lists the radar blip capacity per game:</p>
 <table>
-<tr><th>Key</th><th>Value</th><th>Meaning</th></tr>
-<tr><td><code>Van</code>, <code>Payphone</code>, <code>Pickup</code></td><td><code>-1</code></td><td>The blip call failed</td></tr>
-<tr><td><code>VanHandle</code></td><td><code>11010</code></td><td>The car existed</td></tr>
-<tr><td><code>PlayerHandle</code></td><td><code>0</code></td><td>The mission read the right global slot</td></tr>
+<tr><th>Game</th><th>Radar Blips</th></tr>
+<tr><td>GTA III</td><td>32</td></tr>
+<tr><td>Vice City</td><td>75</td></tr>
+<tr><td>San Andreas</td><td>175</td></tr>
+<tr><td>San Andreas Mobile</td><td>250</td></tr>
 </table>
-<p>Every <code>Blip.Add*</code> command returns <code>-1</code> when the blip pool has no free slot. <code>main.txt</code> called <code>ensureSafehouseBlip()</code> on every frame off mission, and each call added another blip and overwrote <code>$SafeBlip</code>, so the old handles leaked. The fix is a <code>$SafeBlip == 0</code> guard. Details: <code>.agents/reports/bugs/blip-pool-exhausted-by-safehouse-blip.md</code>.</p>
-<blockquote class="callout" data-variant="tip">When a blip is missing, log the handle the add command returns before changing any display settings.</blockquote>
+<p>An add command that creates a blip each frame, or overwrites its handle variable without calling <code>Blip.Remove</code>, fills the pool. This project logged <code>-1</code> handles from every add command while the pool was full (<a href="../reports/bugs/blip-pool-exhausted-by-safehouse-blip.md">blip-pool-exhausted-by-safehouse-blip.md</a>).</p>
+<blockquote class="callout" data-variant="tip">When a blip is missing, log the handle the add command returns before changing any display settings. A handle of <code>-1</code> means no blip exists.</blockquote>
 
 <h2>6. Check Yourself</h2>
-<p>Which reading in <code>debug.ini</code> showed that the blips never existed?</p>
-<button>The player handle was zero after the van spawned.</button>
-<button data-ok="1">The blip handles came back as negative one each.</button>
-<button>The van handle was a large number instead of zero.</button>
-<p id="result" aria-live="polite"></p>
+<p>Per the GTA Limits table, how many radar blips can GTA III hold at once?</p>
+<div class="quiz">
+<button type="button">75 blips</button>
+<button type="button" data-ok="1">32 blips</button>
+<button type="button">175 blips</button>
+</div>
+<p id="result" class="result" aria-live="polite"></p>
 
 <h2>Next</h2>
 <p>Primary source: the <a href="https://library.sannybuilder.com/#/gta3/default/02A7">Sanny Builder Library entry for 02A7</a>. Ask follow-up questions in the session whenever a step is unclear. Related: <a href="0002-candle-2dfx-in-gta-iii.html">Lesson 2</a>.</p>
 
 <script>
-document.querySelectorAll("button").forEach(function (b) {
+document.querySelectorAll(".quiz button").forEach(function (b) {
   b.addEventListener("click", function () {
-    document.getElementById("result").textContent = b.dataset.ok
-      ? "Correct. Every Blip.Add* command returns -1 when the pool is full."
-      : "Not that one. The table in section 5 shows which reading is the failed call.";
+    var ok = !!b.dataset.ok, out = document.getElementById("result");
+    b.classList.add(ok ? "ok" : "bad");
+    out.className = "result " + (ok ? "ok" : "bad");
+    out.textContent = ok
+      ? "Correct. Section 5 lists 32 for GTA III."
+      : "Not that one. The table in section 5 gives each game's capacity.";
   });
 });
+(function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem("lesson-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = getComputedStyle(root).colorScheme.indexOf("dark") === 0;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("lesson-theme", root.dataset.theme); } catch (e) {}
+  });
+})();
 </script>
 </body>
 </html>

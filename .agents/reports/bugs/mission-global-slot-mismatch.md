@@ -29,4 +29,4 @@ Main's camera block writes `true` or `false` into `$isCameraAvoidingObstacle` ev
 | Stale `.cm` in `[gta3]/CLEO` | Found and removed earlier; separate defect, now linted by `scripts/install.ts` |
 
 ## Prevention
-Put every global that more than one script touches, or that any script uses, in `variables.txt` with the next free index. Never rely on declaration order. After adding a global, dump the `.cm` operands or the `VAR` table and compare with `main.scm`.
+Put every global that more than one script touches in `variables.txt` with the next free index, and declare mission-private state as a CLEO local (`int x`, 16 per script) in the mission. `scripts/lint-scripts.ts` runs in `deno task build` and `deno task install` and fails on a duplicate pin, a slot outside `$2` to `$3FFF`, an unpinned `$global` in a mission, or more than 16 locals. After adding a global, dump the `.cm` operands or the `VAR` table and compare with `main.scm`.

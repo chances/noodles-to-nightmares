@@ -8,10 +8,13 @@
 //=============================================
 const REWARD = 250 // Rosa's paycheck
 
+// Mission-private state is a CLEO local, which needs no global slot (16 per script)
+int isDriving = false
+int wasArrested = false
+int isDying = false
+int health = 0
+
 $onMission = true
-$isDriving = false
-$wasArrested = false
-$isDying = false
 
 wait 5000
 Text.PrintString("Fuck me, that shift was long. I reek of noodles.", {time} 3500)
@@ -34,7 +37,7 @@ wait 2500
 // Thus far, Rosa's primary form of travel is on-foot.
 checkSafety()
 if
-  $isDriving == false
+  isDriving == false
 then
   Text.PrintHelpString("Find your way home.")
 end
@@ -49,10 +52,9 @@ while true
     Player.IsDead($player)
     Player.HasBeenArrested($player)
   then
-    if not
-      Player.IsDead($player)
+    if not Player.IsDead($player)
     then
-      $wasArrested = true
+      wasArrested = true
     end
     Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
     wait 3000
@@ -70,7 +72,7 @@ while true
     Camera.SetInterpolationParameters(0, {time} 1250)
     Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
 
-    if $isDriving == false
+    if isDriving == false
     then
       Text.PrintString("Ugh, that was a long walk.", 2500)
       wait 2500
@@ -122,27 +124,28 @@ $missionIndex = $missionIndex + 1
 //----------- Functions ----------
 //================================
 
-function checkSafety()
+// A label subroutine, not a `function`: a function has its own locals and cannot see this script's
+:checkSafety
   if and
     Player.IsSittingInAnyCar($player)
     Player.IsInAnyCar($player)
-    $isDriving == false
+    isDriving == false
   then
-    $isDriving = true
+    isDriving = true
     Text.PrintHelpString("Drive safe.")
     Player.StoreCarIsIn($player, $myCar)
   end
 
-  $health = 0
-  Player.GetHealth($player, $health)
+  health = 0
+  Player.GetHealth($player, health)
   // Remind the player not to die 😜💀
   if and
-    $health < 45
-    $isDying == false
+    health < 45
+    isDying == false
   then
-    $isDying = true
+    isDying = true
     Text.PrintHelpString("Don't you ~r~dare ~w~die!")
   end
-end
+  return
 
 {$INCLUDE ../utils/missions.txt}

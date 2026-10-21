@@ -11,7 +11,6 @@ var
   $onCutscene: int
   $player: Player
   $playerChar: Char
-  $sal: Char
   $myCar: Car
   $myCarModel: int
   $isCameraAvoidingObstacle: int
@@ -29,17 +28,18 @@ Alloc($missionIndex, 4400)
 Alloc($onCutscene, 4401)
 Alloc($player, 4402)
 Alloc($playerChar, 4403)
-Alloc($sal, 4404)
 Alloc($myCar, 4405)
-Alloc($myCarModel, 4408)
 Alloc($isCameraAvoidingObstacle, 4406)
 Alloc($isCarInWater, 4407)
+Alloc($myCarModel, 4408)
+Alloc($onMission, 4409)
+Alloc($skipCutscene, 4410)
 
 // Main
 Alloc($SafeBlip, 4501)
 Alloc($PunkNoodles, 4502)
 Alloc($NoodlesBlip, 4503)
-Alloc($VanBlip, 4404)
+Alloc($VanBlip, 4504)
 Alloc($ApartmentGarage, 4505)
 Alloc($SafeInfo, 4506)
 Alloc($Bribe, 4507)
@@ -49,18 +49,7 @@ Alloc($KurumaGen, 4510)
 Alloc($gen_car3, 4511)
 Alloc($tempPickup, 4512)
 
-// Missions
-// QUESTION: Why can't mission-specific allocations just live in the CLEO mission scripts?
-Alloc($isDying, 4513)
-Alloc($isWanted, 4514)
-Alloc($isDriving, 4515)
-Alloc($health, 4516)
-Alloc($isSalNearby, 4517)
-Alloc($payphone, 4518)
-Alloc($payphoneBlip, 4519)
-Alloc($package, 4520)
-Alloc($pickupBlip, 4521)
-Alloc($deliveryBlip, 4522)
-Alloc($skipCutscene, 4523)
-Alloc($salHeading, 4524)
-Alloc($faceSalHeading, 4525)
+// Mission-private state are CLEO locals declared in its mission scripts (16 per script),
+// _not_ a global. Add a global here only when main, utils/, or more than one script share it.
+//
+// scripts/lint-scripts.ts enforces this on build and install.

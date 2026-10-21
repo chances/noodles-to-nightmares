@@ -23,11 +23,13 @@ button.opt { display:block; inline-size:100%; text-align:start; margin-block:.4r
 button.opt.ok { border-color:#2e8b57; background:rgba(46,139,87,.15); }
 button.opt.bad { border-color:#c0392b; background:rgba(192,57,43,.15); }
 .fb { min-block-size:1.5rem; color:var(--accent); }
+.fb.ok { color:#2e8b57; font-weight:bold; }
+.fb.bad { color:#c0392b; font-weight:bold; }
 code { font-family:Consolas, monospace; font-size:.9em; }
 </style>
 </head>
 <body>
-<button id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<button id="theme" type="button" aria-label="Toggle light or dark theme">Toggle Theme</button>
 <h1>Color Temperature in Blender</h1>
 <p class="sub">Lesson 1. Mission: light the Punk Noodles diner interior so it reads as a warm, lived-in room.</p>
 
@@ -67,7 +69,7 @@ Low Kelvin is orange (candle, tungsten bulb). High Kelvin is blue (overcast sky)
 <p class="fb" id="fb" role="status"></p>
 
 <h2>Next</h2>
-<p>Set the diner booth lamps to 2700 K, then compare the viewport against the 6500 K look. Ask your teacher (this agent) about anything unclear. This lesson did not source how Blender's view transform shifts perceived warmth, so ask there first.</p>
+<p>Set the diner booth lamps to 2700 K, then compare the viewport against the 6500 K look. Ask your teacher (this agent) about anything unclear. Open question: how Blender's view transform shifts perceived warmth. This lesson has no source for it, so ask in the session first.</p>
 <p><small>Primary source: <a href="https://docs.blender.org/manual/en/latest/render/lights/light_object.html">Blender Manual, Light Objects</a>.</small></p>
 
 <script>
@@ -102,6 +104,7 @@ k.addEventListener('input',upd); upd();
 document.querySelectorAll('#q .opt').forEach(b=>b.addEventListener('click',()=>{
   const ok=b.dataset.ok==='1';
   b.classList.add(ok?'ok':'bad');
+  document.getElementById('fb').className = 'fb ' + (ok ? 'ok' : 'bad');
   document.getElementById('fb').textContent = ok ? 'Correct: 2700 K sits in the tungsten range.' : 'Not that one. Recall the reference table, then try again.';
 }));
 </script>

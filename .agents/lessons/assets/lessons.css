@@ -1,0 +1,125 @@
+:root {
+    color-scheme: light dark;
+    --bg: #fbfaf7;
+    --fg: #222;
+    --mute: #666;
+    --line: #ddd;
+    --accent: #b4531a;
+    --code: #f0ede6;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #1b1b1d;
+        --fg: #e8e6e1;
+        --mute: #9a9892;
+        --line: #3a3a3d;
+        --accent: #e8935a;
+        --code: #26262a;
+    }
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #1b1b1d;
+    --fg: #e8e6e1;
+    --mute: #9a9892;
+    --line: #3a3a3d;
+    --accent: #e8935a;
+    --code: #26262a;
+}
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font:
+        17px/1.6 Georgia,
+        serif;
+    max-inline-size: 46rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    padding-block: 2rem;
+}
+h1 {
+    font-size: 1.8rem;
+    margin-block-end: 0.2rem;
+}
+h2 {
+    font-size: 1.15rem;
+    margin-block-start: 2rem;
+    border-block-end: 1px solid var(--line);
+    padding-block-end: 0.2rem;
+}
+h3 {
+    font-size: 0.95rem;
+    font-family: system-ui, sans-serif;
+    color: var(--accent);
+    margin-block: 1.2rem 0.2rem;
+    padding-inline-start: 0.6rem;
+    border-inline-start: 3px solid var(--accent);
+}
+.sub,
+small {
+    color: var(--mute);
+}
+table {
+    border-collapse: collapse;
+    inline-size: 100%;
+    font-size: 0.9rem;
+}
+td,
+th {
+    border-block-end: 1px solid var(--line);
+    padding: 0.35rem 0.5rem;
+    text-align: start;
+    vertical-align: top;
+}
+code,
+pre {
+    background: var(--code);
+    border-radius: 0.25rem;
+    font-size: 0.88rem;
+}
+code {
+    padding-inline: 0.25rem;
+}
+pre {
+    padding: 0.7rem 0.9rem;
+    overflow-x: auto;
+}
+a {
+    color: var(--accent);
+}
+button {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    margin-block: 0.25rem;
+    cursor: pointer;
+    display: block;
+    text-align: start;
+}
+#theme {
+    position: fixed;
+    inset-block-start: 0.6rem;
+    inset-inline-end: 0.6rem;
+}
+.result {
+    min-block-size: 1.6rem;
+}
+tr.clash td {
+    background: color-mix(in srgb, #c0392b 14%, transparent);
+}
+details {
+    margin-block: 0.5rem;
+}
+summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-family: system-ui, sans-serif;
+    font-size: 0.9rem;
+}

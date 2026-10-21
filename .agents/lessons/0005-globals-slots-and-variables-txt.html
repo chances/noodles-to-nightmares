@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Globals, Slots, and Variables</title>
+<link rel="stylesheet" href="assets/lessons.css">
+<link rel="stylesheet" href="assets/callout.css">
+<link rel="stylesheet" href="assets/quiz.css">
+</head>
+<body>
+<button id="theme" type="button">Toggle Theme</button>
+<h1>Globals, Slots, and Variables</h1>
+<p class="sub">Mission: stop globals from landing on the wrong slot between <code>main.scm</code> and the <code>.cm</code> missions. Target: GTA III, Sanny Builder mode <code>gta3_sbl</code>. Covers every open question about variables.</p>
+
+<h2>1. What a Global Is</h2>
+<p>A global is a named cell in one global variable space that every script on the running game shares. When Sanny compiles, each <code>$name</code> gets a numeric index in that space, and the runtime reads and writes by index. Names do not exist at runtime. A name that is already numeric, such as <code>$100</code>, keeps its index. A name such as <code>$var</code> gets whichever index is available during that compile (<a href="https://docs.sannybuilder.com/language/data-types/variables.md">Sanny docs: Variables</a>).</p>
+<p><code>main.scm</code> and each <code>.cm</code> are separate compiles. Two compiles that both write <code>$sal</code> can pick different indices, and both then write into one shared space. That is the whole reason <code>variables.txt</code> exists.</p>
+<blockquote class="callout" data-variant="note">The repo's own record of this failure is <a href="../reports/bugs/mission-global-slot-mismatch.md">mission-global-slot-mismatch.md</a>: <code>$sal</code> landed on the slot of <code>$isCameraAvoidingObstacle</code>, which main rewrote every frame, and the engine dereferenced a bad ped handle.</blockquote>
+
+<h2>2. The Three Tools in variables.txt</h2>
+<table>
+<tr><th>Tool</th><th>Example</th><th>What It Does</th><th>What It Does Not Do</th></tr>
+<tr><td><code>var</code> block</td><td><code>$sal: Char</code></td><td>Gives the compiler the type, so expressions between two variables compile (error 0017 otherwise).</td><td>Allocate a slot.</td></tr>
+<tr><td><code>Alloc</code></td><td><code>Alloc($sal, 4404)</code></td><td>Compiles <code>$sal</code> as <code>$4404</code> (docs: <code>Alloc($MyVar, 40)</code> compiles as <code>$40</code>).</td><td>Give a type, or protect the slot from a second <code>Alloc</code> of the same index.</td></tr>
+<tr><td><code>{$INCLUDE}</code></td><td><code>{$INCLUDE ../variables.txt}</code></td><td>Pastes the file into this compile, so every script gets identical <code>Alloc</code> lines.</td><td>Share values. Each script only shares slots.</td></tr>
+</table>
+<p>Per the docs, <code>Alloc</code> takes a global variable and a non-negative integer (error 0079 otherwise). The slot's byte offset in <code>main.scm</code> is the index times four (docs: <code>$40</code> sits at offset 160), so <code>$4404</code> is offset <code>17616</code> (<code>0x44D0</code>). Valid names run <code>$2</code> to <code>$3FFF</code> (error 0088), and GTA III allows 16381 globals in total.</p>
+
+<h2>3. The Slot Map of Your File</h2>
+<table>
+<tr><th>Slots</th><th>Section</th><th>Names</th></tr>
+<tr><td>4400 to 4409</td><td>Shared</td><td><code>$missionIndex</code>, <code>$onCutscene</code>, <code>$player</code>, <code>$playerChar</code>, <code>$myCar</code>, <code>$isCameraAvoidingObstacle</code>, <code>$isCarInWater</code>, <code>$myCarModel</code>, <code>$onMission</code>, <code>$skipCutscene</code> (4404 is free)</td></tr>
+<tr><td>4501 to 4512</td><td>Main</td><td><code>$SafeBlip</code> to <code>$tempPickup</code>, including <code>$VanBlip</code> at 4504</td></tr>
+</table>
+<blockquote class="callout" data-variant="note">The slot 4404 conflict is resolved. <code>$sal</code> became a local of <code>1_shady_job</code>, and <code>$VanBlip</code> sits at 4504. Every mission-private name left <code>variables.txt</code> (Section 4), so the file pins only names that main, <code>utils/</code>, or several scripts share.</blockquote>
+<blockquote class="callout" data-variant="tip">To check the pins after a build, compare the operand for <code>$VanBlip</code> in <code>main.scm</code> and <code>1_shady_job.cm</code>. It should be <code>0x4660</code> in both if the formula in Section 2 holds. Whether Sanny warns on a duplicate <code>Alloc</code> index is unconfirmed.</blockquote>
+
+<h2>4. ❓ Why Can't Mission Allocations Live in the Missions?</h2>
+<p>This was the question on <code>variables.txt</code> line 53. They can, if the variable stops being a <code>$global</code>, and they now do. A <code>$name</code> in a <code>.cm</code> is a slot in the shared space, so a private <code>$thief</code> still gets an index that only that compile chose, and nothing ties it to the slots main uses. A CLEO <strong>local</strong> has no slot in that space at all. Per the docs, a local is available only within its own script, and the <code>int a = 1</code> syntax works in CLEO scripts only. GTA III allows 16 locals plus two timers per script (<a href="https://docs.sannybuilder.com/scm-documentation/gta-limits.md">GTA Limits</a>).</p>
+<pre>// Before: a pin in variables.txt, shared by every compile
+Alloc($isDriving, 4515)
+$isDriving = false
+
+// After: a local, declared at the top of 0_tutorial.txt only
+int isDriving = false</pre>
+<h3>Where Each Variable Went</h3>
+<table>
+<tr><th>Variable</th><th>Used By</th><th>Now</th></tr>
+<tr><td><code>$isDying</code>, <code>$isWanted</code></td><td>Set to <code>false</code> in five missions, read only in <code>0_tutorial</code> (<code>isDying</code>)</td><td>Local in the tutorial; the write-only copies are gone</td></tr>
+<tr><td><code>$isDriving</code>, <code>$health</code>, <code>$wasArrested</code></td><td><code>0_tutorial</code> only</td><td>Locals (4 in all)</td></tr>
+<tr><td><code>$sal</code> and 8 other names</td><td><code>1_shady_job</code> only</td><td>9 locals</td></tr>
+<tr><td>11 supply-run names (<code>$reward</code> is now <code>payout</code>)</td><td><code>side_supply_run</code> only</td><td>11 locals</td></tr>
+<tr><td><code>$skipCutscene</code></td><td><code>main.txt</code> lines 203 and 263, plus two missions</td><td>Global, Shared section (4410)</td></tr>
+<tr><td><code>$VanBlip</code></td><td>Main, <code>utils/missions.txt</code>, <code>utils/cars.txt</code>, two missions</td><td>Global, Main section (4504)</td></tr>
+</table>
+<blockquote class="callout" data-variant="warning">A <code>function</code> has its own locals, so it cannot see the mission's. <code>checkSafety</code> and <code>tryRemoveSal</code> read and wrote mission state, so they became label subroutines (<code>:checkSafety</code> ending in <code>return</code>, still called as <code>checkSafety()</code>), which share the script's locals.</blockquote>
+<p>The busiest mission, the supply run, declares 11 of its 16 locals. <code>scripts/test-sanny-locals.ts</code> compiles small <code>{$CLEO}</code> scripts with the Sanny CLI in mode <code>gta3_sbl</code> and reads <code>compile.log</code>:</p>
+<table>
+<tr><th>Test Script</th><th>Compiler Result</th></tr>
+<tr><td>15 and 16 <code>int</code> locals</td><td>No error</td></tr>
+<tr><td>17 <code>int</code> locals</td><td>Error: not enough memory to allocate local <code>loc16</code> in the current scope</td></tr>
+<tr><td><code>Char sal</code> or <code>var sal: Char</code>, passed to <code>Char.Create</code></td><td>No error</td></tr>
+<tr><td>A <code>function</code> with a parameter and a local, plus 16 script locals</td><td>No error</td></tr>
+<tr><td>The same function plus 17 script locals</td><td>Error on the 17th script local, not on the function's</td></tr>
+</table>
+<p>So the limit is 16 script locals, a class-typed local compiles, and locals inside an included <code>function</code> do not count against the script's sixteen. Both tests are compile-only. Nothing here ran in the game.</p>
+<blockquote class="callout" data-variant="warning">The compiler accepts <code>int x = 1</code> only after <code>{$CLEO}</code> (or a variant such as <code>{$CLEO .cm}</code>). Under <code>{$USE CLEO}</code> with <code>{$EXTERNAL}</code> the same line fails with "Unknown directive".</blockquote>
+
+<h2>5. The Lint and the Mission Flag</h2>
+<p>A name in no <code>Alloc</code> line gets a slot from its own compile's first-use order, the condition behind the <code>$sal</code> crash. <code>scripts/lint-scripts.ts</code> now runs at the start of <code>deno task build</code> and <code>deno task install</code> and fails on:</p>
+<table>
+<tr><th>Rule</th><th>Why</th></tr>
+<tr><td>Two names on one slot, or one name on two slots</td><td>Two names would share one cell</td></tr>
+<tr><td>A slot outside <code>$2</code> to <code>$3FFF</code></td><td>Sanny error 0088</td></tr>
+<tr><td>A <code>$global</code> in a mission with no <code>Alloc</code> pin</td><td>Its slot comes from that mission's own first-use order</td></tr>
+<tr><td>More than 16 locals in a mission (outside <code>function</code> bodies)</td><td>GTA III allows 16 locals per script</td></tr>
+</table>
+<p>The build also reads <code>compile.log</code> after every Sanny compile, because the CLI exits 0 on a compile error and still writes an output file (<a href="../reports/bugs/sanny-compile-errors-hidden.md">sanny-compile-errors-hidden.md</a>). <code>deno task build --force</code> ignores the hash cache and recompiles everything.</p>
+<blockquote class="callout" data-variant="note"><code>$onMission</code> is pinned at 4409 so main and every mission share one cell. Main declares it with <code>declare_mission_flag</code> in <code>globals.txt</code> line 6, after the include of <code>variables.txt</code>. The engine accepts a pinned variable there.</blockquote>
+
+<h2>6. ❓ Is Char Only for Third-Party Characters?</h2>
+<p>This is the question on <code>main.txt</code> line 107. In your code, <code>Char</code> is the type of any ped handle, the player's included:</p>
+<table>
+<tr><th>Line</th><th>Code</th><th>What It Shows</th></tr>
+<tr><td><code>main.txt:35</code></td><td><code>$playerChar = Player.GetChar($player)</code></td><td>The player's own ped is a <code>Char</code></td></tr>
+<tr><td><code>variables.txt:13</code> and <code>1_shady_job.txt</code> (top)</td><td><code>$playerChar: Char</code> and the local <code>Char sal</code></td><td>One type for both</td></tr>
+<tr><td><code>1_shady_job.txt</code></td><td><code>Char.Create(PedType.Special, #SPECIAL01, ..., sal)</code></td><td>Spawning an NPC</td></tr>
+</table>
+<p>The player already has a ped from <code>Player.Create</code>, so <code>Char.Create</code> on <code>$playerChar</code> (the FIXME on line 108) would spawn a second ped, not restyle the first. <code>Char.Undress</code> and <code>Char.Dress</code> on lines 109 and 110 already act on the player's ped. The library entry for <code>Char.Create</code> was not opened for this lesson. Search it in <a href="https://library.sannybuilder.com/#/gta3/script">the gta3 library</a> and read its parameter list before relying on this reading.</p>
+
+<h2>7. Check Yourself</h2>
+<p>Per the docs, which variable does <code>Alloc($MyVar, 40)</code> compile <code>$MyVar</code> as?</p>
+<div class="quiz">
+<button type="button">$160</button>
+<button type="button" data-correct="1">$40</button>
+<button type="button">$400</button>
+</div>
+<p class="result" aria-live="polite"></p>
+<p>Which line gives a CLEO mission a private variable with no slot in the global space?</p>
+<div class="quiz">
+<button type="button">var $isDying: int</button>
+<button type="button">$isDying = false</button>
+<button type="button" data-correct="1">int isDying = false</button>
+</div>
+<p class="result" aria-live="polite"></p>
+
+<h2>Next</h2>
+<p>Primary source: <a href="https://docs.sannybuilder.com/language/data-types/variables.md">Sanny Builder docs, Variables</a>, then <a href="https://docs.sannybuilder.com/language/instructions/built-in-commands.md">Built-in Commands</a> for <code>Alloc</code>. Ask follow-up questions in the session whenever a step is unclear. Related: <a href="0003-contact-point-blips-on-the-radar.html">Lesson 3</a>, which covers the blip pool that <code>$VanBlip</code> draws from.</p>
+
+<script>
+document.querySelectorAll(".quiz").forEach(function (q) {
+  var out = q.nextElementSibling;
+  q.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var ok = !!b.dataset.correct;
+      b.classList.add(ok ? "ok" : "bad");
+      out.className = "result " + (ok ? "ok" : "bad");
+      out.textContent = ok
+        ? "Correct. Section 2 and Section 4 give this form."
+        : "Not that one. Section 2 shows what Alloc compiles to, and Section 4 shows the local form side by side with the global.";
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem("lesson-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = getComputedStyle(root).colorScheme.indexOf("dark") === 0;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("lesson-theme", root.dataset.theme); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

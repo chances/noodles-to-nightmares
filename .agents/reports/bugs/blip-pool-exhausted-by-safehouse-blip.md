@@ -33,3 +33,4 @@ The car handle and player handle were valid, so the mission read the right globa
 | Contact point blip hidden on mission | The payphone blip uses `Blip.AddSpriteForCoord` and still returned `-1` |
 | Unpinned `$van` and `$vanBlip` slots | The van handle read back valid; the slots are now pinned in `variables.txt` regardless |
 | Wrong radar sprite constant | The pickup and van blips use no sprite and returned `-1` too |
+| `Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)` on the contact point blip | No blip appeared on the minimap beside the payphone; the contact point blip is also hidden on mission by the library's own description |

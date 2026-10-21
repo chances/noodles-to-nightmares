@@ -11,15 +11,23 @@
 {$INCLUDE ../constants.txt}
 const REWARD = 800 // Fee for the job
 
+// Mission-private state is a CLEO local, which needs no global slot (16 per script)
+Char sal
+int isSalNearby = false
+float salHeading = 0.0
+float faceSalHeading = 0.0
+int payphoneHandle = 0
+int payphoneBlip = 0
+int packagePickup = 0
+int pickupBlip = 0
+int deliveryBlip = 0
+
 $onMission = true
 $onCutscene = true
-$isDying = false
-$isWanted = false
-$isSalNearby = false
 
 Player.SetControl($player, false)
 
-// QUESTION: Trigger mission with this? Char.HasSpottedPlayer($sal, $player)
+// QUESTION: Trigger mission with this? Char.HasSpottedPlayer(sal, $player)
 // QUESTION: How long after the game starts do we need to slow down the player?
 
 // Start a cutscene with the "mysterious contact", Salvatore
@@ -54,17 +62,17 @@ then
   // FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop
   load_special_character {slotId} 1 {modelName} 'FRANKIE'
   Streaming.LoadAllModelsNow()
-  Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, $sal)
-  Char.SetPersonality($sal, PedStat.ToughGuy)
-  Char.TurnToFacePlayer($sal, $player)
+  Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
+  Char.SetPersonality(sal, PedStat.ToughGuy)
+  Char.TurnToFacePlayer(sal, $player)
   // Note: Rosa turns to face Sal after he first speaks
-  Char.LookAtPlayerAlways($sal, $player)
-  Char.SetAnimGroup($sal, AnimGroup.Man)
-  $isSalNearby = true
+  Char.LookAtPlayerAlways(sal, $player)
+  Char.SetAnimGroup(sal, AnimGroup.Man)
+  isSalNearby = true
 
   // Move the camera, like one of the shop's security cameras for a spooky vibe
   Camera.SetFixedPosition(NOODLES_SECURITY_CAM_X, NOODLES_SECURITY_CAM_Y, NOODLES_SECURITY_CAM_Z, 0, 0, 0)
-  Camera.PointAtChar($sal, CameraMode.Fixed, SwitchType.JumpCut)
+  Camera.PointAtChar(sal, CameraMode.Fixed, SwitchType.JumpCut)
   Camera.DoFade(500, Fade.In)
   wait 525
 
@@ -80,12 +88,12 @@ then
 
   // Rosa (_Huh? Who's talking to me?_)
   // Face the characters toward each other
-  $salHeading = Char.GetHeading($sal)
-  $faceSalHeading = invertHeading($salHeading)
-  Player.TurnToFaceChar($player, $sal)
+  salHeading = Char.GetHeading(sal)
+  faceSalHeading = invertHeading(salHeading)
+  Player.TurnToFaceChar($player, sal)
   // TODO: Walk a bit towards each other, for hush-hush vibes
-  Player.SetHeading($player, $faceSalHeading)
-  Player.LookAtCharAlways($player, $sal)
+  Player.SetHeading($player, faceSalHeading)
+  Player.LookAtCharAlways($player, sal)
   wait 550
   // FIXME: Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)
 
@@ -100,11 +108,11 @@ then
   wait 2250
 
   // Watch Sal leave (without paying 😏)
-  Char.StopLooking($sal)
-  Char.SetRunning($sal, true)
-  Char.SetObjGotoCoordOnFoot($sal, ROSA_SPAWN_X, ROSA_SPAWN_Y)
+  Char.StopLooking(sal)
+  Char.SetRunning(sal, true)
+  Char.SetObjGotoCoordOnFoot(sal, ROSA_SPAWN_X, ROSA_SPAWN_Y)
   Camera.SetInterpolationParameters(0, {time} 750)
-  Camera.PointAtChar($sal, CameraMode.Fixed, SwitchType.Interpolation)
+  Camera.PointAtChar(sal, CameraMode.Fixed, SwitchType.Interpolation)
   wait 2750
 
   Camera.DoFade(500, Fade.Out)
@@ -114,7 +122,7 @@ then
 
   // Remove sal from the scene
   tryRemoveSal()
-  $isSalNearby = false
+  isSalNearby = false
 end
 
 // End cutscene
@@ -144,12 +152,12 @@ ensureVanBlip()
 
 // Show a payphone waypoint blip
 // FIXME: I don't see the phone blip on the HUD
-$payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)
+payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)
 
 debugLogInt(DEBUG_PLAYER, $player)
 debugLogInt(DEBUG_VAN, $myCar)
 debugLogInt(DEBUG_VAN_BLIP, $VanBlip)
-debugLogInt(DEBUG_PAYPHONE_BLIP, $payphoneBlip)
+debugLogInt(DEBUG_PAYPHONE_BLIP, payphoneBlip)
 
 TIMERA = 0
 Player.SetControl($player, true)
@@ -165,8 +173,8 @@ while true
     Text.PrintString("Must be Sal calling.", 4000)
 
     // Ring the payphone
-    Phone.Grab(PAYPHONE_X, PAYPHONE_Y, $payphone)
-    Phone.TurnOn($payphone)
+    Phone.Grab(PAYPHONE_X, PAYPHONE_Y, payphoneHandle)
+    Phone.TurnOn(payphoneHandle)
     Sound.AddOneOffSound(PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, ScriptSound.SoundPayphoneRinging)
     break
   end
@@ -182,8 +190,8 @@ while true
     Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, 2.25, 2.25, 2.0, true)
   then
     // Note: Player.IsLiftingAPhone($player) is true here
-    Blip.Remove($payphoneBlip)
-    Phone.TurnOff($payphone)
+    Blip.Remove(payphoneBlip)
+    Phone.TurnOff(payphoneHandle)
     break
   end
 end
@@ -224,31 +232,31 @@ Player.SetControl($player, true)
 // TODO: Start a two minute countdown
 
 // Spawn the drugs pickup
-$package = Pickup.Create(1321, PickupType.OnStreet, PACKAGE_PICKUP_X, PACKAGE_PICKUP_Y, PACKAGE_PICKUP_Z)
+packagePickup = Pickup.Create(1321, PickupType.OnStreet, PACKAGE_PICKUP_X, PACKAGE_PICKUP_Y, PACKAGE_PICKUP_Z)
 // FIXME: I don't see this blip on the HUD, either, ugh
-$pickupBlip = Blip.AddForPickup($package)
-debugLogInt(DEBUG_PICKUP_BLIP, $pickupBlip)
+pickupBlip = Blip.AddForPickup(packagePickup)
+debugLogInt(DEBUG_PICKUP_BLIP, pickupBlip)
 // Wait for the package to be picked up
 while true
   wait 0
 
-  if Pickup.HasBeenCollected($package)
+  if Pickup.HasBeenCollected(packagePickup)
   then
-    Blip.Remove($pickupBlip)
-    Pickup.Remove($package)
+    Blip.Remove(pickupBlip)
+    Pickup.Remove(packagePickup)
     break
   end
 end
 
 // Wait for the player to "deliver" the package to the projects
-$deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)
+deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)
 while true
   wait 0
 
   if
     Player.LocateAnyMeans3D($player, DELIVERY_X, DELIVERY_Y, DELIVERY_Z, DELIVERY_RADIUS, DELIVERY_RADIUS, DELIVERY_RADIUS, true)
   then
-    Blip.Remove($deliveryBlip)
+    Blip.Remove(deliveryBlip)
     break
   end
 end
@@ -274,27 +282,28 @@ $missionIndex = $missionIndex + 1
 05DC: terminate_custom_thread
 
 /// Gracefully remove Sal if he's far away or 7.5 seconds have passed since the cutscene ended
-function tryRemoveSal()
-  Char.MarkAsNoLongerNeeded($sal)
+// A label subroutine, not a `function`: a function has its own locals and cannot see this script's
+:tryRemoveSal
+  Char.MarkAsNoLongerNeeded(sal)
 
-  if Char.LocateAnyMeansChar2D($sal, $playerChar, 50.0, 50.0, false)
+  if Char.LocateAnyMeansChar2D(sal, $playerChar, 50.0, 50.0, false)
   then
-    $isSalNearby = true
+    isSalNearby = true
   else
-    $isSalNearby = false
+    isSalNearby = false
   end
   if
-    $isSalNearby == false
+    isSalNearby == false
   then
-    Char.RemoveElegantly($sal)
+    Char.RemoveElegantly(sal)
   end
   if
     TIMERA > 7500
   then
-    Char.Delete($sal)
-    $sal = 0
+    Char.Delete(sal)
+    sal = 0
   end
-end
+  return
 
 {$INCLUDE ../utils/missions.txt}
 {$INCLUDE ../utils/debug.txt}

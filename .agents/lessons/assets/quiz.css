@@ -1,0 +1,12 @@
+/* Lesson quizzes: <div class="quiz"><button data-correct="1">..</button>..</div><p class="result"></p>
+   Script adds .ok or .bad to the clicked button and to the result paragraph. */
+:root { --quiz-ok:#1f7a45; --quiz-bad:#b3261e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --quiz-ok:#5fcf8f; --quiz-bad:#ff7b72; } }
+:root[data-theme="dark"] { --quiz-ok:#5fcf8f; --quiz-bad:#ff7b72; }
+.quiz button { display:block; inline-size:100%; text-align:start; }
+.quiz button.ok { border-color:var(--quiz-ok); border-width:2px; background:color-mix(in srgb, var(--quiz-ok) 20%, transparent); }
+.quiz button.bad { border-color:var(--quiz-bad); border-width:2px; background:color-mix(in srgb, var(--quiz-bad) 20%, transparent); }
+.quiz button.ok::before { content:"\2714\FE0E  "; color:var(--quiz-ok); font-weight:bold; }
+.quiz button.bad::before { content:"\2716\FE0E  "; color:var(--quiz-bad); font-weight:bold; }
+.result.ok { color:var(--quiz-ok); font-weight:bold; }
+.result.bad { color:var(--quiz-bad); font-weight:bold; }

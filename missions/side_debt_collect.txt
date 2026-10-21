@@ -8,8 +8,6 @@
 //============================================
 const REWARD = 200 // Payment for collecting debt
 
-$isDying = false
-
 Text.PrintBigString("The Squeeze", {time} 5000, TextStyle.BottomRight)
 wait 7500
 
