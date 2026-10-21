@@ -58,7 +58,7 @@ function usePan() {
     onPointerDown: (e) => {
       const emptySpace = e.button === LEFT && !e.target.closest(".node");
       if (e.button !== MIDDLE && !emptySpace) return;
-      const pane = e.currentTarget.closest(".pane");
+      const pane = e.currentTarget.closest(".pane-body");
       e.currentTarget.setPointerCapture(e.pointerId);
       e.currentTarget.dataset.panning = "";
       start.current = { x: e.clientX, y: e.clientY, left: pane.scrollLeft, top: pane.scrollTop, pane };
@@ -102,7 +102,7 @@ function useZoom(canvas) {
   // The pane can only scroll past its old size once the graph has grown, so apply the shift after rendering.
   useLayoutEffect(() => {
     if (!shift.current) return;
-    const pane = canvas.current.closest(".pane");
+    const pane = canvas.current.closest(".pane-body");
     pane.scrollLeft += shift.current.x;
     pane.scrollTop += shift.current.y;
     shift.current = null;

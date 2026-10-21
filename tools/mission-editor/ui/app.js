@@ -3,8 +3,10 @@
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
 import { GraphPane } from "./graph-pane.js";
+import { InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { ProjectMenu } from "./project-menu.js";
 import { StatesPane } from "./states-pane.js";
+import { TimelinePane, TimelineSummary } from "./timeline-pane.js";
 import { Status } from "./status.js";
 
 async function getJson(url) {
@@ -89,11 +91,16 @@ function saveSizes(sizes) {
   } catch { /* storage can be blocked; the sizes just reset next launch */ }
 }
 
-function Pane({ title, children, innerRef, class: className = "" }) {
+/**
+ * The heading and the optional `bar` (the selected state's name, say) stay outside the scrolling body.
+ * `hideTitle` keeps the heading for screen readers only.
+ */
+function Pane({ title, hideTitle = false, bar = null, children, innerRef, class: className = "" }) {
   return html`
     <section class="pane ${className}" ref=${innerRef}>
-      <hgroup><h2>${title}</h2></hgroup>
-      ${children}
+      ${hideTitle ? html`<h2 class="sr-only">${title}</h2>` : html`<hgroup><h2>${title}</h2></hgroup>`}
+      ${bar && html`<div class="pane-bar">${bar}</div>`}
+      <div class="pane-body">${children}</div>
     </section>
   `;
 }
@@ -175,7 +182,6 @@ function App() {
   const [custom, setCustom] = useState(loadSizes);
   const [measured, setMeasured] = useState({ left: 0, right: 0, timeline: 0 });
   const main = useRef(null);
-  const center = useRef(null);
   const panes = { left: useRef(null), right: useRef(null), timeline: useRef(null) };
 
   // Clamp a requested size so the center keeps its minimum width, the graph keeps its minimum height, and the other sidebar keeps its width.
@@ -183,7 +189,7 @@ function App() {
     const { axis, limits: [min, max] } = PANES[side];
     const room = axis === "x"
       ? main.current.clientWidth - MIN_CENTER - panes[side === "left" ? "right" : "left"].current.offsetWidth
-      : center.current.clientHeight - MIN_GRAPH;
+      : main.current.clientHeight - MIN_GRAPH;
     return Math.round(Math.max(min, Math.min(px, max, room)));
   };
   const resize = (side) => (px) => {
@@ -212,7 +218,6 @@ function App() {
       }
     });
     observer.observe(main.current);
-    observer.observe(center.current);
     for (const pane of Object.values(panes)) observer.observe(pane.current);
     return () => observer.disconnect();
   }, [custom]);
@@ -233,6 +238,7 @@ function App() {
       </div>
     </header>
     <main ref=${main} style=${style}>
+      <div class="workspace">
       <${Splitter}
         side="left"
         pane=${panes.left}
@@ -258,25 +264,34 @@ function App() {
         <//>
         <${Pane} title="Assets"><p class="hint">Spots, models, characters, and sprites appear here.</p><//>
       </aside>
-      <div class="center" ref=${center}>
-        <${Pane} title="Graph" class="graph">
+      <div class="center">
+        <${Pane} title="Graph" hideTitle class="graph">
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to draw its graph."
             ready=${(m) => html`<${GraphPane} doc=${m} edges=${m.edges} node=${m.node} selected=${selected} onSelect=${setSelected} />`} />
         <//>
-        <${Pane} title="Timeline" class="timeline" innerRef=${panes.timeline}><p class="hint">The beat timeline appears here.</p><//>
-        <${Splitter}
-          side="timeline"
-          pane=${panes.timeline}
-          label="Resize the Timeline height"
-          value=${measured.timeline}
-          measure=${measure}
-          onResize=${resize("timeline")}
-          onReset=${reset}
-        />
       </div>
       <aside class="right" ref=${panes.right}>
-        <${Pane} title="Inspector"><p class="hint">Select a state to edit it.</p><//>
+        <${Pane} title="Inspector"
+          bar=${mission.data && selected && html`<${InspectorTitle} doc=${mission.data} selected=${selected} />`}>
+          <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to inspect its states."
+            ready=${(m) => html`<${InspectorPane} doc=${m} edges=${m.edges} selected=${selected} onSelect=${setSelected} />`} />
+        <//>
       </aside>
+      </div>
+      <${Pane} title="Timeline" hideTitle class="timeline" innerRef=${panes.timeline}
+        bar=${mission.data && selected && html`<${TimelineSummary} doc=${mission.data} selected=${selected} />`}>
+        <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to see its beats."
+          ready=${(m) => html`<${TimelinePane} doc=${m} selected=${selected} />`} />
+      <//>
+      <${Splitter}
+        side="timeline"
+        pane=${panes.timeline}
+        label="Resize the Timeline height"
+        value=${measured.timeline}
+        measure=${measure}
+        onResize=${resize("timeline")}
+        onReset=${reset}
+      />
     </main>
     ${exporting && html`<${ExportDialog} onClose=${() => setExporting(false)} />`}
   `;
