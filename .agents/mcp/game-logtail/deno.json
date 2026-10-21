@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "start": "deno run --env-file=../../../.env --allow-env --allow-read --allow-write --allow-run=tasklist,powershell src/main.ts",
+    "hook": "deno run --allow-read --allow-write src/hook.ts",
+    "test": "deno test --allow-env --allow-read --allow-write"
+  },
+  "imports": {
+    "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.32.1",
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/path": "jsr:@std/path@^1.1.4",
+    "zod": "npm:zod@^4.6.7"
+  }
+}

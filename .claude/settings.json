@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno run --config .agents/mcp/game-logtail/deno.json --allow-read --allow-write .agents/mcp/game-logtail/src/hook.ts"
+          }
+        ]
+      }
+    ]
+  }
+}

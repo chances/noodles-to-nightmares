@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cleo-incorrect-opcode",
+    "source": "cleo",
+    "pattern": "incorrect opcode",
+    "flags": "i",
+    "severity": "error",
+    "title": "CLEO rejected an opcode",
+    "hint": "An INI or plugin opcode may be missing its CLEO 2 plugin. See Memory.md, INI Plugin."
+  },
+  {
+    "id": "cleo-script-load-failure",
+    "source": "cleo",
+    "pattern": "(failed|unable|cannot|could not).*(script|plugin)|(script|plugin).*(failed|error)",
+    "flags": "i",
+    "ignore": "unloaded plugin|loaded plugin",
+    "severity": "error",
+    "title": "CLEO script or plugin failed to load",
+    "hint": "Check the .cm header, the CLEO folder for stale duplicates, and install.ts output."
+  },
+  {
+    "id": "cleo-redux-error",
+    "source": "cleo_redux",
+    "pattern": "\\[(ERROR|FATAL)\\]",
+    "severity": "error",
+    "title": "CLEO Redux reported an error"
+  },
+  {
+    "id": "cleo-redux-warning",
+    "source": "cleo_redux",
+    "pattern": "\\[WARN\\]",
+    "ignore": "host version is unknown|unknown command IMGUI_",
+    "severity": "warn",
+    "title": "CLEO Redux warning"
+  },
+  {
+    "id": "modloader-error",
+    "source": "modloader",
+    "pattern": "\\b(error|failed|cannot|can't|unable|missing|not found|duplicate|conflict)\\b",
+    "flags": "i",
+    "ignore": "gta3\\.std\\.(bank|tracks)",
+    "severity": "warn",
+    "title": "ModLoader problem",
+    "hint": "Compare against modloader-guidance: package folder layout, manifest IDE/IPL/COLFILE lines, priorities."
+  },
+  {
+    "id": "debug-ini-negative-handle",
+    "source": "debug_ini",
+    "pattern": "^\\w+\\s*=\\s*-\\d+\\s*$",
+    "severity": "error",
+    "title": "Debug value is negative (a blip or entity handle of -1)",
+    "hint": "A Blip.Add* command returns -1 when the blip pool is full.",
+    "report": ".agents/reports/bugs/blip-pool-exhausted-by-safehouse-blip.md"
+  },
+  {
+    "id": "scrlog-repeated-remove-elegantly",
+    "source": "scrlog",
+    "kind": "count",
+    "pattern": "REMOVE_CHAR_ELEGANTLY",
+    "minCount": 5,
+    "lastLines": 300,
+    "severity": "critical",
+    "title": "Char.RemoveElegantly ran every frame",
+    "hint": "Guard the removal so it runs once per handle.",
+    "report": ".agents/reports/bugs/repeated-remove-elegantly-crash.md"
+  },
+  {
+    "id": "cleo-no-clean-shutdown",
+    "source": "cleo",
+    "kind": "absent-at-exit",
+    "pattern": "--Game Shutdown--",
+    "severity": "critical",
+    "title": "Game exited without CLEO's shutdown marker (likely a crash)",
+    "hint": "Read the tail of scrlog.log for the last commands that ran before the exit."
+  },
+  {
+    "id": "scrlog-no-clean-shutdown",
+    "source": "scrlog",
+    "kind": "absent-at-exit",
+    "pattern": "Logging finished",
+    "severity": "critical",
+    "title": "SCRLog never wrote its footer (likely a crash)",
+    "hint": "Read the tail of scrlog.log for the last commands that ran before the exit."
+  }
+]

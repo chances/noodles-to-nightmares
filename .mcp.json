@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "game-logtail": {
+      "command": "deno",
+      "args": [
+        "run",
+        "--config",
+        ".agents/mcp/game-logtail/deno.json",
+        "--env-file=.env",
+        "--allow-env",
+        "--allow-read",
+        "--allow-write",
+        "--allow-run=tasklist,powershell",
+        ".agents/mcp/game-logtail/src/main.ts"
+      ]
+    }
+  }
+}
