@@ -1,0 +1,46 @@
+// Only ask about my car while we hold a handle to it; natives on handle 0 read an invalid vehicle
+if $myCar > 0
+then
+  debugLogInt(DEBUG_MY_CAR, $myCar)
+  debugLogInt(DEBUG_MY_CAR_MODEL, $myCarModel)
+
+  // Update player in car
+  if Player.IsInCar($player, $myCar)
+  then
+    debugLogInt(DEBUG_PLAYER_IN_MY_CAR, 1)
+
+    // Hide the van blip when inside it
+    if and
+      $VanBlip > 0
+      $myCarModel == #RUMPO
+    then
+      Blip.Remove($VanBlip)
+      $VanBlip = 0
+    end
+  else
+    debugLogInt(DEBUG_PLAYER_IN_MY_CAR, 0)
+  end
+
+  // Update my car
+  if Car.IsInWater($myCar)
+  then
+    $isCarInWater = true
+    debugLogInt(DEBUG_MY_CAR_IN_WATER, 1)
+  else
+    $isCarInWater = false
+    debugLogInt(DEBUG_MY_CAR_IN_WATER, 0)
+  end
+
+  // If my car is destroyed, it's no longer mine
+  if Car.IsUpsidedown($myCar)
+  then
+    debugLogInt(DEBUG_MY_CAR_UPSIDEDOWN, 1)
+    Car.MarkAsNoLongerNeeded($myCar)
+    $myCar = 0
+    $myCarModel = 0
+  else
+    debugLogInt(DEBUG_MY_CAR_UPSIDEDOWN, 0)
+  end
+else
+  $isCarInWater = false
+end

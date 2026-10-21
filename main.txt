@@ -134,6 +134,7 @@ while true
   //=============================
   // Chores to keep things clean
   //=============================
+  {$INCLUDE utils/cars.txt}
 
   // Hide the safehouse blip while on a mission
   if and
@@ -144,17 +145,6 @@ while true
     $SafeBlip = 0
   else
     ensureSafehouseBlip()
-  end
-
-  // Hide the van blip when inside it
-  if and
-    $VanBlip > 0
-    $myCar > 0
-    $myCarModel == #RUMPO
-    Player.IsInCar($player, $myCar)
-  then
-    Blip.Remove($VanBlip)
-    $VanBlip = 0
   end
 
   // Camera: Prevent clipping inside Punk Noodles, i.e. like when the player goes into other tight spaces
@@ -251,6 +241,7 @@ end
 //
 // See: https://tutorial.sannybuilder.com/functions
 
+{$INCLUDE utils/debug.txt}
 {$INCLUDE utils/functions.txt}
 {$INCLUDE utils/missions.txt}
 {$INCLUDE utils/teleportation.txt}
