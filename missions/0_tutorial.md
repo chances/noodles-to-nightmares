@@ -8,8 +8,8 @@ location: Punk Noodles (Chinatown, Portland)
 trigger: Leaving the shop at night; the player spawns out front
 reward: $250, Rosa's paycheck
 context: >-
-  End of shift. It is late, Rosa is tired, and she needs to get home to her
-  apartment in north Portland (~~(1188, -408, 24)~~).
+  End of shift. It's late, Rosa is tired, and she needs to get home to her
+  apartment in north Portland (remodel of `ind_newtenement08`).
 objectives:
   - "Steal a car: Demonstrate vehicle entry and hot-wiring"
   - "Drive to safehouse: Navigate to Rosa's apartment (marked on the map)"

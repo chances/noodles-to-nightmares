@@ -24,6 +24,7 @@
 import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { lintOrExit } from "./lint-scripts.ts";
+import { syncMissions } from "@noodles/fsm";
 import { capitalCase } from "change-case";
 import { say } from "./log.ts";
 
@@ -286,6 +287,11 @@ const distDir = join(cwd, "dist");
 const stagingDir = join(distDir, ".staging");
 const noodlesStagingDir = join(stagingDir, "modloader", "Noodles");
 const dragDropZip = join(distDir, "Drag-N-Drop.zip");
+
+// Regenerate missions that come from a state table, so the lint and the compile see the table's output
+for (const file of (await syncMissions(cwd, { write: true })).written) {
+  say.done(`Generated ${file}`);
+}
 
 // Fail early on variable slot problems (duplicate pins, unpinned mission globals, more than 16 locals)
 await lintOrExit(cwd);

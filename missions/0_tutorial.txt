@@ -2,148 +2,403 @@
 {$INCLUDE ../variables.txt}
 {$INCLUDE ../utils/geography.txt}
 
-//=============================================
+// GENERATED from missions/0_tutorial.states.ts by lib/fsm/generate.ts. Edit the table, then run `deno task build`.
+
+//==============================================
 // Mission 0: Car Tutorial
 // Teach the player how to follow instructions
-//=============================================
+//==============================================
 const REWARD = 250 // Rosa's paycheck
 
-// Mission-private state is a CLEO local, which needs no global slot (16 per script)
-int isDriving = false
-int wasArrested = false
-int isDying = false
+const STATE_INTRO = 0
+const STATE_GO_HOME = 1
+const STATE_ARRIVE = 2
+const STATE_HOME_TUTORIAL = 3
+const STATE_WIN = 4
+const STATE_LOSE = 5
+
+// Mission-private state is CLEO locals, which need no global slot (16 per script)
+int state = STATE_INTRO
+int beat = 0
+int latchDriveHint = false
+int latchDyingWarning = false
 int health = 0
 
 $onMission = true
 
-wait 5000
-Text.PrintString("Fuck me, that shift was long. I reek of noodles.", {time} 3500)
-
-wait 4000
-Text.PrintBigString("The Carpool Shortcut", {time} 5000, TextStyle.BottomRight)
-wait 7500
-
-Text.PrintString("The sooner I'm home in bed, the better.", {time} 3000)
-wait 3000
-
-// Flash Rosa's apartment blip
-$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
-Text.PrintHelpString("This map will guide you around town.")
-Hud.FlashObject(HudObject.Radar)
-wait 3000
-Hud.FlashObject(0)
-wait 2500
-
-// Thus far, Rosa's primary form of travel is on-foot.
-checkSafety()
-if
-  isDriving == false
-then
-  Text.PrintHelpString("Find your way home.")
-end
+enterState()
 
 while true
   wait 0
 
-  checkSafety()
+  runMonitors()
 
-  // Fail: if the player is wasted or busted
   if or
     Player.IsDead($player)
     Player.HasBeenArrested($player)
   then
-    if not Player.IsDead($player)
+    if or
+      state == STATE_INTRO
+      state == STATE_GO_HOME
     then
-      wasArrested = true
+      state = STATE_LOSE
+      enterState()
     end
-    Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
-    wait 3000
-    Mission.Fail()
-
-    // Finish the tutorial
-    break
   end
 
-  // Wait for the player to get to their apartment
-  // QUESTION: Why is Rosa's apartment collision not correct?
-  if Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
+  if
+    state == STATE_INTRO
   then
-    Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
-    Camera.SetInterpolationParameters(0, {time} 1250)
-    Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
-
-    if isDriving == false
+    if
+      beat == 0
     then
-      Text.PrintString("Ugh, that was a long walk.", 2500)
-      wait 2500
-    else
+      TIMERA = 0
+      beat = 1
+    end
+    if
+      beat == 1
+    then
+      if
+        TIMERA >= 5000
+      then
+        beat = 2
+      end
+    end
+    if
+      beat == 2
+    then
+      Text.PrintString("Fuck me, that shift was long. I reek of noodles.", 3500)
+      TIMERA = 0
+      beat = 3
+    end
+    if
+      beat == 3
+    then
+      if
+        TIMERA >= 4000
+      then
+        beat = 4
+      end
+    end
+    if
+      beat == 4
+    then
+      Text.PrintBigString("The Carpool Shortcut", 5000, TextStyle.BottomRight)
+      TIMERA = 0
+      beat = 5
+    end
+    if
+      beat == 5
+    then
+      if
+        TIMERA >= 7500
+      then
+        beat = 6
+      end
+    end
+    if
+      beat == 6
+    then
+      Text.PrintString("The sooner I'm home in bed, the better.", 3000)
+      TIMERA = 0
+      beat = 7
+    end
+    if
+      beat == 7
+    then
+      if
+        TIMERA >= 3000
+      then
+        beat = 8
+      end
+    end
+    if
+      beat == 8
+    then
+      $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+      Text.PrintHelpString("This map will guide you around town.")
+      Hud.FlashObject(HudObject.Radar)
+      TIMERA = 0
+      beat = 9
+    end
+    if
+      beat == 9
+    then
+      if
+        TIMERA >= 3000
+      then
+        beat = 10
+      end
+    end
+    if
+      beat == 10
+    then
+      Hud.FlashObject(0)
+      TIMERA = 0
+      beat = 11
+    end
+    if
+      beat == 11
+    then
+      if
+        TIMERA >= 2500
+      then
+        beat = 12
+      end
+    end
+    if
+      beat >= 12
+    then
+      state = STATE_GO_HOME
+      enterState()
+    end
+  end
+
+  if
+    state == STATE_GO_HOME
+  then
+    // QUESTION: Why is Rosa's apartment collision not correct?
+    if
+      Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
+    then
+      state = STATE_ARRIVE
+      enterState()
+    end
+  end
+
+  if
+    state == STATE_ARRIVE
+  then
+    if
+      beat == 0
+    then
+      Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
+      Camera.SetInterpolationParameters(0, 1250)
+      Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
+      beat = 1
+    end
+    if
+      beat == 1
+    then
+      if
+        latchDriveHint == false
+      then
+        Text.PrintString("Ugh, that was a long walk.", 2500)
+        TIMERA = 0
+        beat = 2
+      else
+        beat = 3
+      end
+    end
+    if
+      beat == 2
+    then
+      if
+        TIMERA >= 2500
+      then
+        beat = 3
+      end
+    end
+    if
+      beat == 3
+    then
+      // Mission Passed!
       // TODO: Save the player's car in this "garage".
       // TODO: Add parking lines to the model. See Marco's Bistro for parking lines
+      Audio.PlayMissionPassedTune(1)
+      register_mission_passed 'NooM_0'
+      Player.AddScore($player, REWARD)
+      Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
+      TIMERA = 0
+      beat = 4
     end
+    if
+      beat == 4
+    then
+      if
+        TIMERA >= 5500
+      then
+        beat = 5
+      end
+    end
+    if
+      beat >= 5
+    then
+      state = STATE_HOME_TUTORIAL
+      enterState()
+    end
+  end
 
-    // Mission Passed!
-    Audio.PlayMissionPassedTune(1)
-    register_mission_passed 'NooM_0'
-    Player.AddScore($player, REWARD)
-    Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
-    wait 5500
+  if
+    state == STATE_HOME_TUTORIAL
+  then
+    // Payphone and front-door tutorial
+    if
+      beat == 0
+    then
+      Text.PrintHelpString("This is your home.")
+      TIMERA = 0
+      beat = 1
+    end
+    if
+      beat == 1
+    then
+      if
+        TIMERA >= 3000
+      then
+        beat = 2
+      end
+    end
+    if
+      beat == 2
+    then
+      Text.PrintHelpString("Come back here anytime to save the game.")
+      TIMERA = 0
+      beat = 3
+    end
+    if
+      beat == 3
+    then
+      if
+        TIMERA >= 4000
+      then
+        beat = 4
+      end
+    end
+    if
+      beat == 4
+    then
+      // All done!
+      Camera.DoFade(750, Fade.Out)
+      Hud.LoadSplash('SPLASH1')
+      TIMERA = 0
+      beat = 5
+    end
+    if
+      beat == 5
+    then
+      if
+        TIMERA >= 1250
+      then
+        beat = 6
+      end
+    end
+    if
+      beat == 6
+    then
+      // TODO: Model and then teleport to Rosa's apartment unit
+      Camera.RestoreJumpcut()
+      Camera.DoFade(750, Fade.In)
+      TIMERA = 0
+      beat = 7
+    end
+    if
+      beat == 7
+    then
+      if
+        TIMERA >= 1000
+      then
+        beat = 8
+      end
+    end
+    if
+      beat == 8
+    then
+      Text.PrintString("TGIF! I really needed that rent money.", 3250)
+      TIMERA = 0
+      beat = 9
+    end
+    if
+      beat == 9
+    then
+      if
+        TIMERA >= 7500
+      then
+        beat = 10
+      end
+    end
+    if
+      beat >= 10
+    then
+      state = STATE_WIN
+      enterState()
+    end
+  end
 
-    break
+  if
+    state == STATE_WIN
+  then
+    finishMission()
+  end
+
+  if
+    state == STATE_LOSE
+  then
+    if
+      beat == 0
+    then
+      Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
+      TIMERA = 0
+      beat = 1
+    end
+    if
+      beat == 1
+    then
+      if
+        TIMERA >= 3000
+      then
+        beat = 2
+      end
+    end
+    if
+      beat >= 2
+    then
+      state = STATE_GO_HOME
+      enterState()
+    end
   end
 end
 
-// Payphone and front-door tutorial
-Text.PrintHelpString("This is your home.")
-wait 3000
-Text.PrintHelpString("Come back here anytime to save the game.")
-wait 4000
-
-// All done!
-Camera.DoFade(750, Fade.Out)
-Hud.LoadSplash('SPLASH1')
-wait 1250
-
-// TODO: Model and then teleport to Rosa's apartment unit
-
-Camera.RestoreJumpcut()
-Camera.DoFade(750, Fade.In)
-wait 1000
-
-Text.PrintString("TGIF! I really needed that rent money.", {time} 3250)
-
-wait 7500
-
-Mission.Finish()
-$onMission = false
-$missionIndex = $missionIndex + 1
-
-// NOTE: 05DC for GTA III CLEO, in lieu of `terminate_this_custom_script` (San Andreas)
+// Never reached: finishMission() terminates the thread
 05DC: terminate_custom_thread
 
-//================================
-//----------- Functions ----------
-//================================
+:enterState
+  beat = 0
+  TIMERA = 0
+  if
+    state == STATE_GO_HOME
+  then
+    if
+      latchDriveHint == false
+    then
+      Text.PrintHelpString("Find your way home.")
+    end
+  end
+  if
+    state == STATE_LOSE
+  then
+    latchDriveHint = false
+    latchDyingWarning = false
+  end
+  return
 
-// A label subroutine, not a `function`: a function has its own locals and cannot see this script's
-:checkSafety
+:runMonitors
   if and
     Player.IsSittingInAnyCar($player)
     Player.IsInAnyCar($player)
-    isDriving == false
+    latchDriveHint == false
   then
-    isDriving = true
+    latchDriveHint = true
     Text.PrintHelpString("Drive safe.")
     Player.StoreCarIsIn($player, $myCar)
   end
-
   health = 0
   Player.GetHealth($player, health)
-  // Remind the player not to die 😜💀
   if and
     health < 45
-    isDying == false
+    latchDyingWarning == false
   then
-    isDying = true
+    latchDyingWarning = true
     Text.PrintHelpString("Don't you ~r~dare ~w~die!")
   end
   return

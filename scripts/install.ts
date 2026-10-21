@@ -9,9 +9,19 @@
 import { join } from "@std/path";
 import { lintOrExit } from "./lint-scripts.ts";
 import { say } from "./log.ts";
+import { syncMissions } from "@noodles/fsm";
 
 // Refuse to install sources whose variable slots would misbehave in game
 await lintOrExit(Deno.cwd());
+
+// Refuse to install a generated mission that was edited by hand or not rebuilt
+const { stale } = await syncMissions(Deno.cwd(), { write: false });
+if (stale.length > 0) {
+  say.error("Generated missions differ from their state tables:");
+  for (const file of stale) say.fail(`      ${file}`);
+  say.fail("    Run 'deno task build' to regenerate them.");
+  Deno.exit(1);
+}
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {

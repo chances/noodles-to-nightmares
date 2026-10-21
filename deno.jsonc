@@ -1,4 +1,5 @@
 {
+  "workspace": ["./lib/fsm"],
   "tasks": {
     "find-free-ids": "deno run --env-file=.env --allow-env --allow-read scripts/find-free-ids.ts",
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
