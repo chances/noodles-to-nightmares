@@ -100,21 +100,30 @@ then
   Text.PrintString("I'll call you later.", 4000)
   wait 2250
 
-  // End cutscene
+  // Watch Sal leave (without paying 😏)
   Char.StopLooking($sal)
-  Player.StopLooking($player)
-  Char.SetObjFleeCharOnFootAlways($sal, $playerChar)
+  Char.SetRunning($sal, true)
+  Char.SetObjGotoCoordOnFoot($sal, ROSA_SPAWN_X, ROSA_SPAWN_Y)
   Camera.SetInterpolationParameters(0, {time} 750)
-  Camera.Restore()
-  wait 250
+  Camera.PointAtChar($sal, CameraMode.Fixed, SwitchType.Interpolation)
+  wait 4500
+
+  Camera.DoFade(500, Fade.Out)
+  Player.StopLooking($player)
+  // TODO: Make Rosa walk towards the West door
+  wait 2500 // Wait a beat
 
   // Remove sal from the scene
   tryRemoveSal()
   $isSalNearby = false
-else
-  Camera.DoFade(500, Fade.In)
-  wait 525
 end
+
+// End cutscene
+Camera.SetInterpolationParameters(0, {time} 0)
+Camera.SetBehindPlayer()
+Camera.Restore()
+Camera.DoFade(500, Fade.In)
+wait 525
 
 // Spawn Lee Chong's van outside the shop
 request_model {modelId} #RUMPO
@@ -256,17 +265,24 @@ $missionIndex = $missionIndex + 1
 
 /// Gracefully remove Sal if he's far away or 7.5 seconds have passed since the cutscene ended
 function tryRemoveSal()
+  Char.MarkAsNoLongerNeeded($sal)
+
   if Char.LocateAnyMeansChar2D($sal, $playerChar, 50.0, 50.0, false)
   then
     $isSalNearby = true
   else
     $isSalNearby = false
   end
-  if or
+  if
     $isSalNearby == false
-    TIMERA > 7500
   then
     Char.RemoveElegantly($sal)
+  end
+  if
+    TIMERA > 7500
+  then
+    Char.Delete($sal)
+    $sal = 0
   end
 end
 

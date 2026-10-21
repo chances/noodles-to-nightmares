@@ -14,7 +14,7 @@ const NOODLES_Z = 14.0094
 const NOODLES_HALF_EXTENT_X = 5.4 // Camera-avoidance zone, half-extents
 const NOODLES_HALF_EXTENT_Y = 14.77
 
-// Rosa's new-game spawn, at the front door
+// Rosa's new-game spawn, at the front door of Punk Noodles
 const ROSA_SPAWN_X = 1039.66
 const ROSA_SPAWN_Y = -653.112
 const ROSA_SPAWN_Z = 14.015
@@ -31,7 +31,7 @@ const NOODLES_SAL_Y = -660.83
 const NOODLES_SAL_Z = 14.2
 const NOODLES_SECURITY_CAM_X = 1034.16
 const NOODLES_SECURITY_CAM_Y = -646.5
-const NOODLES_SECURITY_CAM_Z = 15.0
+const NOODLES_SECURITY_CAM_Z = 16.5
 const NOODLES_SOUND_Z = 11.073 // One-off sound at the security camera's X and Y
 
 //--------------------------------
