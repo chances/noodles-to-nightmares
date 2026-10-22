@@ -11,6 +11,12 @@ import { formatName, formatNumber, reformat } from "./templates.js";
 import { roleKey, roles } from "./states-pane.js";
 import { CondList, FieldInput, StepList } from "./step-controls.js";
 
+// @remarks The Script pane is the form for the selected state, or the Mission form when nothing is selected. Beats are
+// edited in the Beat pane, not here. Every keystroke commits through `edit`, one undoable command per change, with
+// edits to one field merged by time. The start and fail states cannot be deleted, and deleting any other state
+// clears the `next` and branches that pointed at it. Renaming rewrites every `next`, `goto`, `start`, `onFail`, and
+// `STATE_` constant in step text, and renaming a monitor rewrites its `latch` local (see `refactor.js`).
+
 const lines = (text) => text.split("\n");
 
 function StateLink({ id, onSelect }) {

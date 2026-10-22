@@ -1,4 +1,8 @@
 // The Script pane's optional sections and the kinds that choose their defaults. Flow and Fail Check always show.
+//
+// @remarks A state shows only the sections it holds data for, plus any the user opened and has not removed.
+// `kind` is optional in the table: `kindOf` infers it from the sections present until the kind select writes it.
+// Changing the kind opens the new kind's default sections and keeps the ones already filled.
 
 export const KINDS = [
   ["cutscene", "Cutscene"],
