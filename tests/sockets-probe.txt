@@ -1,0 +1,99 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini}
+{$OPCODE 0B30=6,udp_send_telemetry %1d% %2d% %3d% %4d% %5d% %6d%}
+nop
+
+// DEBUG: Tests sockets.cleo opcode 0B30 (UDP telemetry).
+// Sends continuous 15Hz stream to localhost:8089 and instant event on F8.
+// Writes execution status to CLEO\sockets-probe.ini.
+
+var
+  $player: Player
+  $playerChar: Char
+  $px: float
+  $py: float
+  $pz: float
+  $heading: float
+  $step: int
+  $event: int
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+$playerChar = Player.GetChar($player)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.LoadAllModelsNow()
+
+while true
+  wait 0
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+IniFile.WriteInt(1, "CLEO\sockets-probe.ini", "Sockets", "00_started")
+
+// 1: Call 0B30 test with initial position
+Char.GetCoordinates($playerChar, $px, $py, $pz)
+Char.GetHeading($playerChar, $heading)
+
+0B30: 8089 $px $py $pz $heading 0
+
+IniFile.WriteInt(1, "CLEO\sockets-probe.ini", "Sockets", "01_opcode_executed")
+IniFile.WriteFloat($px, "CLEO\sockets-probe.ini", "Sockets", "02_px")
+IniFile.WriteFloat($py, "CLEO\sockets-probe.ini", "Sockets", "03_py")
+IniFile.WriteFloat($pz, "CLEO\sockets-probe.ini", "Sockets", "04_pz")
+IniFile.WriteFloat($heading, "CLEO\sockets-probe.ini", "Sockets", "05_heading")
+
+Text.PrintString("SOCKETS.CLEO ACTIVE", 2000)
+
+// 2: 15Hz loop (~66ms) with F8 capture detection
+$step = 0
+while true
+  wait 66 ms
+  $step += 1
+
+  Char.GetCoordinates($playerChar, $px, $py, $pz)
+  Char.GetHeading($playerChar, $heading)
+
+  $event = 0
+  if
+    0AB0: is_key_pressed 0x77
+  then
+    $event = 1
+    Text.PrintString("F8 CAPTURED VIA UDP", 1000)
+    IniFile.WriteInt($step, "CLEO\sockets-probe.ini", "Sockets", "06_f8_captured_step")
+  end
+
+  // Send telemetry via sockets.cleo
+  0B30: 8089 $px $py $pz $heading $event
+
+  IniFile.WriteInt($step, "CLEO\sockets-probe.ini", "Sockets", "07_stream_step")
+end

@@ -117,6 +117,36 @@ if (shadowedFiles.length > 0) {
   Deno.exit(1);
 }
 
+// Ensure sockets plugin is installed in CLEO and CLEO/CLEO_PLUGINS
+const cleoSockets = join(gta3Base, "CLEO", "sockets.cleo");
+try {
+  const stat = await Deno.stat(cleoSockets);
+  if (stat.isFile) {
+    say.done("  Verified sockets.cleo installed in CLEO");
+  }
+} catch {
+  const localBuilt = join(
+    cwd,
+    "plugins",
+    "sockets",
+    "build",
+    "Release",
+    "sockets.cleo",
+  );
+  try {
+    if ((await Deno.stat(localBuilt)).isFile) {
+      const cleoDir = join(gta3Base, "CLEO");
+      const cleoPluginsDir = join(cleoDir, "CLEO_PLUGINS");
+      await Deno.mkdir(cleoPluginsDir, { recursive: true });
+      await Deno.copyFile(localBuilt, join(cleoDir, "sockets.cleo"));
+      await Deno.copyFile(localBuilt, join(cleoPluginsDir, "sockets.cleo"));
+      say.done("  Copied sockets.cleo into CLEO and CLEO/CLEO_PLUGINS");
+    }
+  } catch {
+    // Optional
+  }
+}
+
 // Ensure unflagged runner hardlink exists (bypasses Windows UAC elevation)
 const gtaExe = join(gta3Base, "gta3.exe");
 const runnerExe = join(gta3Base, "gta3-game.exe");

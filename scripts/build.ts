@@ -9,6 +9,7 @@
  * - modloader/Noodles/noodles_custom.txt (Map manifest directives)
  * - modloader/Noodles/txd/ (UI, splash, and loading screens)
  * - modloader/Noodles/cleo/cleo_text/UL_TEXT.fxt (Text strings)
+ * - CLEO/sockets.cleo & CLEO/CLEO_PLUGINS/sockets.cleo (UDP Telemetry Plugin)
  *
  * Supports interactive bisection and step filtering via:
  * --bisect, -b, --step=<N>, --only=<name>, --skip=<name>
@@ -694,6 +695,75 @@ if (shouldRun(6, "text")) {
   } catch {
     // Optional
   }
+}
+
+// Step 7: CLEO Plugins (Compiles CMake plugins, e.g. plugins/sockets, and stages them)
+if (shouldRun(7, "plugins")) {
+  say.heading("Step 7 (plugins): Compiling and packaging CLEO plugins...");
+  const socketsSrc = join(cwd, "plugins", "sockets", "sockets.cpp");
+  const socketsCleo = join(
+    cwd,
+    "plugins",
+    "sockets",
+    "build",
+    "Release",
+    "sockets.cleo",
+  );
+
+  let needsBuild = forceArg || !await allExist([socketsCleo]);
+  if (!needsBuild) {
+    const srcHash = await sha256(await Deno.readFile(socketsSrc));
+    if (hashCache[socketsSrc] !== srcHash) {
+      needsBuild = true;
+    }
+  }
+
+  if (needsBuild) {
+    say.info("  Compiling sockets.cleo via CMake...");
+    const buildDir = join(cwd, "plugins", "sockets", "build");
+    await ensureDir(buildDir);
+    const configCmd = new Deno.Command("cmake", {
+      args: [
+        "-B",
+        buildDir,
+        "-S",
+        join(cwd, "plugins", "sockets"),
+        "-A",
+        "Win32",
+      ],
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const configRes = await configCmd.output();
+    if (!configRes.success) {
+      say.error("Failed to configure CMake for plugins/sockets");
+      Deno.exit(1);
+    }
+
+    const buildCmd = new Deno.Command("cmake", {
+      args: ["--build", buildDir, "--config", "Release"],
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const buildRes = await buildCmd.output();
+    if (!buildRes.success) {
+      say.error("Failed to build sockets.cleo");
+      Deno.exit(1);
+    }
+    const srcHash = await sha256(await Deno.readFile(socketsSrc));
+    await saveHash(socketsSrc, srcHash);
+    say.done("  Compiled plugins/sockets -> sockets.cleo");
+  } else {
+    say.skip("  Up to date: sockets.cleo");
+  }
+
+  // Stage into CLEO and CLEO/CLEO_PLUGINS at archive root
+  const cleoRootStaging = join(stagingDir, "CLEO");
+  const cleoPluginsStaging = join(cleoRootStaging, "CLEO_PLUGINS");
+  await ensureDir(cleoPluginsStaging);
+  await Deno.copyFile(socketsCleo, join(cleoRootStaging, "sockets.cleo"));
+  await Deno.copyFile(socketsCleo, join(cleoPluginsStaging, "sockets.cleo"));
+  say.done("  Packaged CLEO/sockets.cleo & CLEO/CLEO_PLUGINS/sockets.cleo");
 }
 
 // Packaging archive into dist/Drag-N-Drop.zip

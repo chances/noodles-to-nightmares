@@ -1,0 +1,89 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini}
+nop
+
+// DEBUG: In-game Spot Capture Probe without native plugins or sockets.
+// Press F8 (VK_F8 = 0x77) to capture player [x, y, z] and heading.
+// Writes results to CLEO\capture-probe.ini in the GTA3 folder.
+
+var
+  $player: Player
+  $playerChar: Char
+  $px: float
+  $py: float
+  $pz: float
+  $heading: float
+  $captureCount: int
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+$playerChar = Player.GetChar($player)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+IniFile.WriteInt(1, "CLEO\capture-probe.ini", "Probe", "started")
+$captureCount = 0
+
+while true
+  wait 50 ms
+
+  // Check for F8 keypress (VK_F8 = 0x77 = 119)
+  if
+    0AB0: is_key_pressed 0x77
+  then
+    $captureCount += 1
+    Char.GetCoordinates($playerChar, $px, $py, $pz)
+    Char.GetHeading($playerChar, $heading)
+
+    IniFile.WriteInt($captureCount, "CLEO\capture-probe.ini", "Spot", "count")
+    IniFile.WriteFloat($px, "CLEO\capture-probe.ini", "Spot", "x")
+    IniFile.WriteFloat($py, "CLEO\capture-probe.ini", "Spot", "y")
+    IniFile.WriteFloat($pz, "CLEO\capture-probe.ini", "Spot", "z")
+    IniFile.WriteFloat($heading, "CLEO\capture-probe.ini", "Spot", "heading")
+
+    Text.PrintString("SPOT CAPTURED", 1500)
+
+    // Wait until key released to avoid multiple captures in one tap
+    while 0AB0: is_key_pressed 0x77
+      wait 50 ms
+    end
+  end
+end
