@@ -126,18 +126,28 @@
             "  latchIsDriving == false",
             "then",
             "  Text.PrintHelpString(\"Find your way home.\")",
+            "else",
+            "  Text.PrintString(\"Did you steal this car?\", 3000)",
             "end"
+          ],
+          [
+            "$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)"
           ]
         ],
         "until": [
           {
-            "test": "Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)"
+            "test": "Player.LocateAnyMeans3D($player, SAFEHOUSE_ARRIVE_X, SAFEHOUSE_ARRIVE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)"
           }
         ],
         "next": "ARRIVE"
       },
       "ARRIVE": {
         "fail": false,
+        "onEnter": [
+          [
+            "Blip.Remove($SafeBlip)"
+          ]
+        ],
         "beats": [
           {
             "do": [

@@ -1,5 +1,6 @@
 {$CLEO .cm}
 {$INCLUDE ../variables.txt}
+{$INCLUDE ../constants.txt}
 {$INCLUDE ../utils/geography.txt}
 
 // GENERATED from missions/0_tutorial.fsm.json by lib/fsm/generate.ts. Edit the table, then run `deno task build`.
@@ -158,7 +159,7 @@ while true
   then
     // QUESTION: Why is Rosa's apartment collision not correct?
     if
-      Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
+      Player.LocateAnyMeans3D($player, SAFEHOUSE_ARRIVE_X, SAFEHOUSE_ARRIVE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
     then
       state = STATE_ARRIVE
       enterState()
@@ -370,7 +371,15 @@ end
       latchIsDriving == false
     then
       Text.PrintHelpString("Find your way home.")
+    else
+      Text.PrintString("Did you steal this car?", 3000)
     end
+    $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  end
+  if
+    state == STATE_ARRIVE
+  then
+    Blip.Remove($SafeBlip)
   end
   if
     state == STATE_LOSE
