@@ -106,7 +106,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
               <span key=${index} title=${tooltip(beat, index, at)}>
                 <span class="kf-card" data-conditional=${beat.when?.length ? "" : undefined} data-instant=${wait === 0 ? "" : undefined} ...${press}
                   style=${`inset-inline-start: ${left}px; inline-size: ${width}px`}>
-                  <strong>${index + 1} · ${steps.length ? describe(steps[0]) : "Wait"}</strong>
+                  <strong>${steps.length ? describe(steps[0]) : "Wait"}</strong>
                   <span>${details(beat)}</span>
                 </span>
                 ${wait > 0 && html`<span class="kf-end" style=${`inset-inline-start: ${left + width}px`}></span>`}
