@@ -1,10 +1,10 @@
-import { cond, defineMission, step } from "@noodles/fsm";
+import { cond, defineMission, poiRadius, poiSpot, step } from "@noodles/fsm";
 
-const SAFEHOUSE = ["SAFEHOUSE_X", "SAFEHOUSE_Y", "SAFEHOUSE_Z"] as [
-  string,
-  string,
-  string,
-];
+const SAFEHOUSE = poiSpot("SAFEHOUSE");
+
+
+
+
 
 export default defineMission({
   header: [
@@ -73,8 +73,8 @@ export default defineMission({
       ],
       until: [
         cond.playerNear3D(
-          ["SAFEHOUSE_X", "SAFEHOUSE_Y", "SAFEHOUSE_ARRIVE_Z"],
-          "SAFEHOUSE_ARRIVE_RADIUS",
+          poiSpot("SAFEHOUSE_ARRIVE"),
+          poiRadius("SAFEHOUSE_ARRIVE"),
         ),
       ],
       next: "ARRIVE",

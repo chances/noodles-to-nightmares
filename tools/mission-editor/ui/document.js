@@ -34,52 +34,8 @@ function normalize(mission) {
   }
 }
 
-/** The error to show under a state-name field, or "" when `name` can be used for `from`. */
-export function nameError(name, mission, from) {
-  if (!name) return "Enter a name for the state.";
-  if (name !== from && name in mission.states) {
-    return `A state named ${name} already exists.`;
-  }
-  return "";
-}
-
-/** Renames a state everywhere the table and the graph layout mention it. Changes `draft`. */
-export function renameState(draft, from, to) {
-  const { mission, layout } = draft;
-  const swap = (id) => (id === from ? to : id);
-  mission.states = Object.fromEntries(
-    Object.entries(mission.states).map(([id, state]) => [swap(id), state]),
-  );
-  for (const state of Object.values(mission.states)) {
-    if (state.next) state.next = swap(state.next);
-    for (const rule of state.on ?? []) rule.goto = swap(rule.goto);
-  }
-  mission.start = swap(mission.start);
-  mission.onFail = swap(mission.onFail);
-  draft.layout = Object.fromEntries(
-    Object.entries(layout).map(([id, point]) => [swap(id), point]),
-  );
-}
-
-/** What points at `id`: `{ from, kind }` for each Next and branch, plus whether it is the start or the fail state. */
-export function inboundTo(mission, id) {
-  return {
-    edges: transitions(mission).filter((e) => e.to === id),
-    isStart: mission.start === id,
-    isOnFail: mission.onFail === id,
-  };
-}
-
-/** Deletes a state and every Next and branch that pointed at it. The start and fail states cannot be deleted. Changes `draft`. */
-export function deleteState(draft, id) {
-  const { mission } = draft;
-  delete mission.states[id];
-  delete draft.layout[id];
-  for (const state of Object.values(mission.states)) {
-    if (state.next === id) delete state.next;
-    if (state.on) state.on = state.on.filter((rule) => rule.goto !== id);
-  }
-}
+// The pure state operations live in refactor.js so tests can import them without Preact.
+export { deleteState, inboundTo, nameError, renameState } from "./refactor.js";
 
 /**
  * Wraps a loaded mission (`{ stem, source, mission, layout, problems }`) with edit, undo, redo, and autosave.

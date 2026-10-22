@@ -3,6 +3,8 @@
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
 import { AddStateDialog, Plus } from "./add-state.js";
+import { AssetsPane } from "./assets-pane.js";
+import { DebuggerPane } from "./debugger-pane.js";
 import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
 import { addState } from "./mission-ops.js";
@@ -17,6 +19,7 @@ import { StatesPane } from "./states-pane.js";
 import { EditorContext } from "./step-controls.js";
 import { TimelinePane, TimelineSummary } from "./timeline-pane.js";
 import { Status } from "./status.js";
+import { CaptureToast, TelemetryPill, useTelemetry } from "./telemetry.js";
 
 async function getJson(url) {
   const res = await fetch(url);
@@ -190,12 +193,18 @@ function ExportDialog({ problems, onSelect, onClose }) {
 const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
 
 /** Gives the step and condition controls inside it the vocabulary and the mission's monitors. */
-function Vocabulary({ vocabulary, mission, children }) {
-  return html`<${EditorContext.Provider} value=${{ ...vocabulary, monitorIds: (mission.monitors ?? []).map((x) => x.id) }}>${children}<//>`;
+function Vocabulary({ vocabulary, mission, names, children }) {
+  // The mission's own constants come first and follow its edits; the project's files add the rest.
+  const own = Object.entries(mission.consts ?? {}).map(([name, v]) => {
+    const value = Array.isArray(v) ? v[0] : v;
+    return { name, kind: Number.isInteger(value) ? "int" : "float", value: String(value), comment: Array.isArray(v) ? v[1] : undefined, source: "This mission" };
+  });
+  const constants = [...own, ...(names?.constants ?? []).filter((c) => !(c.name in (mission.consts ?? {})))];
+  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: names?.globals ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id) }}>${children}<//>`;
 }
 
 function App() {
-  const [exporting, setExporting] = useState(false);
+
   const [showProblems, setShowProblems] = useState(false);
   const [adding, setAdding] = useState(false);
   const [savedSelection] = useState(() => loadNodeSelection(localStorage, project));
@@ -203,6 +212,7 @@ function App() {
   const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
   // A failed save is listed first, with its reason, beside the mission's own problems.
   const problems = save.state === "error" ? [{ severity: "error", message: `Save failed: ${save.error}` }, ...found] : found;
+  const hasErrors = problems.some((p) => p.severity === "error" || p.level === "error");
   // The document follows the loaded mission one render late; until it catches up the mission is still loading.
   const current = loadedMission.data && doc?.stem === loadedMission.data.stem ? doc : null;
   const mission = loadedMission.data && !current
@@ -232,7 +242,14 @@ function App() {
   useEffect(() => setBeatPick(0), [selected]);
   const beat = current && selected ? activeBeat(current, selected, beatPick) : -1;
   const [vocabulary, setVocabulary] = useState(null);
-  useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [] })); }, []);
+  useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [], spots: [], enums: {} })); }, []);
+  const [mode, setMode] = useState("edit");
+  const { connected, telemetry, capture, captures, setCapture, runInGame, running } = useTelemetry(projectQuery);
+  useEffect(() => {
+    if (connected) {
+      setMode("debug");
+    }
+  }, [connected]);
 
   useEffect(() => {
     const keys = (e) => {
@@ -310,7 +327,12 @@ function App() {
           <${ProblemsPill} problems=${problems} open=${showProblems} onToggle=${() => setShowProblems(!showProblems)} />
           ${showProblems && html`<${ProblemsPanel} problems=${problems} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
         </div>
-        <button class="primary" onClick=${() => setExporting(true)}>Export</button>
+        <button class="primary run-in-game" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${running ? "Running..." : "▶ Run"}</button>
+        <div class="mode-switch">
+          <button class="mode-btn ${mode === 'edit' ? 'active' : ''}" onClick=${() => setMode('edit')}>Edit</button>
+          <button class="mode-btn ${mode === 'debug' ? 'active' : ''}" onClick=${() => setMode('debug')}>Debug</button>
+        </div>
+        ${mode === "debug" && html`<${TelemetryPill} connected=${connected} telemetry=${telemetry} />`}
       </div>
     </header>
     <main ref=${main} style=${style}>
@@ -339,7 +361,7 @@ function App() {
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to list its states."
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
         <//>
-        <${Pane} title="Assets"><p class="hint">Spots, models, characters, and sprites appear here.</p><//>
+        <${Pane} title="Assets"><${AssetsPane} telemetry=${telemetry} /><//>
       </aside>
       <div class="center">
         <${Pane} title="Graph" hideTitle class="graph">
@@ -348,14 +370,16 @@ function App() {
         <//>
       </div>
       <aside class="right" ref=${panes.right}>
-        <${Pane} title="Script"
-          trail=${mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
-          bar=${mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
-          <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
+        <${Pane} title=${mode === "debug" ? "Debugger" : "Script"}
+
+          trail=${mode === "edit" && mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
+          bar=${mode === "edit" && mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
+          ${mode === "debug" ? html`<${DebuggerPane} connected=${connected} telemetry=${telemetry} captures=${captures} />` : html`<${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
             ready=${(m) => html`
-              <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission}>
+              <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission} names=${m.names}>
                 <${InspectorPane} doc=${m} edges=${m.edges} problems=${problems} selected=${selected} onSelect=${setSelected} edit=${edit} />
-              <//>`} />
+              <//>`} />`}
+
         <//>
       </aside>
       </div>
@@ -370,7 +394,7 @@ function App() {
             trail=${mission.data && html`<${BeatAdd} selected=${selected} index=${beat} edit=${edit} onPick=${setBeatPick} />`}
             bar=${mission.data && selected && html`<${BeatBar} doc=${mission.data} selected=${selected} index=${beat} edit=${edit} onPick=${setBeatPick} />`}>
             <${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to edit its beats."
-              ready=${(m) => html`<${Vocabulary} vocabulary=${vocabulary} mission=${m.mission}><${BeatPane} doc=${m} selected=${selected} index=${beat} edit=${edit} /><//>`} />
+              ready=${(m) => html`<${Vocabulary} vocabulary=${vocabulary} mission=${m.mission} names=${m.names}><${BeatPane} doc=${m} selected=${selected} index=${beat} edit=${edit} /><//>`} />
           <//>
         </aside>
       </div>
@@ -391,7 +415,8 @@ function App() {
           openOnShow(values.name, KIND_SECTIONS[values.kind]);
           setSelected(values.name);
         }} />`}
-    ${exporting && html`<${ExportDialog} problems=${problems} onSelect=${setSelected} onClose=${() => setExporting(false)} />`}
+
+    <${CaptureToast} capture=${capture} onDismiss=${() => setCapture(null)} />
   `;
 }
 

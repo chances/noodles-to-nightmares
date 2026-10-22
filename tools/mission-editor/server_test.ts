@@ -52,7 +52,7 @@ Deno.test("serves a mission's table, layout, and edges", async () => {
   const res = await get(`/api/missions/0_tutorial?project=${repo}`);
   assertEquals(res.status, 200);
   const body = await res.json();
-  assertEquals(body.source, "states.ts");
+  assert(body.source === "states.ts" || body.source === "fsm.json");
   assertEquals(body.mission.start, "INTRO");
   assertEquals(typeof body.layout.GO_HOME.x, "number");
   assert(
@@ -66,6 +66,33 @@ Deno.test("serves the step and condition vocabulary", async () => {
   const body = await (await get("/api/vocabulary")).json();
   assert(body.steps.some((d: { name: string }) => d.name === "say"));
   assert(body.conds.some((d: { name: string }) => d.name === "playerNear3D"));
+  assert(body.spots.some((s: { id: string }) => s.id === "SAFEHOUSE"));
+  assert(
+    body.enums.RadarSprite.some((m: { name: string }) =>
+      m.name === "Savehouse"
+    ),
+  );
+});
+
+Deno.test("serves the constants and globals the project's files declare", async () => {
+  const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
+    .json();
+  const chong = body.names.constants.find((c: { name: string }) =>
+    c.name === "CHONG"
+  );
+  assertEquals(chong.kind, "int");
+  assertEquals(chong.source, "constants.txt");
+  const player = body.names.globals.find((g: { name: string }) =>
+    g.name === "$player"
+  );
+  assertEquals(player.type, "Player");
+  // Spot constants have their own typeahead, so they are not repeated here.
+  assertEquals(
+    body.names.constants.some((c: { name: string }) =>
+      c.name === "SAFEHOUSE_X"
+    ),
+    false,
+  );
 });
 
 Deno.test("serves a mission's problems with its table", async () => {
@@ -191,6 +218,14 @@ Deno.test("creates a project over the API, lists it, and refuses a non-JSON body
   } finally {
     await Deno.remove(root, { recursive: true });
   }
+});
+
+Deno.test("serves geography catalog", async () => {
+  const res = await get("/api/geography");
+  assertEquals(res.status, 200);
+  const geo = await res.json();
+  assert(geo.SAFEHOUSE);
+  assertEquals(typeof geo.SAFEHOUSE.pos[0], "number");
 });
 
 Deno.test("answers 404 for an unknown path", async () => {

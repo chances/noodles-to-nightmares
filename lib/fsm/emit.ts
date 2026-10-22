@@ -18,6 +18,11 @@ export function latchLocal(id: string): string {
   return `latch${id[0].toUpperCase()}${id.slice(1)}`;
 }
 
+/** The constant the generator declares for a state, e.g. `GO_HOME` becomes `STATE_GO_HOME`. */
+export function stateConst(id: string): string {
+  return `STATE_${id}`;
+}
+
 /** An `if` block. Several conditions combine with `mode`; an empty `then` emits nothing. */
 export function ifBlock(
   conds: Cond[],

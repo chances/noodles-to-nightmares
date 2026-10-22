@@ -1,0 +1,22 @@
+[
+  { "name": "Asuka", "id": 1 },
+  { "name": "Bomb", "id": 2 },
+  { "name": "Catalina", "id": 3 },
+  { "name": "Centre", "id": 4 },
+  { "name": "Copcar", "id": 5 },
+  { "name": "Love", "id": 6 },
+  { "name": "EightBall", "id": 7 },
+  { "name": "Diablo", "id": 8 },
+  { "name": "Hood", "id": 9 },
+  { "name": "Joey", "id": 10 },
+  { "name": "Kenji", "id": 11 },
+  { "name": "Yardie", "id": 12 },
+  { "name": "Luigi", "id": 13 },
+  { "name": "North", "id": 14 },
+  { "name": "Ray", "id": 15 },
+  { "name": "Salvatore", "id": 16 },
+  { "name": "Savehouse", "id": 17 },
+  { "name": "Spray", "id": 18 },
+  { "name": "Tony", "id": 19 },
+  { "name": "Weapon", "id": 20 }
+]

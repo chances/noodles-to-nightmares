@@ -3,10 +3,103 @@
 
 import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
 import { SplitButton } from "./split-button.js";
-import { buildCond, buildLines, buildWhen, defaults, formatField, isValid, parseCond, parseLines, parseWhen, reformat } from "./templates.js";
+import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
 
-/** The vocabulary (`steps`, `conds`) and the open mission's monitor ids, which the latch fields offer. */
-export const EditorContext = createContext({ steps: [], conds: [], monitorIds: [] });
+/** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
+export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], monitorIds: [] });
+
+let comboCount = 0;
+
+/**
+ * A typeahead over `options` (`{ value, meta, search }`): typing filters the list, and picking one commits its
+ * value. A strict combo (a spot) commits only a pick. A free one (a number or a variable) also commits what is
+ * typed once `field` accepts it, so the list suggests and never limits.
+ */
+function Combo({ field, value, options, free, label, note, missing = "is not in the geography", onCommit }) {
+  const [draft, setDraft] = useState(value);
+  const [typed, setTyped] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const root = useRef(null);
+  const last = useRef(value);
+  const [listId] = useState(() => `combo-${++comboCount}`);
+  useEffect(() => {
+    if (value !== last.current) {
+      last.current = value;
+      setDraft(value);
+    }
+  }, [value]);
+
+  const matches = open ? filterOptions(options, typed ?? "") : [];
+  // An emptied field with a placeholder takes the placeholder's value, e.g. the default radius.
+  const resolve = (text) => (text === "" && field.placeholder ? field.placeholder : text);
+  const valid = !free || isValid(field, resolve(draft));
+  const unknown = !free && options.length > 0 && !options.some((o) => o.value === value);
+
+  const close = () => {
+    const closed = closedCombo(last.current);
+    setOpen(closed.open);
+    setTyped(closed.typed);
+    setDraft(closed.draft);
+  };
+  const show = () => { setOpen(true); setActive(0); };
+  const pick = (option) => {
+    close();
+    if (!option) return;
+    last.current = option.value;
+    setDraft(option.value);
+    if (option.value !== value) onCommit(option.value);
+  };
+  const input = (e) => {
+    const text = free ? reformat(e.currentTarget, (t) => formatField(field, t)) : e.currentTarget.value;
+    setTyped(text);
+    show();
+    if (!free) return;
+    setDraft(text);
+    const effective = resolve(text);
+    if (isValid(field, effective)) {
+      last.current = effective;
+      onCommit(effective);
+    }
+  };
+  const keys = (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!open) { show(); return; }
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      setActive((a) => (matches.length ? (a + step + matches.length) % matches.length : 0));
+    } else if (e.key === "Enter" && open && matches[active]) {
+      e.preventDefault();
+      pick(matches[active]);
+    } else if (e.key === "Escape" && open) {
+      e.stopPropagation();
+      close();
+    }
+  };
+
+  return html`
+    <div class="combo" ref=${root} onfocusout=${(e) => { if (!root.current.contains(e.relatedTarget)) close(); }}>
+      <input role="combobox" aria-expanded=${open} aria-controls=${listId} aria-autocomplete="list" aria-label=${label}
+        aria-activedescendant=${open && matches[active] ? `${listId}-${active}` : undefined}
+        autocomplete="off" spellcheck=${false} class=${free ? "" : "mono"} aria-invalid=${!valid || unknown}
+        value=${free ? draft : open ? typed ?? "" : value} placeholder=${free ? field.placeholder ?? "" : open ? value : ""}
+        onFocus=${show} onInput=${input} onKeyDown=${keys} />
+      ${open && matches.length > 0 && html`
+        <ul class="combo-list" role="listbox" id=${listId}>
+          ${matches.map((o, i) => html`
+            <li key=${o.value} id=${`${listId}-${i}`} role="option" aria-selected=${o.value === value} data-active=${i === active}
+              onMouseDown=${(e) => { e.preventDefault(); pick(o); }} onMouseEnter=${() => setActive(i)}>
+              <span class="combo-id">${o.value}</span>
+              <span class="combo-meta">${o.meta}</span>
+            </li>`)}
+        </ul>`}
+      ${open && matches.length === 0 && !free && html`<ul class="combo-list" id=${listId}><li class="combo-empty">Nothing matches</li></ul>`}
+      ${!valid && html`<small class="error">${EMPTY[field.type]}</small>`}
+      ${unknown && html`<small class="error">${value} ${missing}.</small>`}
+      ${note && html`<small class="error">${note}</small>`}
+    </div>
+  `;
+}
 
 // What an empty or unfinished field asks for; formatting has already removed everything else that could be wrong.
 const EMPTY = {
@@ -19,7 +112,7 @@ const EMPTY = {
 
 /** One typed field. Typing is rewritten into the field's format; an empty or unfinished value is not saved. */
 export function FieldInput({ field, value, onCommit }) {
-  const { monitorIds } = useContext(EditorContext);
+  const { monitorIds, spots, constants, globals, enums } = useContext(EditorContext);
   const [draft, setDraft] = useState(value);
   const last = useRef(value);
   useEffect(() => {
@@ -33,6 +126,18 @@ export function FieldInput({ field, value, onCommit }) {
     last.current = e.currentTarget.value;
     onCommit(last.current);
   };
+  if (field.type === "toggle") {
+    // The row's own label wraps this input, so the checkbox needs none of its own.
+    return html`<input type="checkbox" class="toggle" checked=${value === "true"} onChange=${(e) => { last.current = String(e.currentTarget.checked); onCommit(last.current); }} />`;
+  }
+  // A Sanny enum member (a map icon) is picked from the enum's list.
+  if (field.enum) return html`<${Combo} field=${field} value=${value} options=${enumOptions(enums[field.enum] ?? [])} label=${field.label} missing=${`is not a ${field.enum} member`} onCommit=${onCommit} />`;
+  if (field.type === "spot") return html`<${Combo} field=${field} value=${value} options=${spotOptions(spots)} label="Spot" onCommit=${onCommit} />`;
+  // A number or variable is typed freely; the list offers the project's constants (of the field's number type) or variables (of its type).
+  if (field.type === "expr" || field.type === "handle") {
+    const options = field.type === "handle" || !field.numeric ? globalOptions(globals, field.varType) : constantOptions(constants, field.numeric);
+    return html`<${Combo} field=${field} value=${value} options=${options} free label=${field.label} note=${numberProblem(field, value, constants)} onCommit=${onCommit} />`;
+  }
   if (field.type === "choice" || field.type === "latch") {
     const options = field.type === "choice" ? field.options : [...new Set([...monitorIds, value])];
     return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${field.labels?.[o] ?? o}</option>`)}</select>`;
@@ -60,7 +165,7 @@ export function NumberField({ label, value, onCommit }) {
 }
 
 function Row({ item, kind, n, onChange, onRemove, onMove }) {
-  const { steps, conds } = useContext(EditorContext);
+  const { steps, conds, monitorIds, spots, globals } = useContext(EditorContext);
   const [sanny, setSanny] = useState(false);
   const isCond = kind === "cond";
   const noun = isCond ? "condition" : "step";
@@ -72,6 +177,13 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
   const setValue = (name) => (text) => {
     const values = { ...parsed.values, [name]: text };
     onChange(isCond ? { ...item, ...buildCond(parsed.descriptor, values) } : buildLines(parsed.descriptor, values));
+  };
+  // A card with a "Shown" checkbox becomes its partner card (Add Blip <-> Remove Blip) when it is flipped.
+  const remembered = useRef({});
+  const flip = () => {
+    const next = flipShown(steps, parsed.descriptor, parsed.values, remembered.current, { monitorIds, spotIds: spots.map((s) => s.id), globals });
+    remembered.current = next.remembered;
+    onChange(buildLines(next.descriptor, next.values));
   };
 
   return html`
@@ -98,8 +210,10 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
             <p class="hint">Otherwise</p>
             <${StepList} steps=${when.otherwise} emptyText="Nothing runs otherwise." onChange=${(list) => setWhen({ otherwise: list })} />
           </div>`
-        : parsed.descriptor.fields.length > 0 && html`
+        : (parsed.descriptor.fields.length > 0 || parsed.descriptor.shown) && html`
           <div class="fields">
+            ${parsed.descriptor.shown && html`
+              <label class="mini"><span>Shown</span><input type="checkbox" class="toggle" checked=${parsed.descriptor.shown.on} onChange=${flip} /></label>`}
             ${parsed.descriptor.fields.map((f) => html`
               <label class="mini" key=${f.name}><span>${f.label}</span><${FieldInput} field=${f} value=${parsed.values[f.name]} onCommit=${setValue(f.name)} /></label>
             `)}
@@ -109,7 +223,8 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
 }
 
 function TypedList({ items, kind, onChange, addLabel, emptyText }) {
-  const { steps, conds, monitorIds } = useContext(EditorContext);
+  const { steps, conds, monitorIds, spots, globals } = useContext(EditorContext);
+  const spotIds = spots.map((s) => s.id);
   const descriptors = kind === "cond" ? conds : steps;
   // Rows keep a "Sanny" toggle of their own; a new generation remounts them after a removal or move.
   const [generation, setGeneration] = useState(0);
@@ -120,8 +235,8 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
     const descriptor = descriptors.find((d) => d.name === name);
     const blank = kind === "cond" ? { test: "" } : [""];
     const first = conds[0];
-    const when = buildWhen({ conds: first ? [buildCond(first, defaults(first, monitorIds))] : [], then: [], otherwise: [] });
-    const fresh = name === "__when" ? when : !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds)) : buildLines(descriptor, defaults(descriptor, monitorIds));
+    const when = buildWhen({ conds: first ? [buildCond(first, defaults(first, monitorIds, spotIds, globals))] : [], then: [], otherwise: [] });
+    const fresh = name === "__when" ? when : !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds, spotIds, globals)) : buildLines(descriptor, defaults(descriptor, monitorIds, spotIds, globals));
     onChange([...items, fresh]);
   };
   const replace = (i) => (next) => onChange(items.map((item, j) => (j === i ? next : item)));
@@ -150,7 +265,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
         ? html`<${SplitButton} label="Add Condition" title="Add Condition" ariaLabel="Add a conditional step to this list" onMain=${() => add("__when")}
             menuTitle="More Steps" menuAriaLabel="Choose a step to add" onPick=${add}
             groups=${[
-              ...groups.map((group) => ({ heading: group, items: descriptors.filter((d) => d.group === group).map((d) => ({ value: d.name, label: d.label })) })),
+              ...groups.map((group) => ({ heading: group, items: descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => ({ value: d.name, label: d.label })) })),
               // TODO: Add a "JavaScript/TypeScript" item for CLEO JS scripts beside Sanny Builder.
               { heading: "Custom", items: [{ value: "__sanny", label: "Sanny Builder" }] },
             ]} />`
@@ -159,7 +274,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
             <option value="">${addLabel}</option>
             ${groups.map((group) => html`
               <optgroup key=${group} label=${group}>
-                ${descriptors.filter((d) => d.group === group).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
+                ${descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
               </optgroup>`)}
             <option value="__sanny">Custom Sanny</option>
           </select>`}

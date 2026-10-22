@@ -1111,6 +1111,94 @@ small.error {
   font-size: 14px;
 }
 
+/* A checkbox is as tall as the text inputs beside it, with the box centered in that height. */
+.mini input.toggle {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  min-block-size: 0;
+  margin-block: calc((var(--control-size) - 1.1rem) / 2);
+  margin-inline: 0;
+  padding: 0;
+  align-self: start;
+  accent-color: var(--accent);
+}
+
+/* A toggle takes only the width it needs, wherever it sits, so the fields beside it stay in one row. */
+.fields:has(.toggle) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+}
+
+.fields:has(.toggle) > .mini {
+  flex: 1 1 5.5rem;
+}
+
+.fields:has(.toggle) > .mini:has(.toggle) {
+  flex: 0 0 auto;
+}
+
+/* A typeahead: the input filters a list that opens under it. */
+.combo {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.combo input {
+  inline-size: 100%;
+}
+
+.combo-list {
+  position: absolute;
+  inset-block-start: calc(100% + 2px);
+  inset-inline: 0;
+  z-index: 10;
+  max-block-size: 40vh;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  list-style: none;
+}
+
+.combo-list li {
+  display: flex;
+  flex-direction: column;
+  padding-block: 4px;
+  padding-inline: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.combo-list li[data-active="true"] {
+  background: var(--surface);
+  outline: 1px solid var(--accent);
+}
+
+.combo-list li[aria-selected="true"] .combo-id {
+  color: var(--accent);
+}
+
+.combo-id {
+  color: var(--text);
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.combo-meta,
+.combo-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.combo-empty {
+  padding: 8px;
+}
+
 .title-tools {
   display: flex;
   align-items: center;
@@ -1424,4 +1512,293 @@ dialog .actions {
   .spinner {
     animation-duration: 3s;
   }
+}
+
+/* Telemetry Status Pill */
+.telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  user-select: none;
+}
+.telemetry-pill.connected {
+  border-color: #00ff8888;
+  color: #00ff88;
+}
+.telemetry-pill.disconnected {
+  border-color: #ff003366;
+  color: var(--muted);
+}
+.telemetry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff0033;
+}
+.telemetry-pill.connected .telemetry-dot {
+  background: #00ff88;
+  box-shadow: 0 0 6px #00ff88;
+}
+
+/* Run in Game Button */
+button.run-in-game {
+  background: #238636;
+  color: #fff;
+  border: 1px solid #2ea043;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+button.run-in-game:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+/* F8 Capture Toast */
+.capture-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #25282d;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  animation: slideUp 0.25s ease-out;
+}
+.capture-toast strong {
+  display: block;
+  font-size: 12px;
+  color: var(--accent);
+}
+.capture-toast span {
+  font-size: 11px;
+  color: var(--text);
+}
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Assets Pane & Spots */
+.assets-pane {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.live-player-card {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid #00ff8866;
+  border-radius: 6px;
+}
+.live-player-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #00ff88;
+  margin-bottom: 4px;
+}
+.live-player-coords {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text);
+  gap: 2px 8px;
+}
+.spots-heading {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 0 0 6px 0;
+}
+.spots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.spot-item {
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: default;
+}
+.spot-item:hover {
+  border-color: var(--accent);
+}
+.spot-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.spot-id {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text);
+}
+.spot-cat {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.spot-coords {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Mode Switch (Edit / Debug) */
+.mode-switch {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mode-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Sidebar Tabs */
+.sidebar-tabs {
+  display: flex;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.sidebar-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.sidebar-tab.active {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+/* Debugger Pane */
+.debugger-pane {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.debug-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.debug-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 0;
+}
+.telemetry-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.telemetry-badge.live {
+  background: #00ff8822;
+  color: #00ff88;
+  border: 1px solid #00ff8844;
+}
+.telemetry-badge.offline {
+  background: #ff003322;
+  color: #ff0033;
+  border: 1px solid #ff003344;
+}
+.player-hud-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: var(--surface);
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+.hud-stat {
+  display: flex;
+  flex-direction: column;
+}
+.hud-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.hud-value {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.hud-actions {
+  display: flex;
+  gap: 6px;
+}
+.captures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.capture-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.capture-coords {
+  font-family: monospace;
+  color: var(--text);
+}
+.capture-time {
+  font-size: 10px;
+  color: var(--muted);
+}
+.capture-actions {
+  display: flex;
+  gap: 4px;
 }

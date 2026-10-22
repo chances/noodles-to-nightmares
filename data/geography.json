@@ -1,0 +1,214 @@
+[
+  {
+    "id": "NOODLES",
+    "comment": "Interior is 10.8m by 29.54m. Center of the building, dinerind in custom.ipl.\nhalfExtent is the camera-avoidance zone, in half-extents.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "interior",
+    "tags": ["punk_noodles", "restaurant", "interior"],
+    "pos": [1031.13, -654.956, 14.0094],
+    "halfExtent": [5.4, 14.77]
+  },
+  {
+    "id": "NOODLES_BLIP",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "blip",
+    "tags": ["punk_noodles", "blip"],
+    "pos": [1030.0, -654.956, 14.0094]
+  },
+  {
+    "id": "ROSA_SPAWN",
+    "comment": "Rosa's new-game spawn, at the front door of Punk Noodles. Heading faces north-east.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "spawn",
+    "tags": ["rosa", "spawn", "player"],
+    "pos": [1039.66, -653.112, 14.015],
+    "heading": 315.0
+  },
+  {
+    "id": "NOODLES_CAM",
+    "comment": "Camera that avoids clipping inside the shop.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "camera",
+    "tags": ["camera", "punk_noodles"],
+    "pos": [1027.28, -623.825, 21.47]
+  },
+  {
+    "id": "NOODLES_SAL",
+    "comment": "Easy Money cutscene: where Salvatore stands.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "npc",
+    "tags": ["cutscene", "salvatore"],
+    "pos": [1031.98, -660.83, 14.2]
+  },
+  {
+    "id": "NOODLES_SECURITY_CAM",
+    "comment": "Easy Money cutscene: where the security camera sits.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "camera",
+    "tags": ["camera", "security"],
+    "pos": [1034.16, -646.5, 16.5]
+  },
+  {
+    "id": "NOODLES_SOUND",
+    "comment": "One-off sound at the security camera's X and Y.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "sound",
+    "tags": ["sound", "security"],
+    "pos": [1034.16, -646.5, 11.073]
+  },
+  {
+    "id": "SAFEHOUSE",
+    "comment": "The front door of Rosa's building. Z is the blip, bribe, and save pickup height.",
+    "district": "portland",
+    "group": "SAFEHOUSE",
+    "category": "safehouse",
+    "tags": ["safehouse", "pickup", "bribe", "blip"],
+    "pos": [1170.85, -416.097, 22.93]
+  },
+  {
+    "id": "SAFEHOUSE_ARRIVE",
+    "comment": "Mission 0 arrival check.",
+    "district": "portland",
+    "group": "SAFEHOUSE",
+    "category": "objective",
+    "tags": ["safehouse", "arrival"],
+    "pos": [1170.85, -416.097, 23.25],
+    "heading": 315.0,
+    "radius": 3.0
+  },
+  {
+    "id": "SAFEHOUSE_INFO",
+    "comment": "Info pickup.",
+    "district": "portland",
+    "group": "SAFEHOUSE",
+    "category": "pickup",
+    "tags": ["safehouse", "info"],
+    "pos": [1173.523, -415.67, 23.5]
+  },
+  {
+    "id": "SAFEHOUSE_TELEPORT",
+    "comment": "Debug teleport target.",
+    "district": "portland",
+    "group": "SAFEHOUSE",
+    "category": "debug",
+    "tags": ["teleport", "safehouse"],
+    "pos": [1170.372, -416.7, 23.178]
+  },
+  {
+    "id": "TENEMENT",
+    "comment": "The apartment building, ind_newtenement08 (model 445).",
+    "district": "portland",
+    "group": "SAFEHOUSE",
+    "category": "building",
+    "tags": ["tenement", "apartment", "model_445"],
+    "pos": [1160.77, -407.515, 33.28]
+  },
+  {
+    "id": "PAYPHONE",
+    "comment": "Source: missions/1_shady_job.txt. Ringing, grabbing, and the phone object.\nradius is the ringing trigger zone, in X and Y.",
+    "district": "portland",
+    "group": "PAYPHONE",
+    "category": "interactive",
+    "tags": ["payphone", "ringer"],
+    "pos": [1173.523, -416.67, 22.8],
+    "radius": 20.0
+  },
+  {
+    "id": "PAYPHONE_BLIP",
+    "district": "portland",
+    "group": "PAYPHONE",
+    "category": "blip",
+    "tags": ["payphone", "blip"],
+    "pos": [1173.523, -414.165, 22.8]
+  },
+  {
+    "id": "PAYPHONE_CALL_CAM",
+    "comment": "Over-the-shoulder camera during the call.",
+    "district": "portland",
+    "group": "PAYPHONE",
+    "category": "camera",
+    "tags": ["camera", "payphone"],
+    "pos": [1176.525, -420.0, 25.75]
+  },
+  {
+    "id": "PACKAGE_PICKUP",
+    "comment": "Mission 1: Easy Money. Docks.",
+    "district": "portland",
+    "group": "DOCKS",
+    "category": "pickup",
+    "tags": ["package", "mission1", "docks"],
+    "pos": [1316.96, -1088.5, 11.1705]
+  },
+  {
+    "id": "DELIVERY",
+    "comment": "Mission 1: Easy Money. The projects, north side.",
+    "district": "portland",
+    "group": "PROJECTS",
+    "category": "objective",
+    "tags": ["delivery", "mission1", "projects"],
+    "pos": [966.364, -133.515, 3.8],
+    "radius": 2.5
+  },
+  {
+    "id": "SUPASAVE",
+    "comment": "Source: data/maps/noodles/custom.ipl (supasave_open, id 3153).",
+    "district": "portland",
+    "group": "SUPASAVE",
+    "category": "building",
+    "tags": ["supasave", "store"],
+    "pos": [1296.64, -592.45, 13.53]
+  },
+  {
+    "id": "SUPASAVE_DOOR",
+    "comment": "Side Mission: Supply Run.\nTODO: Fill in from the remodel: the pavement in front of the SupaSave door.",
+    "district": "portland",
+    "group": "SUPASAVE",
+    "category": "door",
+    "tags": ["supasave", "entrance"],
+    "pos": [1296.64, -592.45, 13.53]
+  },
+  {
+    "id": "SUPPLY_VAN",
+    "comment": "Side Mission: Supply Run. The van's parking spot outside Punk Noodles.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "vehicle",
+    "tags": ["van", "parking", "supply_run"],
+    "pos": [1013.277, -680.853, 14.014]
+  },
+  {
+    "id": "LEE_CHONG",
+    "comment": "Side Mission: Supply Run.\nTODO: Fill in: Lee Chong's spot inside Punk Noodles.",
+    "district": "portland",
+    "group": "NOODLES",
+    "category": "npc",
+    "tags": ["npc", "lee_chong", "punk_noodles"],
+    "pos": [1031.98, -660.83, 14.2]
+  },
+  {
+    "id": "SUPPLY_GANG",
+    "comment": "Side Mission: Supply Run.\nTODO: Fill in: a chokepoint on the road between the shop and SupaSave.",
+    "district": "portland",
+    "group": "CHINATOWN",
+    "category": "npc",
+    "tags": ["gang", "ambush", "supply_run"],
+    "pos": [1160.0, -620.0, 14.0]
+  },
+  {
+    "id": "BRIDGE_BARRIER",
+    "comment": "World tweak: bridge barrier removed and swapped for a LOD in main.txt.",
+    "district": "portland",
+    "group": "CALLAHAN_BRIDGE",
+    "category": "world",
+    "tags": ["bridge", "barrier"],
+    "pos": [1027.25, -933.6875, 15.0],
+    "radius": 50.0
+  }
+]

@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "mission": {
+    "header": [
+      "Teach the player how to follow instructions"
+    ],
+    "consts": {
+      "REWARD": [
+        250,
+        "Rosa's paycheck"
+      ]
+    },
+    "start": "INTRO",
+    "onFail": "LOSE",
+    "fail": [
+      {
+        "test": "Player.IsDead($player)"
+      },
+      {
+        "test": "Player.HasBeenArrested($player)"
+      }
+    ],
+    "monitors": [
+      {
+        "id": "isDriving",
+        "when": [
+          {
+            "test": "Player.IsSittingInAnyCar($player)"
+          },
+          {
+            "test": "Player.IsInAnyCar($player)"
+          }
+        ],
+        "once": [
+          [
+            "Text.PrintHelpString(\"Drive safe.\")"
+          ],
+          [
+            "Player.StoreCarIsIn($player, $myCar)"
+          ]
+        ]
+      },
+      {
+        "id": "dyingWarning",
+        "when": [
+          {
+            "pre": [
+              "health = 0",
+              "Player.GetHealth($player, health)"
+            ],
+            "test": "health < 45",
+            "locals": [
+              "health"
+            ]
+          }
+        ],
+        "once": [
+          [
+            "Text.PrintHelpString(\"Don't you ~r~dare ~w~die!\")"
+          ]
+        ]
+      }
+    ],
+    "states": {
+      "INTRO": {
+        "beats": [
+          {
+            "wait": 5000
+          },
+          {
+            "do": [
+              [
+                "Text.PrintString(\"Fuck me, that shift was long. I reek of noodles.\", 3500)"
+              ]
+            ],
+            "wait": 4000
+          },
+          {
+            "do": [
+              [
+                "Text.PrintBigString(\"The Carpool Shortcut\", 5000, TextStyle.BottomRight)"
+              ]
+            ],
+            "wait": 7500
+          },
+          {
+            "do": [
+              [
+                "Text.PrintString(\"The sooner I'm home in bed, the better.\", 3000)"
+              ]
+            ],
+            "wait": 3000
+          },
+          {
+            "do": [
+              [
+                "$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)"
+              ],
+              [
+                "Text.PrintHelpString(\"This map will guide you around town.\")"
+              ],
+              [
+                "Hud.FlashObject(HudObject.Radar)"
+              ]
+            ],
+            "wait": 3000
+          },
+          {
+            "do": [
+              [
+                "Hud.FlashObject(0)"
+              ]
+            ],
+            "wait": 2500
+          }
+        ],
+        "next": "GO_HOME"
+      },
+      "GO_HOME": {
+        "notes": [
+          "QUESTION: Why is Rosa's apartment collision not correct?"
+        ],
+        "onEnter": [
+          [
+            "if",
+            "  latchIsDriving == false",
+            "then",
+            "  Text.PrintHelpString(\"Find your way home.\")",
+            "end"
+          ]
+        ],
+        "until": [
+          {
+            "test": "Player.LocateAnyMeans3D($player, SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)"
+          }
+        ],
+        "next": "ARRIVE"
+      },
+      "ARRIVE": {
+        "fail": false,
+        "beats": [
+          {
+            "do": [
+              [
+                "Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)",
+                "Camera.SetInterpolationParameters(0, 1250)",
+                "Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)"
+              ]
+            ]
+          },
+          {
+            "when": [
+              {
+                "test": "latchIsDriving == false"
+              }
+            ],
+            "do": [
+              [
+                "Text.PrintString(\"Ugh, that was a long walk.\", 2500)"
+              ]
+            ],
+            "wait": 2500
+          },
+          {
+            "notes": [
+              "TODO: Save the player's car in this \"garage\".",
+              "TODO: Add parking lines to the model. See Marco's Bistro for parking lines"
+            ],
+            "do": [
+              [
+                "Audio.PlayMissionPassedTune(1)"
+              ],
+              [
+                "register_mission_passed 'NooM_0'"
+              ],
+              [
+                "Player.AddScore($player, REWARD)"
+              ],
+              [
+                "Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)"
+              ]
+            ],
+            "wait": 5500
+          }
+        ],
+        "next": "HOME_TUTORIAL"
+      },
+      "HOME_TUTORIAL": {
+        "notes": [
+          "Payphone and front-door tutorial"
+        ],
+        "fail": false,
+        "beats": [
+          {
+            "do": [
+              [
+                "Text.PrintHelpString(\"This is your home.\")"
+              ]
+            ],
+            "wait": 3000
+          },
+          {
+            "do": [
+              [
+                "Text.PrintHelpString(\"Come back here anytime to save the game.\")"
+              ]
+            ],
+            "wait": 4000
+          },
+          {
+            "notes": [
+              "All done!"
+            ],
+            "do": [
+              [
+                "Camera.DoFade(750, Fade.Out)"
+              ],
+              [
+                "Hud.LoadSplash('SPLASH1')"
+              ]
+            ],
+            "wait": 1250
+          },
+          {
+            "notes": [
+              "TODO: Model and then teleport to Rosa's apartment unit"
+            ],
+            "do": [
+              [
+                "Camera.RestoreJumpcut()"
+              ],
+              [
+                "Camera.DoFade(750, Fade.In)"
+              ]
+            ],
+            "wait": 1000
+          },
+          {
+            "do": [
+              [
+                "Text.PrintString(\"TGIF! I really needed that rent money.\", 3250)"
+              ]
+            ],
+            "wait": 7500
+          }
+        ],
+        "next": "WIN"
+      },
+      "WIN": {
+        "fail": false,
+        "finish": true
+      },
+      "LOSE": {
+        "fail": false,
+        "resetLatches": true,
+        "beats": [
+          {
+            "do": [
+              [
+                "Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)"
+              ]
+            ],
+            "wait": 3000
+          }
+        ],
+        "next": "GO_HOME"
+      }
+    }
+  },
+  "layout": {
+    "INTRO": {
+      "x": 0,
+      "y": 0
+    },
+    "GO_HOME": {
+      "x": 0,
+      "y": 96
+    },
+    "ARRIVE": {
+      "x": 0,
+      "y": 192
+    },
+    "HOME_TUTORIAL": {
+      "x": 0,
+      "y": 288
+    },
+    "WIN": {
+      "x": 0,
+      "y": 384
+    },
+    "LOSE": {
+      "x": 232,
+      "y": 0
+    }
+  }
+}

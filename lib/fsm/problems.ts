@@ -1,6 +1,10 @@
 // What is wrong with a mission table. Errors stop the generator or produce Sanny that cannot compile; warnings are legal but suspicious.
 
+import { latchLocal, stateConst } from "./emit.ts";
 import { transitions } from "./graph.ts";
+import { describeMismatch, fieldUses, numberMismatches } from "./numeric.ts";
+import type { NumberKind } from "./numeric.ts";
+import { ENUMS } from "./sprites.ts";
 import type { Cond, Mission, State, Step } from "./types.ts";
 
 export interface Problem {
@@ -10,22 +14,190 @@ export interface Problem {
   state?: string;
 }
 
-const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+/** A constant a Sanny file declares. */
+export interface ConstInfo {
+  /** int or float, from how the value is written; undefined for an expression. */
+  kind?: NumberKind;
+  /** The value as written, e.g. `20.0`. */
+  value?: string;
+  /** The `//` comment after the declaration. */
+  comment?: string;
+  /** Where it is declared: a file name, or `geography` for the generated spot constants. */
+  source: string;
+}
 
-/** Every problem in `mission`, errors first. */
-export function problems(mission: Mission): Problem[] {
+/** A global variable variables.txt declares. */
+export interface GlobalInfo {
+  /** The `$name: Type` declaration's type, e.g. `Blip`. */
+  type?: string;
+  /** The `Alloc($name, slot)` slot. A mission cannot use a global that has none. */
+  slot?: number;
+}
+
+/** Names the project's Sanny files declare, which a table can use without declaring them itself. */
+export interface Known {
+  /** `const` names from variables.txt, constants.txt, the geography file, and the mission's includes. */
+  constants: Map<string, ConstInfo>;
+  /** Global names, with the `$`, from variables.txt. */
+  globals: Map<string, GlobalInfo>;
+}
+
+const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const LATCH_REF = /(?<![\w$])latch[A-Z]\w*/g;
+const STATE_REF = /(?<![\w$.])STATE_\w+/g;
+// An all-capitals word of three or more letters, apart from model names (`#BANSHEE`), members (`Hud.X`), and calls.
+const CONST_REF = /(?<![\w$.#])[A-Z][A-Z0-9_]{2,}(?![\w(])/g;
+const GLOBAL_REF = /\$[A-Za-z_]\w*/g;
+const STRING = /"[^"]*"|'[^']*'/g;
+
+/** `line` without string literals and `//` comments. */
+const stripNonCode = (line: string) =>
+  line.replace(STRING, '""').replace(/\/\/.*$/, "");
+
+/** Every problem in `mission`, errors first. Pass `known` to also check constants and globals against the project's Sanny files. */
+export function problems(mission: Mission, known?: Known): Problem[] {
   const found: Problem[] = [];
   const error = (message: string, state?: string) =>
     found.push({ severity: "error", message, state });
   const warn = (message: string, state?: string) =>
     found.push({ severity: "warning", message, state });
 
+  // The names this table declares itself. Sanny rejects a `latch…` local or `STATE_…` constant that nothing declares.
+  const latches = new Set(
+    (mission.monitors ?? []).map((m) => latchLocal(m.id)),
+  );
+  const stateConsts = new Set(Object.keys(mission.states).map(stateConst));
+  const consts = new Set(Object.keys(mission.consts ?? {}));
+  // A constant's number type, from how its value is written: the table's own, then the project's files.
+  const kindOfName = (name: string): NumberKind | undefined => {
+    const own = mission.consts?.[name];
+    if (own !== undefined) {
+      return Number.isInteger(Array.isArray(own) ? own[0] : own)
+        ? "int"
+        : "float";
+    }
+    return known?.constants.get(name)?.kind;
+  };
+  const reported = new Set<string>();
+  const once = (key: string, report: () => void) => {
+    if (!reported.has(key)) {
+      reported.add(key);
+      report();
+    }
+  };
+  /** Reports every name in `lines` that nothing declares. Names in strings and comments are not code. */
+  const reads = (lines: string[], state?: string) => {
+    const code = lines.map(stripNonCode).join("\n");
+    for (const ref of code.match(LATCH_REF) ?? []) {
+      if (!latches.has(ref)) {
+        once(
+          `${state}:${ref}`,
+          () => error(`${ref} is read or set, but no monitor makes it`, state),
+        );
+      }
+    }
+    for (const ref of code.match(STATE_REF) ?? []) {
+      if (!stateConsts.has(ref)) {
+        once(
+          `${state}:${ref}`,
+          () =>
+            error(`${ref} is used, but the mission has no such state`, state),
+        );
+      }
+    }
+    for (const line of lines) {
+      for (const m of numberMismatches(line, kindOfName)) {
+        once(
+          `${state}:${m.label}:${m.value}`,
+          () => error(describeMismatch(m), state),
+        );
+      }
+    }
+    for (const line of lines) {
+      for (const { field, value } of fieldUses(line)) {
+        const members = field.enum && ENUMS[field.enum];
+        if (members && !members.some((m) => m.name === value)) {
+          once(
+            `${state}:${field.enum}:${value}`,
+            () => error(`${field.enum}.${value} does not exist`, state),
+          );
+        }
+      }
+    }
+    // Names from the project's Sanny files are only checked when the caller says what those declare.
+    if (!known) return;
+    // A spot that is not in the geography is one mistake, not a missing `_X`, `_Y`, and `_Z` each.
+    const badSpots: string[] = [];
+    for (const line of lines) {
+      for (const { field, value } of fieldUses(line)) {
+        if (field.type === "spot" && !known.constants.has(`${value}_X`)) {
+          badSpots.push(value);
+          once(
+            `${state}:spot:${value}`,
+            () => error(`Spot ${value} is not in the geography`, state),
+          );
+        }
+        const declared = field.varType && known.globals.get(value)?.type;
+        if (declared && declared !== field.varType) {
+          once(
+            `${state}:${field.label}:${value}`,
+            () =>
+              error(
+                `${field.label} needs a ${field.varType} variable, but ${value} is a ${declared}`,
+                state,
+              ),
+          );
+        }
+      }
+    }
+    for (const ref of code.match(CONST_REF) ?? []) {
+      if (badSpots.some((spot) => ref.startsWith(`${spot}_`))) continue;
+      if (
+        !consts.has(ref) && !stateConsts.has(ref) && !known.constants.has(ref)
+      ) {
+        once(
+          `${state}:${ref}`,
+          () =>
+            error(
+              `${ref} is used, but no constant or include declares it`,
+              state,
+            ),
+        );
+      }
+    }
+    for (const ref of code.match(GLOBAL_REF) ?? []) {
+      const global = known.globals.get(ref);
+      if (!global) {
+        once(
+          `${state}:${ref}`,
+          () =>
+            error(
+              `${ref} is used, but variables.txt does not declare it`,
+              state,
+            ),
+        );
+      } else if (global.slot === undefined) {
+        once(
+          `${state}:${ref}`,
+          () =>
+            error(
+              `${ref} has no Alloc pin in variables.txt, so it has no slot`,
+              state,
+            ),
+        );
+      }
+    }
+  };
   // `message` is the whole sentence, so each caller can phrase its subject in the right number.
   const conds = (list: Cond[] | undefined, message: string, state?: string) => {
-    for (const c of list ?? []) if (!c.test.trim()) error(message, state);
+    for (const c of list ?? []) {
+      if (!c.test.trim()) error(message, state);
+      reads([...(c.pre ?? []), c.test], state);
+    }
   };
   const steps = (list: Step[] | undefined, message: string, state?: string) => {
     for (const s of list ?? []) {
+      reads(s, state);
       if (!s.some((line) => line.trim())) error(message, state);
       // A conditional with no test line would emit an `if` Sanny cannot compile.
       const ifAt = s.findIndex((line) => /^if( and)?$/.test(line));

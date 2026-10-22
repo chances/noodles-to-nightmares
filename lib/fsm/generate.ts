@@ -4,10 +4,9 @@
 // scratch locals that conditions ask for. TIMERA measures time in the current beat. A beat runs its `do`
 // steps once, then waits; the beat counter counts a run phase and a wait phase per beat.
 
-import { cmp, ifBlock, indent, latchLocal } from "./emit.ts";
+import { cmp, ifBlock, indent, latchLocal, stateConst } from "./emit.ts";
 import type { Cond, Const, Mission, State } from "./types.ts";
 
-const stateConst = (id: string) => `STATE_${id}`;
 const comments = (notes: string[] = []) => notes.map((note) => `// ${note}`);
 
 function constLine(name: string, value: Const): string {
@@ -150,6 +149,7 @@ export function generate(mission: Mission, source: string): string {
   const out = [
     "{$CLEO .cm}",
     "{$INCLUDE ../variables.txt}",
+    "{$INCLUDE ../constants.txt}",
     "{$INCLUDE ../utils/geography.txt}",
     "",
     `// GENERATED from ${source} by lib/fsm/generate.ts. Edit the table, then run \`deno task build\`.`,

@@ -1,11 +1,20 @@
 // The step and condition vocabulary for mission state tables. Each entry maps a friendly name to its Sanny lines.
 
+import { DEFAULT_RADIUS } from "./descriptors.ts";
 import { cmp, ifBlock, latchLocal } from "./emit.ts";
 import type { Cond, Step } from "./types.ts";
 
 /** A number or a Sanny identifier such as a constant name. */
 export type Expr = string | number;
-export type Spot = [x: Expr, y: Expr, z: Expr];
+/** A POI id from data/geography.json (`SAFEHOUSE`), or explicit coordinates. */
+export type Spot = string | [x: Expr, y: Expr, z: Expr];
+export type Spot2D = string | [x: Expr, y: Expr];
+
+/** The coordinate arguments of `spot`: a POI id reads its generated `_X`, `_Y`, and `_Z` consts. */
+const coords = (spot: Spot | Spot2D, axes: 2 | 3): string =>
+  typeof spot === "string"
+    ? ["X", "Y", "Z"].slice(0, axes).map((axis) => `${spot}_${axis}`).join(", ")
+    : spot.join(", ");
 
 export const step = {
   say: (text: string, ms: number): Step => [
@@ -23,11 +32,13 @@ export const step = {
   /** Stores a new sprite blip's handle in `handle`, e.g. `$SafeBlip`. */
   blipAt: (handle: string, spot: Spot, sprite: string): Step => [
     `${handle} = Blip.AddSpriteForCoord(${
-      spot.join(", ")
+      coords(spot, 3)
     }, RadarSprite.${sprite})`,
   ],
+  /** Removes the blip whose handle `handle` holds, e.g. `$SafeBlip`. */
+  blipRemove: (handle: string): Step => [`Blip.Remove(${handle})`],
   cameraAtPlayer: (spot: Spot, ms: number): Step => [
-    `Camera.SetFixedPosition(${spot.join(", ")}, 0, 0, 0)`,
+    `Camera.SetFixedPosition(${coords(spot, 3)}, 0, 0, 0)`,
     `Camera.SetInterpolationParameters(0, ${ms})`,
     "Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)",
   ],
@@ -58,10 +69,14 @@ export const cond = {
     test: "Player.IsSittingInAnyCar($player)",
   }),
   playerInCar: (): Cond => ({ test: "Player.IsInAnyCar($player)" }),
-  playerNear3D: (spot: Spot, radius: Expr): Cond => ({
+  playerNear3D: (
+    spot: Spot,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = true,
+  ): Cond => ({
     test: `Player.LocateAnyMeans3D($player, ${
-      spot.join(", ")
-    }, ${radius}, ${radius}, ${radius}, true)`,
+      coords(spot, 3)
+    }, ${radius}, ${radius}, ${radius}, ${sphere})`,
   }),
   /** Reads the player's health into the scratch local `health`. */
   healthBelow: (amount: number): Cond => ({
@@ -69,25 +84,41 @@ export const cond = {
     test: `health < ${amount}`,
     locals: ["health"],
   }),
-  playerNear2D: (spot: [x: Expr, y: Expr], radius: Expr): Cond => ({
+  playerNear2D: (
+    spot: Spot2D,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = false,
+  ): Cond => ({
     test: `Player.LocateAnyMeans2D($player, ${
-      spot.join(", ")
-    }, ${radius}, ${radius}, false)`,
+      coords(spot, 2)
+    }, ${radius}, ${radius}, ${sphere})`,
   }),
-  playerOnFootNear3D: (spot: Spot, radius: Expr): Cond => ({
+  playerOnFootNear3D: (
+    spot: Spot,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = true,
+  ): Cond => ({
     test: `Player.LocateOnFoot3D($player, ${
-      spot.join(", ")
-    }, ${radius}, ${radius}, ${radius}, true)`,
+      coords(spot, 3)
+    }, ${radius}, ${radius}, ${radius}, ${sphere})`,
   }),
-  playerOnFootNear2D: (spot: [x: Expr, y: Expr], radius: Expr): Cond => ({
+  playerOnFootNear2D: (
+    spot: Spot2D,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = false,
+  ): Cond => ({
     test: `Player.LocateOnFoot2D($player, ${
-      spot.join(", ")
-    }, ${radius}, ${radius}, false)`,
+      coords(spot, 2)
+    }, ${radius}, ${radius}, ${sphere})`,
   }),
-  playerStoppedNear3D: (spot: Spot, radius: Expr): Cond => ({
+  playerStoppedNear3D: (
+    spot: Spot,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = true,
+  ): Cond => ({
     test: `Player.LocateStoppedOnFoot3D($player, ${
-      spot.join(", ")
-    }, ${radius}, ${radius}, ${radius}, true)`,
+      coords(spot, 3)
+    }, ${radius}, ${radius}, ${radius}, ${sphere})`,
   }),
   playerInThisCar: (car: Expr): Cond => ({
     test: `Player.IsInCar($player, ${car})`,

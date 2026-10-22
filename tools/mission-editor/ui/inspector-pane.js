@@ -4,6 +4,7 @@
 import { html, useEffect, useRef, useState } from "/vendor/preact.js";
 import { Plus } from "./add-state.js";
 import { deleteState, inboundTo, nameError, renameState } from "./document.js";
+import { renameMonitor } from "./refactor.js";
 import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS, takeOpened } from "./sections.js";
 import { missionLabel } from "./mission-label.js";
 import { formatName, formatNumber, reformat } from "./templates.js";
@@ -307,7 +308,13 @@ function MissionForm({ doc, edit }) {
     while (monitors.some((x) => x.id === `monitor${n}`)) n++;
     m.monitors = [...monitors, { id: `monitor${n}`, when: [], once: [] }];
   });
-  const patchMonitor = (i, patch, key) => change("Monitor", (m) => { m.monitors = monitors.map((x, j) => (j === i ? { ...x, ...patch } : x)); }, key);
+  const patchMonitor = (i, patch, key) => change("Monitor", (m) => {
+    const from = m.monitors[i].id;
+    // A name another monitor has is refused whole: taking it would merge the two latches.
+    const { id, ...rest } = patch;
+    if (id !== undefined && id !== from) renameMonitor(m, from, id);
+    m.monitors = m.monitors.map((x, j) => (j === i ? { ...x, ...rest } : x));
+  }, key);
   const [newConst, setNewConst] = useState("");
   const constError = newConst in (mission.consts ?? {}) ? `A constant named ${newConst} already exists.` : "";
 

@@ -2,10 +2,9 @@
 {$INCLUDE ../variables.txt}
 {$INCLUDE ../utils/geography.txt}
 
-// GENERATED from missions/0_tutorial.states.ts by lib/fsm/generate.ts. Edit the table, then run `deno task build`.
+// GENERATED from missions/0_tutorial.fsm.json by lib/fsm/generate.ts. Edit the table, then run `deno task build`.
 
 //==============================================
-// Mission 0: Car Tutorial
 // Teach the player how to follow instructions
 //==============================================
 const REWARD = 250 // Rosa's paycheck
@@ -20,7 +19,7 @@ const STATE_LOSE = 5
 // Mission-private state is CLEO locals, which need no global slot (16 per script)
 int state = STATE_INTRO
 int beat = 0
-int latchDriveHint = false
+int latchIsDriving = false
 int latchDyingWarning = false
 int health = 0
 
@@ -181,7 +180,7 @@ while true
       beat == 1
     then
       if
-        latchDriveHint == false
+        latchIsDriving == false
       then
         Text.PrintString("Ugh, that was a long walk.", 2500)
         TIMERA = 0
@@ -202,7 +201,6 @@ while true
     if
       beat == 3
     then
-      // Mission Passed!
       // TODO: Save the player's car in this "garage".
       // TODO: Add parking lines to the model. See Marco's Bistro for parking lines
       Audio.PlayMissionPassedTune(1)
@@ -369,7 +367,7 @@ end
     state == STATE_GO_HOME
   then
     if
-      latchDriveHint == false
+      latchIsDriving == false
     then
       Text.PrintHelpString("Find your way home.")
     end
@@ -377,7 +375,7 @@ end
   if
     state == STATE_LOSE
   then
-    latchDriveHint = false
+    latchIsDriving = false
     latchDyingWarning = false
   end
   return
@@ -386,9 +384,9 @@ end
   if and
     Player.IsSittingInAnyCar($player)
     Player.IsInAnyCar($player)
-    latchDriveHint == false
+    latchIsDriving == false
   then
-    latchDriveHint = true
+    latchIsDriving = true
     Text.PrintHelpString("Drive safe.")
     Player.StoreCarIsIn($player, $myCar)
   end

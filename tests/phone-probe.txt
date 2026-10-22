@@ -82,7 +82,7 @@ while true
 
   // 4: Log whether the player is inside the 20 unit ring zone
   if
-    Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_NEAR_RADIUS, PAYPHONE_NEAR_RADIUS, false)
+    Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_RADIUS, PAYPHONE_RADIUS, false)
   then
     IniFile.WriteInt($step, "CLEO\phone-probe.ini", "Probe", "4_in_ring_zone_at_step")
   end

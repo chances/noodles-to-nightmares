@@ -1,7 +1,9 @@
 // Regenerates `missions/<stem>.txt` from every `missions/<stem>.states.ts` state table.
 
-import { basename, join, toFileUrl } from "@std/path";
+import { join } from "@std/path";
+import { listMissions, loadMission } from "./fsm-file.ts";
 import { generate } from "./generate.ts";
+import { generateGeographyTxt } from "./geography.ts";
 import type { Mission } from "./types.ts";
 
 export interface SyncResult {
@@ -17,12 +19,11 @@ export async function syncMissions(
 ): Promise<SyncResult> {
   const result: SyncResult = { stale: [], written: [] };
   const missionsDir = join(root, "missions");
-  for await (const entry of Deno.readDir(missionsDir)) {
-    if (!entry.isFile || !entry.name.endsWith(".states.ts")) continue;
-    const stem = basename(entry.name, ".states.ts");
-    const table = join(missionsDir, entry.name);
-    const mission = (await import(toFileUrl(table).href)).default as Mission;
-    const text = generate(mission, `missions/${entry.name}`);
+  for (const { stem, source } of await listMissions(missionsDir)) {
+    const loaded = await loadMission(missionsDir, stem);
+    if (!loaded) continue;
+    const text = generate(loaded.mission, `missions/${stem}.${source}`);
+
     const output = join(missionsDir, `${stem}.txt`);
     let current = "";
     try {
@@ -38,5 +39,23 @@ export async function syncMissions(
       result.stale.push(`missions/${stem}.txt`);
     }
   }
+  // Sync utils/geography.txt from data/geography.json
+  const geoOutput = join(root, "utils", "geography.txt");
+  const geoText = generateGeographyTxt();
+  let currentGeo = "";
+  try {
+    currentGeo = await Deno.readTextFile(geoOutput);
+  } catch {
+    // Not present
+  }
+  if (currentGeo !== geoText) {
+    if (write) {
+      await Deno.writeTextFile(geoOutput, geoText);
+      result.written.push("utils/geography.txt");
+    } else {
+      result.stale.push("utils/geography.txt");
+    }
+  }
+
   return result;
 }

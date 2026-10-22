@@ -10,7 +10,12 @@ export type FieldType =
   | "handle"
   | "name"
   | "choice"
-  | "latch";
+  | "latch"
+  | "spot"
+  | "toggle";
+
+/** The radius a "Player is near" card starts with, and the one an emptied radius field falls back to. */
+export const DEFAULT_RADIUS = "3.0";
 
 export interface Field {
   name: string;
@@ -21,6 +26,40 @@ export interface Field {
   /** What the editor shows for an option whose Sanny value reads poorly; the value itself is unchanged. */
   labels?: Record<string, string>;
   default?: string;
+  /** What an empty input shows. An emptied `expr` field takes this value. */
+  placeholder?: string;
+  /**
+   * The Sanny type an `expr` field's number must have. Sanny reads an int literal or constant in a float
+   * parameter as about zero, so `problems` rejects the mismatch.
+   */
+  numeric?: "int" | "float";
+  /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`; see `ENUMS` in `sprites.ts`. */
+  enum?: string;
+  /** The declared type a `handle` field's variable has in variables.txt, e.g. `Blip`; the editor offers only those. */
+  varType?: string;
+}
+
+/** The regular expression source a value of each field type must match entirely; `choice` takes its options. */
+export const FIELD_PATTERNS: Record<Exclude<FieldType, "choice">, string> = {
+  text: '[^"\\n]*',
+  number: "\\d+",
+  expr: "-?\\d+(?:\\.\\d+)?|[A-Za-z_$][\\w$]*",
+  handle: "\\$\\w+",
+  name: "\\w+",
+  latch: "[A-Z]\\w*",
+  // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
+  spot: "[A-Z][A-Z0-9_]*",
+  toggle: "true|false",
+};
+
+const escapeRegex = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** The regular expression source a value of `field` must match entirely. */
+export function fieldPattern(field: Field): string {
+  return field.type === "choice"
+    ? (field.options ?? []).map(escapeRegex).join("|")
+    : FIELD_PATTERNS[field.type];
 }
 
 export interface Descriptor {
@@ -34,6 +73,11 @@ export interface Descriptor {
 
 export interface StepDescriptor extends Descriptor {
   group: "Text" | "Camera" | "Map" | "Result" | "Player";
+  /**
+   * Gives the card a "Shown" checkbox, checked when `on`. Flipping it turns the card into its `partner`, so the
+   * card's title and Sanny follow the checkbox: "Add Blip" when shown, "Remove Blip" when not.
+   */
+  shown?: { on: boolean; partner: string };
 }
 
 export interface CondDescriptor extends Descriptor {
@@ -50,11 +94,23 @@ const ms: Field = {
   default: "3000",
 };
 const text: Field = { name: "text", label: "Text", type: "text", default: "" };
-const spot = (): Field[] => [
-  { name: "x", label: "X", type: "expr", default: "0" },
-  { name: "y", label: "Y", type: "expr", default: "0" },
-  { name: "z", label: "Z", type: "expr", default: "0" },
-];
+// A `spot` field holds a POI id from data/geography.json. Its lines read the consts the generated
+// utils/geography.txt declares for it: `{spot}_X`, `{spot}_Y`, `{spot}_Z`, and where a POI has them `_HEADING`
+// and `_RADIUS`.
+const spot: Field = {
+  name: "spot",
+  label: "Spot",
+  type: "spot",
+  default: "SAFEHOUSE",
+};
+
+const blipHandle: Field = {
+  name: "handle",
+  label: "Blip Variable",
+  type: "handle",
+  default: "$Blip",
+  varType: "Blip",
+};
 
 export const stepDescriptors: StepDescriptor[] = [
   {
@@ -100,21 +156,31 @@ export const stepDescriptors: StepDescriptor[] = [
     fields: [],
   },
   {
-    name: "blipAt",
-    label: "Add Map Blip",
+    name: "blipRemove",
+    label: "Remove Blip",
     group: "Map",
+    shown: { on: false, partner: "blipAt" },
+    lines: ["Blip.Remove({handle})"],
+    fields: [blipHandle],
+  },
+  {
+    name: "blipAt",
+    label: "Add Blip",
+    group: "Map",
+    shown: { on: true, partner: "blipRemove" },
     lines: [
-      "{handle} = Blip.AddSpriteForCoord({x}, {y}, {z}, RadarSprite.{sprite})",
+      "{handle} = Blip.AddSpriteForCoord({spot}_X, {spot}_Y, {spot}_Z, RadarSprite.{sprite})",
     ],
     fields: [
+      blipHandle,
+      spot,
       {
-        name: "handle",
-        label: "Blip Variable",
-        type: "handle",
-        default: "$Blip",
+        name: "sprite",
+        label: "Map Icon",
+        type: "name",
+        default: "Savehouse",
+        enum: "RadarSprite",
       },
-      ...spot(),
-      { name: "sprite", label: "Map Icon", type: "name", default: "Savehouse" },
     ],
   },
   {
@@ -122,11 +188,14 @@ export const stepDescriptors: StepDescriptor[] = [
     label: "Camera looks at player",
     group: "Camera",
     lines: [
-      "Camera.SetFixedPosition({x}, {y}, {z}, 0, 0, 0)",
+      "Camera.SetFixedPosition({spot}_X, {spot}_Y, {spot}_Z, 0, 0, 0)",
       "Camera.SetInterpolationParameters(0, {ms})",
       "Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)",
     ],
-    fields: [...spot(), { ...ms, default: "1000" }],
+    fields: [{ ...spot, default: "PAYPHONE_CALL_CAM" }, {
+      ...ms,
+      default: "1000",
+    }],
   },
   {
     name: "restoreJumpcut",
@@ -190,6 +259,7 @@ export const stepDescriptors: StepDescriptor[] = [
       label: "Amount",
       type: "expr",
       default: "REWARD",
+      numeric: "int",
     }],
   },
   {
@@ -204,6 +274,7 @@ export const stepDescriptors: StepDescriptor[] = [
       label: "Amount",
       type: "expr",
       default: "REWARD",
+      numeric: "int",
     }],
   },
   {
@@ -226,7 +297,25 @@ const radius: Field = {
   name: "radius",
   label: "Radius",
   type: "expr",
-  default: "2.0",
+  default: DEFAULT_RADIUS,
+  placeholder: DEFAULT_RADIUS,
+  numeric: "float",
+};
+
+// The last argument of every Locate command: whether the game draws the zone as a sphere.
+const sphere = (on: boolean): Field => ({
+  name: "sphere",
+  label: "Show Sphere",
+  type: "toggle",
+  default: String(on),
+});
+
+const carField: Field = {
+  name: "car",
+  label: "Car",
+  type: "expr",
+  default: "$myCar",
+  varType: "Car",
 };
 
 export const condDescriptors: CondDescriptor[] = [
@@ -263,12 +352,9 @@ export const condDescriptors: CondDescriptor[] = [
     label: "Player is near (3D)",
     group: "Position",
     lines: [
-      "Player.LocateAnyMeans3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
+      "Player.LocateAnyMeans3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
-    fields: [
-      ...spot(),
-      { name: "radius", label: "Radius", type: "expr", default: "2.0" },
-    ],
+    fields: [spot, radius, sphere(true)],
   },
   {
     name: "healthBelow",
@@ -289,43 +375,43 @@ export const condDescriptors: CondDescriptor[] = [
     label: "Player is near (2D)",
     group: "Position",
     lines: [
-      "Player.LocateAnyMeans2D($player, {x}, {y}, {radius}, {radius}, false)",
+      "Player.LocateAnyMeans2D($player, {spot}_X, {spot}_Y, {radius}, {radius}, {sphere})",
     ],
-    fields: [...spot().slice(0, 2), radius],
+    fields: [spot, radius, sphere(false)],
   },
   {
     name: "playerOnFootNear3D",
     label: "Player is on foot near (3D)",
     group: "Position",
     lines: [
-      "Player.LocateOnFoot3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
+      "Player.LocateOnFoot3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
-    fields: [...spot(), radius],
+    fields: [spot, radius, sphere(true)],
   },
   {
     name: "playerOnFootNear2D",
     label: "Player is on foot near (2D)",
     group: "Position",
     lines: [
-      "Player.LocateOnFoot2D($player, {x}, {y}, {radius}, {radius}, false)",
+      "Player.LocateOnFoot2D($player, {spot}_X, {spot}_Y, {radius}, {radius}, {sphere})",
     ],
-    fields: [...spot().slice(0, 2), radius],
+    fields: [spot, radius, sphere(false)],
   },
   {
     name: "playerStoppedNear3D",
     label: "Player has stopped on foot near",
     group: "Position",
     lines: [
-      "Player.LocateStoppedOnFoot3D($player, {x}, {y}, {z}, {radius}, {radius}, {radius}, true)",
+      "Player.LocateStoppedOnFoot3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
-    fields: [...spot(), radius],
+    fields: [spot, radius, sphere(true)],
   },
   {
     name: "playerInThisCar",
     label: "Player is in a given car",
     group: "Player",
     lines: ["Player.IsInCar($player, {car})"],
-    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+    fields: [carField],
   },
   {
     name: "playerLiftingPhone",
@@ -353,14 +439,14 @@ export const condDescriptors: CondDescriptor[] = [
     label: "Car is upside down",
     group: "Vehicles",
     lines: ["Car.IsUpsidedown({car})"],
-    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+    fields: [carField],
   },
   {
     name: "carInWater",
     label: "Car is in water",
     group: "Vehicles",
     lines: ["Car.IsInWater({car})"],
-    fields: [{ name: "car", label: "Car", type: "expr", default: "$myCar" }],
+    fields: [carField],
   },
   {
     name: "pickupCollected",
@@ -372,6 +458,7 @@ export const condDescriptors: CondDescriptor[] = [
       label: "Pickup",
       type: "expr",
       default: "$pickup",
+      varType: "Pickup",
     }],
   },
   {
@@ -384,6 +471,7 @@ export const condDescriptors: CondDescriptor[] = [
       label: "Character",
       type: "expr",
       default: "$char",
+      varType: "Char",
     }],
   },
   {
@@ -398,7 +486,13 @@ export const condDescriptors: CondDescriptor[] = [
     label: "Model is loaded",
     group: "World",
     lines: ["Streaming.IsModelLoaded({model})"],
-    fields: [{ name: "model", label: "Model", type: "expr", default: "0" }],
+    fields: [{
+      name: "model",
+      label: "Model",
+      type: "expr",
+      default: "0",
+      numeric: "int",
+    }],
   },
   {
     name: "latchSet",

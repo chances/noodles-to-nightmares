@@ -46,6 +46,12 @@
     "hide": "on_success",
   },
   {
+    "label": "Serve Mission Editor",
+    "command": "deno",
+    "args": ["task", "editor:serve"],
+    "hide": "on_success",
+  },
+  {
     "label": "Format Documentation",
     "command": "deno",
     "args": ["fmt", "./**/*.md"],

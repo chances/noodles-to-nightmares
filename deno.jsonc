@@ -3,6 +3,7 @@
   "tasks": {
     "clean": "deno run --allow-read --allow-write scripts/clean.ts",
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
+    "build:missions": "deno run --allow-read --allow-write scripts/sync-missions.ts",
     "install": "deno task build && deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install.ts",
     "run": "deno task install && deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts",
     "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts",

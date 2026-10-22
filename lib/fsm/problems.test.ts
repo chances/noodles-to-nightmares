@@ -32,6 +32,26 @@ Deno.test("a wait without a next state is an error on that state", () => {
   });
 });
 
+Deno.test("a latch no monitor makes is an error on the state that reads it", () => {
+  const broken = {
+    ...ok,
+    states: {
+      ...ok.states,
+      A: { until: [cond.latchClear("driveHint")], next: "WIN" },
+    },
+  };
+  assertEquals(problems(broken)[0], {
+    severity: "error",
+    message: "latchDriveHint is read or set, but no monitor makes it",
+    state: "A",
+  });
+  const fixed = {
+    ...broken,
+    monitors: [{ id: "driveHint", when: [cond.playerDead()], once: [] }],
+  };
+  assertEquals(problems(fixed), []);
+});
+
 Deno.test("empty conditions and steps are errors", () => {
   const broken = {
     ...ok,

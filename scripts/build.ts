@@ -320,6 +320,16 @@ try {
     } catch {
       // Ignored
     }
+    // Remove obsolete loose CLEO scripts from the zip; the modloader copies are the ones that run
+    try {
+      for await (const entry of Deno.readDir(join(stagingDir, "CLEO"))) {
+        if (entry.isFile && extname(entry.name) === ".cs") {
+          await Deno.remove(join(stagingDir, "CLEO", entry.name));
+        }
+      }
+    } catch {
+      // Ignored if the zip has no CLEO folder
+    }
     // Remove obsolete loose root models directory if present in zip
     try {
       await Deno.remove(join(stagingDir, "models"), { recursive: true });
@@ -370,6 +380,22 @@ if (shouldRun(2, "missions")) {
     await Deno.copyFile(outputPath, join(cleoStagingDir, `${missionName}.cm`));
   }
   say.done("  Packaged modloader/Noodles/cleo/*.cm");
+
+  const cleoCustomDir = join(cwd, "cleo");
+  try {
+    for await (const entry of Deno.readDir(cleoCustomDir)) {
+      if (!entry.isFile || extname(entry.name) !== ".txt") continue;
+      const scriptName = basename(entry.name, ".txt");
+      const inputPath = join(cleoCustomDir, entry.name);
+      const outputPath = join(cleoCustomDir, `${scriptName}.cs`);
+      say.info(`  [CLEO Script] ${scriptName}`);
+      await compileIfChanged(inputPath, outputPath);
+      await Deno.copyFile(outputPath, join(cleoStagingDir, `${scriptName}.cs`));
+    }
+    say.done("  Packaged CLEO scripts (*.cs)");
+  } catch {
+    // Optional cleo dir
+  }
 }
 
 // Step 3: Models (Compiles manifested models from Blender via export-blend-models.py and packages overrides)

@@ -11,6 +11,9 @@ const PATTERNS = {
   handle: "\\$\\w+",
   name: "\\w+",
   latch: "[A-Z]\\w*",
+  // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
+  spot: "[A-Z][A-Z0-9_]*",
+  toggle: "true|false",
 };
 
 const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -44,6 +47,7 @@ const FORMATS = {
   expr: (text) => text.replace(/[^A-Za-z0-9_$.-]/g, ""),
   handle: (text) => "$" + text.replace(/[^\w]/g, ""),
   name: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
+  spot: (text) => text.toUpperCase().replace(/[^A-Z0-9_]/g, ""),
 };
 
 /** `text` rewritten into the format of `field`; selects and latches hold only their own options. */
@@ -82,16 +86,134 @@ const fromSanny = (field, value) =>
     ? value.charAt(0).toLowerCase() + value.slice(1)
     : value;
 
-/** A descriptor's field values at their defaults. */
-export function defaults(descriptor, monitorIds = []) {
-  return Object.fromEntries(
-    descriptor.fields.map((
-      f,
-    ) => [
-      f.name,
-      f.type === "latch" ? monitorIds[0] ?? "monitor" : f.default ?? "",
-    ]),
+/**
+ * The typeahead options for a field: `{ value, meta, search }`, where `search` is the text a typed query is
+ * matched against. Spots match on id, group, category, district, and tags.
+ */
+export function spotOptions(spots) {
+  return spots.map((s) => ({
+    value: s.id,
+    meta: [s.group, s.category].filter(Boolean).join(" · "),
+    search: [s.id, s.group, s.category, s.district, ...(s.tags ?? [])]
+      .filter(Boolean).join(" "),
+  }));
+}
+
+/**
+ * The values a card with a "Shown" checkbox takes when the box is flipped: its partner descriptor, with the
+ * fields both share carried over. `remembered` holds every value the card has had, so flipping back restores
+ * what the other form could not hold (a removed blip has no spot). Returns `{ descriptor, values, remembered }`.
+ */
+export function flipShown(steps, descriptor, values, remembered, context) {
+  const partner = steps.find((d) => d.name === descriptor.shown.partner);
+  const kept = { ...remembered, ...values };
+  const fresh = defaults(
+    partner,
+    context.monitorIds,
+    context.spotIds,
+    context.globals,
   );
+  return {
+    descriptor: partner,
+    values: Object.fromEntries(
+      partner.fields.map((f) => [f.name, kept[f.name] ?? fresh[f.name]]),
+    ),
+    remembered: kept,
+  };
+}
+
+/** The members of a Sanny enum as options, with each member's numeric id as its meta. */
+export function enumOptions(members) {
+  return members.map((m) => ({
+    value: m.name,
+    meta: `id ${m.id}`,
+    search: `${m.name} ${m.id}`,
+  }));
+}
+
+/** The constants a field with this `numeric` type can take: only those written as that type. */
+export function constantOptions(constants, numeric) {
+  return constants
+    .filter((c) => !numeric || c.kind === numeric)
+    .map((c) => ({
+      value: c.name,
+      meta: [c.kind ?? "expression", c.value, c.comment, c.source].filter(
+        Boolean,
+      ).join(" · "),
+      search: [c.name, c.value, c.comment, c.source].filter(Boolean).join(" "),
+    }));
+}
+
+/** The global variables a field can take, only those declared as `varType` when the field names one. */
+export function globalOptions(globals, varType) {
+  return globals
+    .filter((g) => !varType || g.type === varType)
+    .map((g) => ({
+      value: g.name,
+      meta: g.type ?? "",
+      search: [g.name, g.type].filter(Boolean).join(" "),
+    }));
+}
+
+/**
+ * What a typeahead shows once it loses focus or is dismissed: the list closed, the typed query gone, and the field
+ * back on the value last committed, so an unfinished or rejected entry never lingers.
+ */
+export function closedCombo(committed) {
+  return { open: false, typed: null, draft: committed };
+}
+
+/** The options whose `search` text holds every word of `query`, in their given order. */
+export function filterOptions(options, query) {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return options.filter((o) =>
+    words.every((w) => (o.search ?? o.value).toLowerCase().includes(w))
+  );
+}
+
+/**
+ * What is wrong with a number typed into a `numeric` field, or "": an int where a float belongs and the other
+ * way round. A name is looked up in `constants`. Mirrors `numberMismatches` in lib/fsm/numeric.ts.
+ */
+export function numberProblem(field, text, constants = []) {
+  if (!field.numeric) return "";
+  const literal = /^-?\d+$/.test(text)
+    ? "int"
+    : /^-?\d+\.\d+$/.test(text)
+    ? "float"
+    : undefined;
+  const found = literal ?? constants.find((c) => c.name === text)?.kind;
+  if (!found || found === field.numeric) return "";
+  const noun = found === "int" ? "an int" : "a float";
+  if (field.numeric === "int") return `${text} is ${noun}; use a whole number.`;
+  return literal
+    ? `${text} is ${noun}; write ${text}.0.`
+    : `${text} is ${noun} constant; declare it with a decimal point.`;
+}
+
+/**
+ * A descriptor's field values at their defaults. A latch field starts on the first monitor and a spot field on its
+ * default spot when the catalog has it, else on the catalog's first spot.
+ */
+export function defaults(
+  descriptor,
+  monitorIds = [],
+  spotIds = [],
+  globals = [],
+) {
+  const initial = (f) => {
+    if (f.type === "latch") return monitorIds[0] ?? "monitor";
+    // A variable field starts on a variable the project declares, since a made-up name has no slot.
+    if (f.varType) {
+      const declared = globals.find((g) => g.type === f.varType);
+      if (declared) return declared.name;
+    }
+    if (f.type === "spot" && spotIds.length > 0) {
+      return spotIds.includes(f.default) ? f.default : spotIds[0];
+    }
+    return f.default ?? "";
+  };
+  return Object.fromEntries(descriptor.fields.map((f) => [f.name, initial(f)]));
 }
 
 /** The descriptor's Sanny lines with `values` filled in. */
