@@ -3,6 +3,7 @@
 
 import { html, useRef, useState } from "/vendor/preact.js";
 import { nameError } from "./document.js";
+import { stateKindIcon } from "./icons.js";
 import { FINISH } from "./mission-ops.js";
 import { KINDS } from "./sections.js";
 import { formatName, reformat } from "./templates.js";
@@ -58,9 +59,12 @@ export function AddStateDialog({ mission, selected, onCreate, onClose }) {
           ${error && html`<small class="error" role="alert">${error}</small>`}
         </label>
         <label class="mini"><span>Kind</span>
-          <select value=${kind} onChange=${(e) => setKind(e.currentTarget.value)}>
-            ${KINDS.map(([id, label]) => html`<option key=${id} value=${id}>${label}</option>`)}
-          </select>
+          <div class="kind-select-wrapper">
+            <span class="kind-icon" title=${kind}>${stateKindIcon(kind)}</span>
+            <select value=${kind} onChange=${(e) => setKind(e.currentTarget.value)}>
+              ${KINDS.map(([id, label]) => html`<option key=${id} value=${id}>${label}</option>`)}
+            </select>
+          </div>
         </label>
         <div class="flow-row">
           <label class="mini"><span>Comes After</span>

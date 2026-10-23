@@ -5,6 +5,7 @@ import { html, useContext, useEffect, useRef, useState } from "/vendor/preact.js
 import { Plus } from "./add-state.js";
 import { deleteState, inboundTo, nameError, renameState } from "./document.js";
 import { renameMonitor } from "./refactor.js";
+import { stateKindIcon } from "./icons.js";
 import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS, takeOpened } from "./sections.js";
 import { missionLabel } from "./mission-label.js";
 import { formatName, formatNumber, reformat } from "./templates.js";
@@ -127,7 +128,10 @@ export function InspectorTitle({ doc, selected, edit, onSelect }) {
     ${renaming
       ? html`<${RenameField} id=${selected} mission=${doc.mission} onCommit=${rename} onCancel=${() => setRenaming(false)} />`
       : html`
-        <h3 class="state-name">${selected}</h3>
+        <h3 class="state-name">
+          <span class="state-icon" title=${kindOf(state)}>${stateKindIcon(kindOf(state))}</span>
+          ${selected}
+        </h3>
         ${roles(doc, selected).map((role) => html`<span class="chip" key=${role} data-role=${roleKey(role)}>${role}</span>`)}
         <button class="icon" aria-label=${`Rename state ${selected}`} title="Rename State" onClick=${() => setRenaming(true)}><${Pencil} /></button>`}
     <span class="title-tools">

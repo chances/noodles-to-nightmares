@@ -2,6 +2,8 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html } from "/vendor/preact.js";
+import { stateKindIcon } from "./icons.js";
+import { kindOf } from "./sections.js";
 
 /** The roles a state plays, as chip labels. Shared by the list and the graph. */
 export function roles(doc, id) {
@@ -31,6 +33,7 @@ export function StatesPane({ doc, selected, onSelect }) {
             title=${`Select ${id}`}
             onClick=${() => onSelect(id)}
           >
+            <span class="row-icon" title=${kindOf(doc.mission.states[id])}>${stateKindIcon(kindOf(doc.mission.states[id]))}</span>
             <span class="row-name">${id}</span>
             ${roles(doc, id).map((role) => html`<span class="chip" key=${role} data-role=${roleKey(role)}>${role}</span>`)}
           </button>

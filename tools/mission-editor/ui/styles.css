@@ -292,6 +292,10 @@ h3 {
   }
 }
 
+.pane:has(.state-list) .pane-body {
+  padding-inline: 4px;
+}
+
 .state-list {
   display: flex;
   flex-direction: column;
@@ -303,9 +307,10 @@ h3 {
 button.row {
   display: flex;
   align-items: center;
-  gap: var(--gap);
+  gap: 6px;
   inline-size: 100%;
   padding-block: 4px;
+  padding-inline: 6px;
   border-color: transparent;
   color: var(--text);
   text-align: start;
@@ -319,6 +324,21 @@ button.row:hover {
 button.row[aria-pressed="true"] {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  color: var(--muted);
+}
+
+button.row:hover .row-icon,
+button.row[aria-pressed="true"] .row-icon {
+  color: var(--text);
 }
 
 .row-name {
@@ -361,8 +381,19 @@ button.row[aria-pressed="true"] {
 }
 
 .state-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 16px;
   overflow-wrap: anywhere;
+}
+
+.state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  flex: none;
 }
 
 .detail {
@@ -659,6 +690,17 @@ button.link:hover {
 .node:focus-visible .box {
   stroke: var(--accent);
   stroke-width: 3;
+}
+
+.node-icon {
+  stroke: var(--muted);
+  fill: none;
+  transition: stroke 160ms;
+}
+
+.node:hover .node-icon,
+.node[aria-pressed="true"] .node-icon {
+  stroke: var(--text);
 }
 
 .node-id {
@@ -1264,8 +1306,29 @@ small.error {
   margin-inline-start: auto;
 }
 
+.mini.kind {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
 .mini.kind select {
   inline-size: auto;
+}
+
+.kind-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kind-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  flex: none;
 }
 
 .check {

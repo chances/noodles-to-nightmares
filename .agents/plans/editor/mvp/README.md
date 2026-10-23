@@ -49,7 +49,7 @@
 - **Accessibility:** WCAG 2.1 AA for text contrast, keyboard use, and touch target size. Buttons and headings use Title Case.
 - **Data safety:** Autosave, undo, and redo keep working. Dangling transitions cannot be saved.
 - **Compatibility:** A `.states.ts` mission still builds until its `.fsm.json` replaces it.
-- **Platform:** Desktop app built with `deno desktop` on Windows. The same code runs in a browser tab for development.
+- **Platform:** Desktop app built with `deno desktop` on Windows. The same code runs in a browser tab for development. Supported devices are desktops and tablets.
 - **Packaging:** The build must complete on a machine with the drive space the build needs.
 
 ## Success Metrics
@@ -63,6 +63,7 @@
 - Multi-track beats (the actor-by-beat grid in [multi-track-beats.md](../../../../.agents/plans/multi-track-beats.md)).
 - Collaboration: sharing, locking, or merging missions between authors.
 - New monitor types. Existing failure-mode and monitor editing stays as it is.
+- Phone-sized layouts. Supported devices are desktops and tablets.
 
 ## Business Value
 

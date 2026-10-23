@@ -2,6 +2,8 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, useEffect, useLayoutEffect, useRef, useState } from "/vendor/preact.js";
+import { stateKindIcon } from "./icons.js";
+import { kindOf } from "./sections.js";
 import { roleKey, roles } from "./states-pane.js";
 
 const PADDING = 24;
@@ -167,7 +169,10 @@ export function GraphPane({ doc, edges, node, selected, onSelect }) {
           <title>${edge.kind === "on" ? `${edge.from} goes to ${edge.to} when a rule holds` : `${edge.from} goes to ${edge.to}`}</title>
         </path>
       `)}
-      ${ids.map((id) => html`
+      ${ids.map((id) => {
+        const state = doc.mission.states[id];
+        const kind = kindOf(state);
+        return html`
         <g
           key=${id}
           class="node"
@@ -182,10 +187,12 @@ export function GraphPane({ doc, edges, node, selected, onSelect }) {
           <title>${`Select ${id}`}</title>
           <rect class="box" width=${node.width} height=${node.height} rx="6" />
           <rect class="role-bar" width="4" height=${node.height - 12} x="0" y="6" />
-          <text class="node-id" x="12" y="24">${id}</text>
+          ${kind && stateKindIcon(kind, { x: 12, y: 13, size: 14, class: "node-icon" })}
+          <text class="node-id" x=${kind ? 32 : 12} y="24">${id}</text>
           <text class="node-sub" x="12" y="42">${subtitle(doc, id)}</text>
         </g>
-      `)}
+      `;
+      })}
     </svg>
     </div>
   `;
