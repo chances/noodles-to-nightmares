@@ -1586,8 +1586,14 @@ button.run-in-game:hover:not(:disabled) {
   color: var(--text);
 }
 @keyframes slideUp {
-  from { transform: translateY(16px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Assets Pane & Spots */

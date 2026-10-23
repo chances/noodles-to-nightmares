@@ -45,6 +45,11 @@ const mission = v.object({
       v.union([v.number(), v.tuple([v.number(), v.string()])]),
     ),
   ),
+  locals: v.optional(v.array(v.object({
+    name: v.string(),
+    type: v.string(),
+    value: v.optional(v.union([v.string(), v.number()])),
+  }))),
   includes: v.optional(lines),
   start: v.string(),
   onFail: v.string(),

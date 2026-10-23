@@ -38,6 +38,7 @@ export type {
   Beat,
   Cond,
   Const,
+  Local,
   Mission,
   Monitor,
   State,

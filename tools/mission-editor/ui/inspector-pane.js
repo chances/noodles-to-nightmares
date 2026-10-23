@@ -185,10 +185,10 @@ function SectionBody({ id, state, states, change }) {
     case "onEnter": return html`<${StepList} steps=${state.onEnter ?? []} emptyText="Nothing runs on entry." onChange=${(v) => change("Enter Steps", (s) => { s.onEnter = v; })} />`;
     case "onExit": return html`<${StepList} steps=${state.onExit ?? []} emptyText="Nothing runs on exit." onChange=${(v) => change("Exit Steps", (s) => { s.onExit = v; })} />`;
     case "until": return html`
-      <p class="hint">After the beats, wait until all of these hold, then go to Next.</p>
+      <p class="hint">After the story beats, wait until all of these hold, then go to Next.</p>
       <${CondList} conds=${state.until ?? []} emptyText="Add a condition to hold this state until it is true." onChange=${(v) => change("Wait Until", (s) => { s.until = v; })} />`;
     case "branches": return html`
-      <p class="hint">After the beats, the first branch whose conditions hold picks the next state.</p>
+      <p class="hint">After the story beats, the first branch whose conditions hold picks the next state.</p>
       <${BranchesForm} rules=${state.on ?? []} states=${states} onChange=${(v) => change("Branches", (s) => { s.on = v; })} />`;
     case "latches": return html`<p>Every monitor can fire again after this state is entered.</p>`;
     case "notes": return html`<textarea rows=${Math.max(2, (state.notes ?? []).length)} aria-label="Notes" value=${(state.notes ?? []).join("\n")}
@@ -351,9 +351,9 @@ function MissionForm({ doc, edit }) {
         ${constError && html`<small class="error">${constError}</small>`}
       <//>
 
-      <${Section} heading="Fail Conditions">
+      <${Section} heading="Failure Conditions">
         <p class="hint">Any one of these sends the mission to ${mission.onFail}, in every state that checks.</p>
-        <${CondList} conds=${mission.fail} emptyText="No fail conditions, so this mission cannot fail." onChange=${(v) => change("Fail Conditions", (m) => { m.fail = v; })} />
+        <${CondList} conds=${mission.fail} emptyText="No failure conditions exist, so this mission cannot fail." onChange=${(v) => change("Fail Conditions", (m) => { m.fail = v; })} />
       <//>
 
       <${Section} heading="Monitors"

@@ -48,7 +48,7 @@ function details(beat) {
 export function TimelineSummary({ doc, selected }) {
   const beats = doc.mission.states[selected].beats ?? [];
   const total = beats.reduce((sum, beat) => sum + (beat.wait ?? 0), 0);
-  return html`<strong>${selected}</strong><span class="hint"> · ${beats.length} ${beats.length === 1 ? "Beat" : "Beats"} · ${seconds(total)}</span>`;
+  return html`<strong>${selected}</strong><span class="hint"> · ${beats.length} Story ${beats.length === 1 ? "Beat" : "Beats"} · ${seconds(total)}</span>`;
 }
 
 /**
@@ -61,7 +61,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
   }
   const beats = doc.mission.states[selected].beats ?? [];
   if (!beats.length) {
-    return html`<${Status} heading="No Beats">${selected} has no beats. Add one with + on the Beat pane.<//>`;
+    return html`<${Status} heading="No Story Beats">${selected} has no story beats. Add one with + on the Beat pane.<//>`;
   }
 
   const x = (ms) => PAD + (ms / 1000) * PX_PER_SECOND;
@@ -92,7 +92,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
       </div>
       <div role="row">
         <div class="tl-name" role="rowheader">
-          <strong>Beats</strong>
+          <strong>Story Beats</strong>
           <span>${beats.length} · ${seconds(start)}</span>
         </div>
         <div class="tl-track" role="cell">

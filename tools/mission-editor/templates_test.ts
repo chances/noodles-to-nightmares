@@ -69,6 +69,16 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ["passBanner", { amount: "REWARD" }, step.passBanner("REWARD")],
     ["failBanner", {}, step.failBanner()],
     ["rememberPlayerCar", {}, step.rememberPlayerCar()],
+    ["playerControl", { on: "false" }, step.playerControl(false)],
+    ["cutsceneFlag", { on: "true" }, step.cutsceneFlag(true)],
+    ["requestModel", { model: "827" }, step.requestModel(827)],
+    ["loadModels", {}, step.loadModels()],
+    ["startTimer", {}, step.startTimer()],
+    [
+      "soundAt",
+      { spot: "PAYPHONE", sound: "SoundPayphoneRinging" },
+      step.soundAt("PAYPHONE", "SoundPayphoneRinging"),
+    ],
   ];
   assertEquals(cases.map(([name]) => name), stepDescriptors.map((d) => d.name));
   for (const [name, values, expected] of cases) {
@@ -125,6 +135,13 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
     ["charSpottedPlayer", { char: "sal" }, cond.charSpottedPlayer("sal")],
     ["saveFinished", {}, cond.saveFinished()],
     ["modelLoaded", { model: "827" }, cond.modelLoaded(827)],
+    ["timeLimit", { minutes: "120" }, cond.timeLimit(120)],
+    ["wantedAbove", { max: "1" }, cond.wantedAbove(1)],
+    [
+      "carHealthBelow",
+      { car: "$myCar", amount: "250" },
+      cond.carHealthBelow("$myCar", 250),
+    ],
     ["latchSet", { id: "driveHint" }, cond.latchSet("driveHint")],
     ["latchClear", { id: "driveHint" }, cond.latchClear("driveHint")],
   ];

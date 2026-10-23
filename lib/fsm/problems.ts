@@ -230,6 +230,46 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     }
   }
 
+  const localNames = new Set<string>();
+  for (const local of mission.locals ?? []) {
+    if (!NAME.test(local.name)) {
+      error(`Local "${local.name}" needs a name that starts with a letter`);
+    } else if (localNames.has(local.name)) {
+      error(`Two locals are named ${local.name}`);
+    }
+    localNames.add(local.name);
+  }
+  // CLEO gives a script 16 locals: `state`, `beat`, a latch per monitor, the declared locals, and scratch locals
+  const scratch = new Set<string>();
+  for (
+    const list of [
+      mission.fail,
+      ...(mission.monitors ?? []).map((m) => m.when),
+    ]
+  ) {
+    for (const c of list) {
+      for (const local of c.locals ?? []) scratch.add(local);
+    }
+  }
+  for (const [, state] of states) {
+    for (
+      const list of [
+        state.until,
+        ...(state.on ?? []).map((r) => r.when),
+        ...(state.beats ?? []).map((b) => b.when),
+      ]
+    ) {
+      for (const c of list ?? []) {
+        for (const local of c.locals ?? []) scratch.add(local);
+      }
+    }
+  }
+  const localCount = 2 + latches.size + (mission.locals?.length ?? 0) +
+    scratch.size;
+  if (localCount > 16) {
+    error(`The mission needs ${localCount} locals, but a CLEO script has 16`);
+  }
+
   const inbound = new Set(transitions(mission).map((edge) => edge.to));
   for (const [id, state] of states) {
     if (state.until && !state.next) {

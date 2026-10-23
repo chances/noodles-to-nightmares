@@ -65,7 +65,7 @@ export function BeatPane({ doc, selected, index, edit }) {
   }
   const beats = beatsOf(doc, selected);
   if (index < 0) {
-    return html`<${Status} heading="No Beats">${selected} has no beats. Add one with +.<//>`;
+    return html`<${Status} heading="No Story Beats">${selected} has no story beats. Add one with +.<//>`;
   }
   const beat = beats[index];
   const change = (label, fn, key) => edit(label, (d) => fn(d.mission.states[selected].beats[index]), key ? { key: `${selected}:beat${index}:${key}` } : {});

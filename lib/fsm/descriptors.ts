@@ -21,6 +21,9 @@ export interface Field {
   name: string;
   label: string;
   type: FieldType;
+  /** The bounds of a `number` field; the editor shows an `input[type=number]` with these `min` and `max` attributes. */
+  min?: number;
+  max?: number;
   /** The allowed values of a `choice`. */
   options?: string[];
   /** What the editor shows for an option whose Sanny value reads poorly; the value itself is unchanged. */
@@ -72,7 +75,7 @@ export interface Descriptor {
 }
 
 export interface StepDescriptor extends Descriptor {
-  group: "Text" | "Camera" | "Map" | "Result" | "Player";
+  group: "Text" | "Camera" | "Map" | "Result" | "Player" | "World";
   /**
    * Gives the card a "Shown" checkbox, checked when `on`. Flipping it turns the card into its `partner`, so the
    * card's title and Sanny follow the checkbox: "Add Blip" when shown, "Remove Blip" when not.
@@ -82,7 +85,7 @@ export interface StepDescriptor extends Descriptor {
 
 export interface CondDescriptor extends Descriptor {
   group: "Player" | "Position" | "Input" | "Vehicles" | "World" | "Monitors";
-  /** Lines that run before the `if`; `lines` holds the test. */
+  /** Lines that run before the `if`; `lines` holds the test. `pre` lines may use `{field}` slots like `lines`. */
   pre?: string[];
   locals?: string[];
 }
@@ -291,6 +294,71 @@ export const stepDescriptors: StepDescriptor[] = [
     lines: ["Player.StoreCarIsIn($player, $myCar)"],
     fields: [],
   },
+  {
+    name: "playerControl",
+    label: "Player Control",
+    group: "Player",
+    lines: ["Player.SetControl($player, {on})"],
+    fields: [{
+      name: "on",
+      label: "Player Can Move",
+      type: "toggle",
+      default: "true",
+    }],
+  },
+  {
+    name: "cutsceneFlag",
+    label: "Cutscene Flag",
+    group: "Player",
+    lines: ["$onCutscene = {on}"],
+    fields: [{
+      name: "on",
+      label: "In Cutscene",
+      type: "toggle",
+      default: "true",
+    }],
+  },
+  {
+    name: "requestModel",
+    label: "Request Model",
+    group: "World",
+    lines: ["Streaming.RequestModel({model})"],
+    fields: [{
+      name: "model",
+      label: "Model",
+      type: "expr",
+      default: "0",
+      numeric: "int",
+    }],
+  },
+  {
+    name: "loadModels",
+    label: "Load Models Now",
+    group: "World",
+    lines: ["Streaming.LoadAllModelsNow()"],
+    fields: [],
+  },
+  {
+    name: "startTimer",
+    label: "Start Time Limit Clock",
+    group: "World",
+    lines: ["TIMERB = 0"],
+    fields: [],
+  },
+  {
+    name: "soundAt",
+    label: "Play Sound",
+    group: "World",
+    lines: [
+      "Sound.AddOneOffSound({spot}_X, {spot}_Y, {spot}_Z, ScriptSound.{sound})",
+    ],
+    fields: [{ ...spot, default: "PAYPHONE" }, {
+      name: "sound",
+      label: "Sound",
+      type: "name",
+      default: "SoundPayphoneRinging",
+    }],
+  },
 ];
 
 const radius: Field = {
@@ -492,6 +560,52 @@ export const condDescriptors: CondDescriptor[] = [
       type: "expr",
       default: "0",
       numeric: "int",
+    }],
+  },
+  {
+    name: "timeLimit",
+    label: "Time limit exceeded",
+    group: "World",
+    // A game minute is 1000 ms, so the minutes field fills the thousands: 120 minutes is `TIMERB > 120000`
+    lines: ["TIMERB > {minutes}000"],
+    fields: [{
+      name: "minutes",
+      label: "Game Minutes",
+      type: "number",
+      min: 1,
+      default: "120",
+    }],
+  },
+  {
+    name: "wantedAbove",
+    label: "Wanted level above",
+    group: "Player",
+    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
+    lines: ["wanted > {max}"],
+    locals: ["wanted"],
+    fields: [{
+      name: "max",
+      label: "Highest Allowed Stars",
+      type: "number",
+      min: 0,
+      max: 6,
+      default: "1",
+    }],
+  },
+  {
+    name: "carHealthBelow",
+    label: "Car health below",
+    group: "Vehicles",
+    pre: ["carHealth = 0", "0227: carHealth = car {car} health"],
+    lines: ["carHealth < {amount}"],
+    locals: ["carHealth"],
+    fields: [carField, {
+      name: "amount",
+      label: "Lowest Allowed Health",
+      type: "number",
+      min: 0,
+      max: 1000,
+      default: "250",
     }],
   },
   {

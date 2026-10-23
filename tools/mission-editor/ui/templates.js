@@ -312,11 +312,19 @@ export function parseWhen(steps, conds, lines) {
   let used = 0;
   for (const raw of tests) {
     const test = raw.slice(INDENT.length);
-    const candidates = conds.filter((d) =>
-      !d.pre || same(d.pre, pre.slice(used, used + d.pre.length))
-    );
-    const found = parseLines(candidates, [test]);
-    if (found?.descriptor.pre) used += found.descriptor.pre.length;
+    let found = null;
+    for (const d of conds) {
+      const own = d.pre?.length ?? 0;
+      const hit = parseLines([whole(d)], [
+        ...pre.slice(used, used + own),
+        test,
+      ]);
+      if (hit) {
+        found = { descriptor: d, values: hit.values };
+        used += own;
+        break;
+      }
+    }
     parsed.push(found ? buildCond(found.descriptor, found.values) : { test });
   }
   if (used !== pre.length) return null;
@@ -349,21 +357,38 @@ export function buildWhen({ conds, then, otherwise }) {
 const same = (a = [], b = []) =>
   a.length === b.length && a.every((line, i) => line === b[i]);
 
+const wholes = new WeakMap();
+
+/** The descriptor with its `pre` lines in front of its test, so `pre` slots are parsed and built like the rest. */
+function whole(descriptor) {
+  if (!descriptor.pre) return descriptor;
+  if (!wholes.has(descriptor)) {
+    wholes.set(descriptor, {
+      ...descriptor,
+      lines: [...descriptor.pre, ...descriptor.lines],
+    });
+  }
+  return wholes.get(descriptor);
+}
+
 /** A condition (`{ pre?, test, locals? }`) built from a descriptor. */
 export function buildCond(descriptor, values) {
-  const cond = { test: buildLines(descriptor, values)[0] };
-  if (descriptor.pre) cond.pre = [...descriptor.pre];
+  const lines = buildLines(whole(descriptor), values);
+  const cond = { test: lines.at(-1) };
+  if (descriptor.pre) cond.pre = lines.slice(0, -1);
   if (descriptor.locals) cond.locals = [...descriptor.locals];
   return cond;
 }
 
-/** Like `parseLines`, for a condition; its `pre` lines and `locals` must be the descriptor's too. */
+/** Like `parseLines`, for a condition; its `pre` lines (slots filled) and `locals` must be the descriptor's too. */
 export function parseCond(descriptors, cond) {
-  const found = parseLines(
-    descriptors.filter((d) =>
-      same(d.pre, cond.pre) && same(d.locals, cond.locals)
-    ),
-    [cond.test],
-  );
-  return found;
+  const candidates = descriptors.filter((d) => same(d.locals, cond.locals));
+  const found = parseLines(candidates.map(whole), [
+    ...(cond.pre ?? []),
+    cond.test,
+  ]);
+  return found && {
+    ...found,
+    descriptor: candidates.find((d) => whole(d) === found.descriptor),
+  };
 }

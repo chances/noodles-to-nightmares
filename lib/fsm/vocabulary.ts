@@ -55,6 +55,17 @@ export const step = {
   ],
   failBanner: (): Step => ["Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)"],
   rememberPlayerCar: (): Step => ["Player.StoreCarIsIn($player, $myCar)"],
+  /** Gives the player control back (`true`) or takes it away (`false`). */
+  playerControl: (on: boolean): Step => [`Player.SetControl($player, ${on})`],
+  /** Sets the global `$onCutscene` flag. */
+  cutsceneFlag: (on: boolean): Step => [`$onCutscene = ${on}`],
+  requestModel: (model: Expr): Step => [`Streaming.RequestModel(${model})`],
+  loadModels: (): Step => ["Streaming.LoadAllModelsNow()"],
+  /** Restarts TIMERB, the clock `cond.timeLimit` reads. */
+  startTimer: (): Step => ["TIMERB = 0"],
+  soundAt: (spot: Spot, sound: string): Step => [
+    `Sound.AddOneOffSound(${coords(spot, 3)}, ScriptSound.${sound})`,
+  ],
   /** Runs `then` when every condition holds, `otherwise` when not. */
   when: (conds: Cond[], then: Step[], otherwise: Step[] = []): Step =>
     ifBlock(conds, then.flat(), otherwise.flat()),
@@ -141,6 +152,25 @@ export const cond = {
   saveFinished: (): Cond => ({ test: "Game.HasSaveGameFinished()" }),
   modelLoaded: (model: Expr): Cond => ({
     test: `Streaming.IsModelLoaded(${model})`,
+  }),
+  /**
+   * True once `minutes` of game time have passed on TIMERB, which counts from the mission's start or from the
+   * last `startTimer` step. A game minute is 1000 ms at the game's default clock speed.
+   */
+  timeLimit: (minutes: number): Cond => ({
+    test: `TIMERB > ${minutes * 1000}`,
+  }),
+  /** Reads the wanted level (stars) into the scratch local `wanted`. */
+  wantedAbove: (max: number): Cond => ({
+    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
+    test: `wanted > ${max}`,
+    locals: ["wanted"],
+  }),
+  /** Reads the car's health (1000 is undamaged) into the scratch local `carHealth`. */
+  carHealthBelow: (car: Expr, amount: number): Cond => ({
+    pre: ["carHealth = 0", `0227: carHealth = car ${car} health`],
+    test: `carHealth < ${amount}`,
+    locals: ["carHealth"],
   }),
   latchSet: (id: string): Cond => cmp(latchLocal(id), "==", "true"),
   latchClear: (id: string): Cond => cmp(latchLocal(id), "==", "false"),

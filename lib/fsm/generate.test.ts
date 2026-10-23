@@ -85,6 +85,100 @@ Deno.test("a state with finish calls finishMission", () => {
   assertStringIncludes(generate(fixture, "x"), "finishMission()");
 });
 
+Deno.test("declared locals are emitted before the latches", () => {
+  const text = generate(
+    {
+      ...fixture,
+      locals: [
+        { name: "sal", type: "Char" },
+        { name: "heading", type: "float", value: "0.0" },
+      ],
+    },
+    "missions/fixture.states.ts",
+  );
+  assertStringIncludes(text, "Char sal\nfloat heading = 0.0\nint latchHint");
+});
+
+Deno.test("branches are an if/else chain that ends in next", () => {
+  const text = generate(
+    {
+      ...fixture,
+      states: {
+        ...fixture.states,
+        A: {
+          on: [{ when: [cond.playerBusted()], goto: "LOSE" }],
+          next: "B",
+        },
+      },
+    },
+    "missions/fixture.states.ts",
+  );
+  assertStringIncludes(
+    text,
+    [
+      "    if",
+      "      Player.HasBeenArrested($player)",
+      "    then",
+      "      exitState()",
+      "      state = STATE_LOSE",
+      "      enterState()",
+      "    else",
+      "      exitState()",
+      "      state = STATE_B",
+      "      enterState()",
+      "    end",
+    ].join("\n"),
+  );
+});
+
+Deno.test("a state nothing watches runs its beats as plain waits", () => {
+  const quiet = defineMission({
+    header: ["Quiet"],
+    start: "A",
+    onFail: "LOSE",
+    fail: [cond.playerDead()],
+    states: {
+      A: {
+        fail: false,
+        beats: [
+          { do: [step.say("One", 1000)], wait: 500 },
+          {
+            when: [cond.playerInCar()],
+            do: [step.say("Two", 1000)],
+            wait: 250,
+          },
+        ],
+        until: [cond.playerBusted()],
+        next: "WIN",
+      },
+      WIN: { finish: true },
+      LOSE: { fail: false, next: "A" },
+    },
+  });
+  const text = generate(quiet, "missions/quiet.states.ts");
+  assertStringIncludes(
+    text,
+    [
+      "    if",
+      "      beat == 0",
+      "    then",
+      '      Text.PrintString("One", 1000)',
+      "      wait 500",
+      "      if",
+      "        Player.IsInAnyCar($player)",
+      "      then",
+      '        Text.PrintString("Two", 1000)',
+      "        wait 250",
+      "      end",
+      "      beat = 1",
+      "    end",
+    ].join("\n"),
+  );
+  assert(!text.includes("TIMERA >="));
+  // A state the fail check watches keeps the tick-driven beats
+  assert(generate(fixture, "missions/fixture.states.ts").includes("TIMERA >="));
+});
+
 Deno.test("an unknown target state is rejected", () => {
   const bad = { ...fixture, onFail: "NOPE" } as unknown as typeof fixture;
   assertThrows(() => generate(bad, "x"), Error, "unknown state NOPE");

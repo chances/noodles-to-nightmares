@@ -102,6 +102,27 @@ Deno.test("healthBelow reads health into a scratch local", () => {
   });
 });
 
+Deno.test("timeLimit counts game minutes of 1000 ms on TIMERB", () => {
+  assertEquals(cond.timeLimit(2).test, "TIMERB > 2000");
+  assertEquals(step.startTimer(), ["TIMERB = 0"]);
+});
+
+Deno.test("wantedAbove reads the wanted level into a scratch local", () => {
+  assertEquals(cond.wantedAbove(1), {
+    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
+    test: "wanted > 1",
+    locals: ["wanted"],
+  });
+});
+
+Deno.test("carHealthBelow reads the car's health into a scratch local", () => {
+  assertEquals(cond.carHealthBelow("$myCar", 250), {
+    pre: ["carHealth = 0", "0227: carHealth = car $myCar health"],
+    test: "carHealth < 250",
+    locals: ["carHealth"],
+  });
+});
+
 Deno.test("latch conditions name the monitor's local", () => {
   assertEquals(cond.latchSet("driveHint").test, "latchDriveHint == true");
   assertEquals(cond.latchClear("driveHint").test, "latchDriveHint == false");

@@ -143,6 +143,28 @@ export function FieldInput({ field, value, onCommit }) {
     return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${field.labels?.[o] ?? o}</option>`)}</select>`;
   }
 
+  // A bounded number is a number input, so the browser enforces `min` and `max` and offers the spinner.
+  if (field.type === "number" && (field.min !== undefined || field.max !== undefined)) {
+    const n = Number(draft);
+    const inRange = isValid(field, draft) && (field.min === undefined || n >= field.min) && (field.max === undefined || n <= field.max);
+    const bounded = (e) => {
+      const text = e.currentTarget.value;
+      const m = Number(text);
+      setDraft(text);
+      if (isValid(field, text) && (field.min === undefined || m >= field.min) && (field.max === undefined || m <= field.max)) {
+        last.current = text;
+        onCommit(text);
+      }
+    };
+    const ask = field.min !== undefined && field.max !== undefined
+      ? `from ${field.min} to ${field.max}`
+      : field.min !== undefined ? `of ${field.min} or more` : `of ${field.max} or less`;
+    return html`
+      <input type="number" min=${field.min} max=${field.max} step="1" value=${draft} aria-invalid=${!inRange} onInput=${bounded} />
+      ${!inRange && html`<small class="error">Enter a whole number ${ask}.</small>`}
+    `;
+  }
+
   const valid = isValid(field, draft);
   const input = (e) => {
     const text = reformat(e.currentTarget, (t) => formatField(field, t));

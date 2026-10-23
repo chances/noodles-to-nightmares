@@ -6,7 +6,6 @@ set_total_number_of_missions MAX_MISSION_INDEX
 declare_mission_flag $onMission
 $onMission = false
 $onCutscene = false
-// FIXME: Update this flag in the main loop
 $isCarInWater = false
 
 // Note: Global variable declarations live in variables.txt

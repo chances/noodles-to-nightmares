@@ -49,22 +49,33 @@ export interface State<S extends string = string> {
   /** Clear every monitor latch on entry. */
   resetLatches?: boolean;
   beats?: Beat[];
-  /** After the beats, wait until all of these hold, then go to `next`. */
+  /** After the story beats, wait until all of these hold, then go to `next`. */
   until?: Cond[];
-  /** After the beats (and `until`), go to this state. */
+  /** After the story beats (and `until`), go to this state. */
   next?: S;
-  /** After the beats, the first rule whose `when` holds picks the next state. */
+  /** After the story beats, the first rule whose `when` holds picks the next state; when none holds, `until` and `next` apply. */
   on?: { when: Cond[]; goto: S }[];
-  /** After the beats, finish the mission through `finishMission()`. */
+  /** After the story beats, finish the mission through `finishMission()`. */
   finish?: boolean;
 }
 
 export type Const = number | [value: number, comment: string];
 
+/** A mission-private CLEO local, e.g. `Char sal` or `float heading = 0.0`. Steps and conditions read and set it by `name`. */
+export interface Local {
+  name: string;
+  /** A Sanny type: `int`, `float`, `Char`, and so on. */
+  type: string;
+  /** The initial value as written in Sanny; leave out for a handle that starts unset. */
+  value?: string | number;
+}
+
 export interface Mission<S extends string = string> {
   /** Comment box lines at the top of the file. */
   header: string[];
   consts?: Record<string, Const>;
+  /** Locals the mission's steps use besides the generated `state`, `beat`, latch, and scratch locals. */
+  locals?: Local[];
   /** `{$INCLUDE}` paths after the generated code. Default: `../utils/missions.txt`. */
   includes?: string[];
   start: S;

@@ -19,6 +19,24 @@ Deno.test("a sound table has no problems", () => {
   assertEquals(problems(ok), []);
 });
 
+Deno.test("locals are checked for names and the CLEO limit of 16", () => {
+  const locals = Array.from({ length: 15 }, (_, i) => ({
+    name: `l${i}`,
+    type: "int",
+  }));
+  assertEquals(problems({ ...ok, locals }).map((p) => p.message), [
+    "The mission needs 17 locals, but a CLEO script has 16",
+  ]);
+  assertEquals(
+    problems({
+      ...ok,
+      locals: [{ name: "a", type: "int" }, { name: "a", type: "int" }],
+    })
+      .map((p) => p.message),
+    ["Two locals are named a"],
+  );
+});
+
 Deno.test("a wait without a next state is an error on that state", () => {
   const broken = {
     ...ok,

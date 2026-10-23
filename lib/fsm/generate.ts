@@ -2,7 +2,9 @@
 //
 // Shape of the output: the mission keeps `state` and `beat` as locals, one latch local per monitor, and
 // scratch locals that conditions ask for. TIMERA measures time in the current beat. A beat runs its `do`
-// steps once, then waits; the beat counter counts a run phase and a wait phase per beat.
+// steps once, then waits; the beat counter counts a run phase and a wait phase per beat. A state that no fail
+// check or monitor needs to watch (`fail: false` or no fail list, and no monitors) runs its beats as plain
+// `wait`s instead, with `beat` only marking that they have run.
 
 import { cmp, ifBlock, indent, latchLocal, stateConst } from "./emit.ts";
 import type { Cond, Const, Mission, State } from "./types.ts";
@@ -63,8 +65,11 @@ export function generate(mission: Mission, source: string): string {
   function stateBlock(id: string, state: State): string[] {
     const body = comments(state.notes);
     const beats = state.beats ?? [];
+    // Nothing needs a tick while this state's beats wait, so they run as straight-line `wait`s
+    const straight = !monitors.length &&
+      (state.fail === false || mission.fail.length === 0);
     let n = 0;
-    for (const beat of beats) {
+    for (const beat of straight ? [] : beats) {
       const run = n++;
       const wait = beat.wait ? n++ : undefined;
       const after = n;
@@ -91,14 +96,33 @@ export function generate(mission: Mission, source: string): string {
       }
     }
 
-    const exit: string[] = [];
-    for (const rule of state.on ?? []) {
-      exit.push(...ifBlock(rule.when, go(rule.goto)));
+    if (straight && beats.length) {
+      const run = beats.flatMap((beat) => {
+        const start = [
+          ...comments(beat.notes),
+          ...(beat.do ?? []).flat(),
+          ...(beat.wait ? [`wait ${beat.wait}`] : []),
+        ];
+        return beat.when ? ifBlock(beat.when, start) : start;
+      });
+      // The state block runs every tick, so `beat` keeps the beats from running again while `until` waits
+      body.push(...ifBlock([cmp("beat", "==", 0)], [...run, "beat = 1"]));
     }
-    if (state.until) exit.push(...ifBlock(state.until, go(state.next!)));
-    else if (state.next) exit.push(...go(state.next));
+
+    // The rules form an if/else chain, so the first one that holds wins and `until` and `next` are the last else
+    let route: string[] = state.until
+      ? ifBlock(state.until, go(state.next!))
+      : state.next
+      ? go(state.next)
+      : [];
+    for (const rule of [...(state.on ?? [])].reverse()) {
+      route = ifBlock(rule.when, go(rule.goto), route);
+    }
+    const exit = [...route];
     if (state.finish) exit.push("finishMission()");
-    body.push(...(beats.length ? ifBlock([cmp("beat", ">=", n)], exit) : exit));
+    body.push(
+      ...(n > 0 ? ifBlock([cmp("beat", ">=", n)], exit) : exit),
+    );
 
     return ifBlock([cmp("state", "==", stateConst(id))], body);
   }
@@ -166,6 +190,11 @@ export function generate(mission: Mission, source: string): string {
     "// Mission-private state is CLEO locals, which need no global slot (16 per script)",
     `int state = ${stateConst(mission.start)}`,
     "int beat = 0",
+    ...(mission.locals ?? []).map((l) =>
+      l.value === undefined
+        ? `${l.type} ${l.name}`
+        : `${l.type} ${l.name} = ${l.value}`
+    ),
     ...latches.map((l) => `int ${l} = false`),
     ...[...scratch].map((local) => `int ${local} = 0`),
     "",
