@@ -1,6 +1,6 @@
 # Cross-Thread State and CLEO State Plugin
 
-Future phases after the per-mission finite state machine in [mission-state-machine.md](mission-state-machine.md). Nothing here starts until that plan ships and mission 0 runs on it.
+Future phases after the per-mission finite state machine in [lib/fsm](../../lib/fsm). Nothing here starts until mission 0 runs on it.
 
 ## Findings
 

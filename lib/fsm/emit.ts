@@ -28,7 +28,11 @@ const pascal = (id: string) =>
     word ? word[0].toUpperCase() + word.slice(1) : ""
   ).join("");
 
-/** The label of a state's routine, e.g. `GO_HOME` becomes `stateGoHome`. */
+/**
+ * The label of a state's routine, e.g. `GO_HOME` becomes `stateGoHome`.
+ *
+ * @remarks Ids that differ only in case, or by repeated underscores, get the same label. The generator does not check for this.
+ */
 export function stateLabel(id: string): string {
   return `state${pascal(id)}`;
 }

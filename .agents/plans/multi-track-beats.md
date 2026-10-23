@@ -1,13 +1,13 @@
 # Multi-Track Beats
 
-A state's beats become a grid: story beats across, actors down. It extends the beat table in [mission-state-machine.md](mission-state-machine.md) and the timeline in [mission-editor.md](mission-editor.md). Future work; nothing here is built.
+A state's beats become a grid: story beats across, actors down. It extends the beat table in [lib/fsm](../../lib/fsm) and the timeline in the [Mission Editor section](../Memory.md#mission-editor). Future work; nothing here is built.
 
 ## Findings
 
 | Source | Fact | Use Here |
 | --- | --- | --- |
 | `lib/fsm/generate.ts` | A state runs one `beat` counter and one `TIMERA`; a beat has a run phase and a wait phase | Lockstep columns keep one counter and one timer for any number of rows |
-| [mission-state-machine.md](mission-state-machine.md) | A mission has 16 locals; `state`, `beat`, each latch, and each scratch read use one | Each non-player actor handle is one more local |
+| [lib/fsm](../../lib/fsm) | A mission has 16 locals; `state`, `beat`, each latch, and each scratch read use one | Each non-player actor handle is one more local |
 | CLEO | A script has two timers, `TIMERA` and `TIMERB` | Independent per-row clocks do not scale past two rows, so rows do not get their own clock |
 
 ## Decisions
