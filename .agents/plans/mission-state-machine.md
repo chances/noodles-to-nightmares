@@ -26,7 +26,7 @@ A finite state machine for `*.cm` mission scripts. Each mission owns its state m
 | Monitors | A mission-level `monitors` list of typed rules that run every tick in every state, with a once-only latch the generator manages |
 | Escape hatch | A `raw` step holds Sanny text verbatim |
 | Output location | Generated `missions/*.txt`, committed |
-| Latch storage | One local per latch, counted against the mission's 16; the lint fails above 16. Bitfields are unavailable: opcode `0B10` is rejected by this install's CLEO ([bug report](../reports/bugs/bitwise-opcodes-unsupported.md)) |
+| Latch storage | One local per latch, counted against the mission's 16; the lint fails above 16. Bitfields are unavailable: opcode `0B10` is rejected by this install's CLEO ([bug report](../bugs/bitwise-opcodes-unsupported.md)) |
 | Transitions | `until` plus `next` as shorthand for a single exit; explicit `on: [{ when, goto }]` rules when a state branches |
 | Drift guard | A `GENERATED` header, and the lint regenerates in memory and fails the build when the committed file differs |
 | Vocabulary | Own friendly names (`playerNear`, `showHelp`); `raw` covers the rest |

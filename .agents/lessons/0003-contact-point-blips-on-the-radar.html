@@ -101,7 +101,7 @@ Blip.ChangeDisplay($payphoneBlip, BlipDisplay.Both)</pre>
 <tr><td>San Andreas</td><td>175</td></tr>
 <tr><td>San Andreas Mobile</td><td>250</td></tr>
 </table>
-<p>An add command that creates a blip each frame, or overwrites its handle variable without calling <code>Blip.Remove</code>, fills the pool. This project logged <code>-1</code> handles from every add command while the pool was full (<a href="../reports/bugs/blip-pool-exhausted-by-safehouse-blip.md">blip-pool-exhausted-by-safehouse-blip.md</a>).</p>
+<p>An add command that creates a blip each frame, or overwrites its handle variable without calling <code>Blip.Remove</code>, fills the pool. This project logged <code>-1</code> handles from every add command while the pool was full (<a href="../bugs/blip-pool-exhausted-by-safehouse-blip.md">blip-pool-exhausted-by-safehouse-blip.md</a>).</p>
 <blockquote class="callout" data-variant="tip">When a blip is missing, log the handle the add command returns before changing any display settings. A handle of <code>-1</code> means no blip exists.</blockquote>
 
 <h2>6. Check Yourself</h2>

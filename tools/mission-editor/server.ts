@@ -11,6 +11,7 @@ import { logger } from "jsr:@hono/hono@^4.13.13/logger";
 import { secureHeaders } from "jsr:@hono/hono@^4.13.13/secure-headers";
 import { vValidator } from "jsr:@hono/valibot-validator@^0.6.1";
 import * as v from "@valibot/valibot";
+import { stripAnsiCode } from "@std/fmt/colors";
 import { fromFileUrl, join, resolve } from "@std/path";
 import {
   condDescriptors,
@@ -100,6 +101,7 @@ export function createApp(
     log = false,
     spawnRun = startGameRun,
     stopRun = (run: GameRun) => killTree(run.pid),
+    telemetryPort = TELEMETRY_PORT,
   } = {},
 ) {
   const app = new Hono();
@@ -206,15 +208,24 @@ export function createApp(
 
   // Live telemetry from the game (plugins/sockets), as SSE events on /api/telemetry. Packets come from this
   // editor's own UDP listener, or, while a run is in progress, from the run's output (see below).
-  let latestTelemetry = {
-    connected: false,
-    lastSeen: 0,
-    pos: [0, 0, 0],
-    heading: 0,
-  };
+  let latestTelemetry: {
+    connected: boolean;
+    lastSeen: number;
+    pos: number[] | null;
+    heading: number;
+  } = { connected: false, lastSeen: 0, pos: null, heading: 0 };
   /** The newest reading of each debug channel, so a viewer that connects late sees them all. */
   const latestDebug = new Map<number, unknown>();
   let debugChannelNames: Record<string, string> = {};
+  /** Everything a viewer needs to show the game's state: sent on connect and again when a run starts over. */
+  const status = () => ({
+    connected: isConnected(),
+    pos: latestTelemetry.pos,
+    heading: latestTelemetry.heading,
+    debug: [...latestDebug.values()],
+    names: debugChannelNames,
+    running,
+  });
   const listeners = new Set<(event: string, data: unknown) => void>();
   const broadcast = (event: string, data: unknown) => {
     for (const fn of listeners) fn(event, data);
@@ -253,13 +264,17 @@ export function createApp(
   const startUdp = async () => {
     if (udp || running) return;
     // A null result means the port is taken, e.g. by a run started from a terminal
-    udp = await listenTelemetry(TELEMETRY_PORT, publish);
+    udp = await listenTelemetry(telemetryPort, publish);
   };
 
   // Run in game: `deno task run --events` builds, installs, and launches GTA III. The run captures telemetry on
   // the same UDP port, so the editor lets go of it until the run ends and takes the game's packets, the exit
   // verdict, and the rest of the output from the run's event lines instead (see scripts/run-events.ts).
   let running = false;
+  /** True from the run's `launch` event until the game exits; readings arrive only when a value changes, so a quiet run is still connected. */
+  let launched = false;
+  const isConnected = () =>
+    launched || Date.now() - latestTelemetry.lastSeen < 2500;
   let current: { child: GameRun; stopped: boolean } | null = null;
   app.post("/api/run", vValidator("query", projectQuery), async (c) => {
     if (running) {
@@ -269,6 +284,10 @@ export function createApp(
     running = true;
     await udp?.close();
     udp = null;
+    // The last run's readings are not this run's state
+    latestTelemetry = { connected: false, lastSeen: 0, pos: null, heading: 0 };
+    latestDebug.clear();
+    broadcast("status", status());
     broadcast("run", { state: "building" });
     let child: GameRun;
     try {
@@ -303,11 +322,14 @@ export function createApp(
   const relayLine = (line: string) => {
     const event = parseEventLine(line);
     if (!event) {
-      if (line.trim()) broadcast("log", { line });
+      // The app shows the log as plain text, so the run's colors and cursor codes are removed here
+      const text = stripAnsiCode(line);
+      if (text.trim()) broadcast("log", { line: text });
     } else if (event.kind === "names") {
       debugChannelNames = event.names;
       broadcast("names", event.names);
     } else if (event.kind === "launch") {
+      launched = true;
       broadcast("run", { state: "running" });
     } else if (event.kind === "packet") {
       publish(event.event);
@@ -335,6 +357,7 @@ export function createApp(
     await Promise.all([relay(child.stdout), relay(child.stderr)]);
     const status = await child.status;
     running = false;
+    launched = false;
     current = null;
     broadcast("run", {
       state: "done",
@@ -360,22 +383,13 @@ export function createApp(
           } catch {}
         };
 
-        const now = Date.now();
-        send("status", {
-          connected: now - latestTelemetry.lastSeen < 2500,
-          pos: latestTelemetry.pos,
-          heading: latestTelemetry.heading,
-          debug: [...latestDebug.values()],
-          names: debugChannelNames,
-          running,
-        });
+        send("status", status());
 
         const onEvent = (evt: string, data: unknown) => send(evt, data);
         listeners.add(onEvent);
 
         timer = setInterval(() => {
-          const isConnected = Date.now() - latestTelemetry.lastSeen < 2500;
-          send("ping", { connected: isConnected });
+          send("ping", { connected: isConnected() });
         }, 1000);
 
         c.req.raw.signal.addEventListener("abort", () => {

@@ -61,7 +61,7 @@ end
 - **Header**: `{$CLEO .cm}` directive required
 - **Naming**: `{index}_{name}.txt` (e.g., `0_tutorial.txt`, `1_robbery.txt`)
 - **Processes And Leftovers**: A check that starts a process (a game, a desktop app, a server, a compiled probe) stops it in the same turn and lists what remains running and what it left in `dist/`; never launch a GUI window for verification without asking. A desktop app must quit when its window closes and must not outlive the command that started it
-- **Generated Missions**: A mission with a `{index}_{name}.states.ts` state table is generated: `missions/{index}_{name}.txt` is its output, so edit the table, never the `.txt`. `deno task build` regenerates it, and `deno task install` refuses a stale one. The state types, the step and condition vocabulary, and the generator are the workspace package `@noodles/fsm` in `lib/fsm`
+- **Generated Missions**: A mission with a `{index}_{name}.fsm.json` (or `{index}_{name}.states.ts`) state table is generated, and the `.fsm.json` wins when both exist: `missions/{index}_{name}.txt` is its output, so edit the table, never the `.txt`. `deno task build` regenerates it, and `deno task install` refuses a stale one. The state types, the step and condition vocabulary, and the generator are the workspace package `@noodles/fsm` in `lib/fsm`
 - **Story Script**: A sibling `{index}_{name}.md` beside each mission holds its screenplay-style story script (e.g., `0_tutorial.md`): the technical details are YAML front matter, the requirement and completion checklists are GFM checklists in the body, followed by the screenplay. Act-level arcs stay in `story/`, which links to these scripts
 
 ### Mission Launch
@@ -425,6 +425,6 @@ understand context before making changes.
 
 ## 10. Bug Reports
 
-- **Location**: Resolved bugs live in `.agents/reports/bugs/<bug-name>.md` (kebab-case file names).
+- **Location**: Open bugs live in `.agents/bugs/<bug-name>.md` and resolved bugs in `.agents/reports/bugs/<bug-name>.md` (kebab-case file names).
 - **Content**: Symptom, root cause, fix, and ruled-out candidates, written as the current state of the finding.
 - **Index**: `.agents/Memory.md` lists open bugs under "Known Issues & Open Bugs" and links the report for resolved ones.

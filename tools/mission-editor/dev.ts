@@ -11,7 +11,7 @@ const child = new Deno.Command(Deno.execPath(), {
     "--allow-read",
     "--allow-write",
     "--allow-net",
-    "--allow-run=deno",
+    "--allow-run=deno,powershell,pkill",
     "--include",
     "ui",
     "main.ts",

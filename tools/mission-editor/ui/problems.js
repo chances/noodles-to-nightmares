@@ -2,6 +2,7 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, useEffect, useRef } from "/vendor/preact.js";
+import { Overlay } from "./overlay.js";
 
 const count = (problems, severity) => problems.filter((p) => p.severity === severity).length;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -37,7 +38,7 @@ export function ProblemsPanel({ problems, onSelect, onClose }) {
   const root = useRef(null);
   useEffect(() => {
     const outside = (e) => {
-      if (!root.current.contains(e.target) && !e.target.closest(".pill")) onClose();
+      if (!root.current?.contains(e.target) && !e.target.closest(".pill")) onClose();
     };
     const escape = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("pointerdown", outside);
@@ -48,9 +49,11 @@ export function ProblemsPanel({ problems, onSelect, onClose }) {
     };
   }, []);
   return html`
-    <section id="problems-panel" class="problems-panel" aria-label="Problems" ref=${root}>
-      <h2>Problems</h2>
-      <${ProblemsList} problems=${problems} onSelect=${onSelect} />
-    </section>
+    <${Overlay} align="end">
+      <section id="problems-panel" class="problems-panel" aria-label="Problems" ref=${root}>
+        <h2>Problems</h2>
+        <${ProblemsList} problems=${problems} onSelect=${onSelect} />
+      </section>
+    <//>
   `;
 }

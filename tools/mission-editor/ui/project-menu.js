@@ -2,6 +2,7 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, useEffect, useRef, useState } from "/vendor/preact.js";
+import { Overlay } from "./overlay.js";
 import { CreateDialog, editorUrl, GAME_LABELS, openProject } from "./projects.js";
 
 function Chevron() {
@@ -41,7 +42,8 @@ export function ProjectMenu({ name, path }) {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const root = useRef(null);
-  const items = () => [...root.current.querySelectorAll("[role=menuitem]")];
+  const menu = useRef(null);
+  const items = () => [...(menu.current?.querySelectorAll("[role=menuitem]") ?? [])];
 
   // The list is fetched on every open, so a project opened a moment ago is already at the top of Recent.
   useEffect(() => {
@@ -52,7 +54,7 @@ export function ProjectMenu({ name, path }) {
 
   useEffect(() => {
     if (!open) return;
-    const outside = (e) => { if (!root.current.contains(e.target)) setOpen(false); };
+    const outside = (e) => { if (!root.current.contains(e.target) && !menu.current?.contains(e.target)) setOpen(false); };
     const escape = (e) => {
       if (e.key !== "Escape") return;
       setOpen(false);
@@ -98,6 +100,7 @@ export function ProjectMenu({ name, path }) {
           <${Chevron} />
         </button>
         ${open && html`
+          <${Overlay} hostRef=${menu}>
           <div class="menu" role="menu" aria-label="Projects" onKeyDown=${arrows}>
             ${!projects && !error && html`<p class="hint menu-note">Loading projects.</p>`}
             ${error && html`<p class="error menu-note" role="alert">${error}</p>`}
@@ -111,6 +114,7 @@ export function ProjectMenu({ name, path }) {
               </button>
             `}
           </div>
+          <//>
         `}
       </div>
       ${creating && projects && html`

@@ -2,6 +2,7 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
+import { Overlay } from "./overlay.js";
 import { SplitButton } from "./split-button.js";
 import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
 
@@ -85,6 +86,7 @@ function Combo({ field, value, options, free, label, note, missing = "is not in 
         value=${free ? draft : open ? typed ?? "" : value} placeholder=${free ? field.placeholder ?? "" : open ? value : ""}
         onFocus=${show} onInput=${input} onKeyDown=${keys} />
       ${open && matches.length > 0 && html`
+        <${Overlay} fit gap=${2}>
         <ul class="combo-list" role="listbox" id=${listId}>
           ${matches.map((o, i) => html`
             <li key=${o.value} id=${`${listId}-${i}`} role="option" aria-selected=${o.value === value} data-active=${i === active}
@@ -92,8 +94,9 @@ function Combo({ field, value, options, free, label, note, missing = "is not in 
               <span class="combo-id">${o.value}</span>
               <span class="combo-meta">${o.meta}</span>
             </li>`)}
-        </ul>`}
-      ${open && matches.length === 0 && !free && html`<ul class="combo-list" id=${listId}><li class="combo-empty">Nothing matches</li></ul>`}
+        </ul>
+        <//>`}
+      ${open && matches.length === 0 && !free && html`<${Overlay} fit gap=${2}><ul class="combo-list" id=${listId}><li class="combo-empty">Nothing matches</li></ul><//>`}
       ${!valid && html`<small class="error">${EMPTY[field.type]}</small>`}
       ${unknown && html`<small class="error">${value} ${missing}.</small>`}
       ${note && html`<small class="error">${note}</small>`}

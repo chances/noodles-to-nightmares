@@ -97,10 +97,16 @@ export interface LintInput {
   pins: Record<string, string>;
   /** Mission scripts, keyed by file name. */
   missions: Record<string, string>;
+  /** Standalone CLEO scripts (`cleo/*.txt`), keyed by file name. */
+  cleo?: Record<string, string>;
+  /** main.txt, which must start each standalone CLEO script. */
+  main?: string;
 }
 
 /** Returns one message per problem; an empty array means the sources pass. */
-export function lintScripts({ pins, missions }: LintInput): string[] {
+export function lintScripts(
+  { pins, missions, cleo = {}, main }: LintInput,
+): string[] {
   const problems: string[] = [];
   const allocs = parseAllocs(pins);
 
@@ -149,6 +155,38 @@ export function lintScripts({ pins, missions }: LintInput): string[] {
       );
     }
   }
+
+  // A standalone script that never includes a pin file gets its own first-use slots, so its `$player` is not main's
+  const pinFiles = new Map<string, string>();
+  for (const { name, file } of allocs) pinFiles.set(name.toLowerCase(), file);
+  for (const [file, source] of Object.entries(cleo)) {
+    const includes = [...source.matchAll(/\{\$INCLUDE\s+([^}]+)\}/gi)]
+      .map((m) => basename(m[1].trim()).toLowerCase());
+    const missing = new Map<string, string>();
+    for (const m of stripNonCode(source).matchAll(/\$([A-Za-z_]\w*)/g)) {
+      const pinFile = pinFiles.get(m[1].toLowerCase());
+      if (pinFile && !includes.includes(basename(pinFile).toLowerCase())) {
+        missing.set(m[1], pinFile);
+      }
+    }
+    // CLEO's boot scan did not load the modloader copy of a `.cs` (cleo.log lists only the `.cm` it was asked for)
+    const script = `${basename(file, ".txt")}.cs`;
+    if (
+      main !== undefined &&
+      !new RegExp(`START_CUSTOM_THREAD\\s+["']${script}["']`, "i").test(
+        main.replace(/\/\/.*$/gm, ""),
+      )
+    ) {
+      problems.push(
+        `${file}: main.txt never runs \`0600: START_CUSTOM_THREAD "${script}"\`, so nothing starts it`,
+      );
+    }
+    for (const [name, pinFile] of missing) {
+      problems.push(
+        `${file}: $${name} is pinned in ${pinFile}, but the script does not \`{$INCLUDE ../${pinFile}}\`, so it reads a different slot than main`,
+      );
+    }
+  }
   return problems;
 }
 
@@ -166,7 +204,16 @@ export async function lintProject(root: string): Promise<string[]> {
       );
     }
   }
-  return lintScripts({ pins, missions });
+  const cleo: Record<string, string> = {};
+  for await (const entry of Deno.readDir(join(root, "cleo"))) {
+    if (entry.isFile && entry.name.endsWith(".txt")) {
+      cleo[`cleo/${entry.name}`] = await Deno.readTextFile(
+        join(root, "cleo", entry.name),
+      );
+    }
+  }
+  const main = await Deno.readTextFile(join(root, "main.txt"));
+  return lintScripts({ pins, missions, cleo, main });
 }
 
 /** Prints problems and exits 1 when any exist. */

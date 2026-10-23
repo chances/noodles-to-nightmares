@@ -237,6 +237,10 @@ function App() {
       setMode("debug");
     }
   }, [connected]);
+  // Running the game opens the Debug view at once, without waiting for its first reading.
+  useEffect(() => {
+    if (running) setMode("debug");
+  }, [running]);
 
   useEffect(() => {
     const keys = (e) => {
@@ -320,7 +324,7 @@ function App() {
         </div>
         ${runState?.state === "running"
           ? html`<button class="danger-fill stop-game" onClick=${stopGame} title="Stop the game"><${StopIcon} />Stop</button>`
-          : html`<button class="primary run-in-game" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${runState?.state === "building" ? "Building..." : "▶ Run"}</button>`}
+          : html`<button class="primary run-in-game ${runState?.state === "building" ? "building" : ""}" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${runState?.state === "building" ? "Building..." : "▶ Run"}</button>`}
         <div class="mode-switch">
           <button class="mode-btn ${mode === 'edit' ? 'active' : ''}" onClick=${() => setMode('edit')}>Edit</button>
           <button class="mode-btn ${mode === 'debug' ? 'active' : ''}" onClick=${() => setMode('debug')}>Debug</button>

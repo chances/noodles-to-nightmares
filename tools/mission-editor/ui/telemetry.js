@@ -1,5 +1,6 @@
 // deno-fmt-ignore-file
 import { html, useEffect, useState } from "/vendor/preact.js";
+import { Overlay } from "./overlay.js";
 
 /**
  * Hook that subscribes to the game's telemetry SSE bridge, /api/telemetry in server.ts.
@@ -32,11 +33,10 @@ export function useTelemetry(projectQuery) {
       try {
         const data = JSON.parse(e.data);
         setConnected(data.connected);
-        if (data.pos) setTelemetry(data);
+        // A status is the whole picture, so what it lacks is cleared: a run starting over sends none of the last one's
+        setTelemetry(data.pos ? data : null);
         if (data.names) setNames(data.names);
-        if (data.debug) {
-          setDebugValues(Object.fromEntries(data.debug.map((d) => [d.channel, d])));
-        }
+        setDebugValues(Object.fromEntries((data.debug ?? []).map((d) => [d.channel, d])));
         if (data.running) setRunState((prev) => prev ?? { state: "running" });
       } catch {}
     });
@@ -157,6 +157,7 @@ export function CaptureToast({ capture, onDismiss }) {
   const coords = capture.pos ? capture.pos.map((n) => n.toFixed(2)).join(", ") : "";
 
   return html`
+    <${Overlay} free>
     <div class="capture-toast" onClick=${onDismiss} title="Click to dismiss">
       <span class="capture-icon">📍</span>
       <div class="capture-body">
@@ -164,5 +165,6 @@ export function CaptureToast({ capture, onDismiss }) {
         <span>[${coords}], Heading: ${capture.heading?.toFixed(1)}°</span>
       </div>
     </div>
+    <//>
   `;
 }

@@ -54,7 +54,7 @@ body {
 
 header {
   display: flex;
-  flex-wrap: wrap;
+  white-space: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--gap);
@@ -906,18 +906,27 @@ button.crumb[aria-expanded="true"] {
   color: var(--muted);
 }
 
+/* Menus, lists, panels, and toasts live in a host on <body> (overlay.js), in the top layer; the content fills it. */
+.overlay {
+  position: fixed;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+}
+
 .menu {
-  position: absolute;
-  inset-block-start: calc(100% + 4px);
-  inset-inline-start: 0;
-  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 2px;
   inline-size: max-content;
   min-inline-size: 280px;
   max-inline-size: min(360px, 90vw);
-  max-block-size: 70vh;
   padding: 4px;
   overflow: auto;
   border: 1px solid var(--line);
@@ -1190,11 +1199,6 @@ small.error {
 }
 
 .combo-list {
-  position: absolute;
-  inset-block-start: calc(100% + 2px);
-  inset-inline: 0;
-  z-index: 10;
-  max-block-size: 40vh;
   margin: 0;
   padding: 4px;
   overflow: auto;
@@ -1421,7 +1425,7 @@ button.danger-fill:hover {
 
 .split-menu {
   min-inline-size: 0;
-  inline-size: max(100%, 16rem);
+  inline-size: max(var(--anchor-inline-size), 16rem);
 }
 
 /* Comes After, the new state, and Leads To on one line; the arrows sit level with the selects. */
@@ -1453,10 +1457,6 @@ button.danger-fill:hover {
 .add-row input {
   flex: 1;
   min-inline-size: 0;
-}
-
-.toolbar {
-  flex-wrap: wrap;
 }
 
 .save-status {
@@ -1497,15 +1497,10 @@ button.pill:focus-visible {
 }
 
 .problems-panel {
-  position: absolute;
-  inset-block-start: calc(100% + 4px);
-  inset-inline-end: 0;
-  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: var(--gap);
   inline-size: min(480px, 90vw);
-  max-block-size: 70vh;
   padding: 12px;
   overflow: auto;
   border: 1px solid var(--line);
@@ -1600,6 +1595,14 @@ button.run-in-game:hover:not(:disabled) {
   background: #2ea043;
 }
 
+/* Building takes the Game Run chip's accent, and stays fully lit though the button is disabled. */
+button.run-in-game.building {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  opacity: 1;
+}
+
 /* Stop replaces Run while the game runs, in the danger fill. */
 button.stop-game {
   gap: 6px;
@@ -1608,9 +1611,8 @@ button.stop-game {
 /* F8 Capture Toast */
 .capture-toast {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1000;
+  inset-block-end: 24px;
+  inset-inline-end: 24px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1784,20 +1786,25 @@ button.stop-game {
   text-transform: uppercase;
   margin: 0;
 }
+/* Game Run chip: accent (building), green (running), light gray (idle or exited), red (build error or crash). */
 .telemetry-badge {
+  --tone: var(--muted);
   font-size: 10px;
-  padding: 2px 6px;
+  padding-block: 2px;
+  padding-inline: 6px;
   border-radius: 4px;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 27%, transparent);
 }
-.telemetry-badge.live {
-  background: #00ff8822;
-  color: #00ff88;
-  border: 1px solid #00ff8844;
+.telemetry-badge[data-state="building"] {
+  --tone: var(--accent);
 }
-.telemetry-badge.offline {
-  background: #ff003322;
-  color: #ff0033;
-  border: 1px solid #ff003344;
+.telemetry-badge[data-state="running"] {
+  --tone: var(--role-start);
+}
+.telemetry-badge[data-state="error"] {
+  --tone: var(--role-on-fail);
 }
 .player-hud-grid {
   position: relative;
@@ -1892,6 +1899,17 @@ button.icon.copied:hover {
 .run-verdict {
   margin: 0;
   font-size: 12px;
+}
+/* A Game Run status sits in the heading, between its title and the chip, and takes the room the title leaves. */
+.debug-heading .run-message {
+  flex: 1;
+  min-inline-size: 0;
+  text-align: end;
+  text-transform: none;
+}
+.debug-heading h4 {
+  margin: 0;
+  font-size: inherit;
 }
 .run-verdict.crashed {
   color: #ff0033;

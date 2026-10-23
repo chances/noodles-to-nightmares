@@ -1,4 +1,5 @@
 {$CLEO .cs}
+{$INCLUDE ../variables.txt}
 {$OPCODE 0B30=6,udp_send_telemetry %1d% %2d% %3d% %4d% %5d% %6d%}
 
 0000: NOP

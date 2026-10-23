@@ -1,6 +1,7 @@
 // deno-fmt-ignore-file
-import { html, useRef, useState } from "/vendor/preact.js";
+import { html, useEffect, useRef, useState } from "/vendor/preact.js";
 import { PauseIcon, StepInIcon, StepOutIcon, StepOverIcon } from "./icons.js";
+import { runStatus } from "./run-status.js";
 
 const svg = (paths) => html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 const CopyIcon = () => svg(html`<rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" />`);
@@ -55,10 +56,17 @@ export function DebuggerPane({
   runState, runLog = [], exit, debugValues = {}, debugLog = [], names = {},
 }) {
   const [channel, setChannel] = useState("all");
+  // The run log follows its newest line
+  const logEl = useRef(null);
+  useEffect(() => {
+    if (logEl.current) logEl.current.scrollTop = logEl.current.scrollHeight;
+  }, [runLog]);
   const channelName = (n) => names[n] ?? `Channel ${n}`;
   const watches = Object.values(debugValues).sort((a, b) => a.channel - b.channel);
   const logged = debugLog.filter((d) => channel === "all" || String(d.channel) === channel);
   const kindLabel = { i: "int", f: "float", c: "count", t: "trace" };
+  // The Game Run chip: accent while building, green while running, gray after a quit, red for a build error or a crash
+  const status = runStatus(runState, exit);
   // A DEBUG_* name is an identifier from constants.txt, so it reads as code; the "Channel 9" fallback is plain text
   const channelLabel = (n) => names[n] ? html`<code>${names[n]}</code>` : `Channel ${n}`;
   // File names inside a sentence, e.g. "cleo.log has no shutdown marker", read as code
@@ -103,23 +111,21 @@ export function DebuggerPane({
       </section>
 
       <section class="debug-section">
-        <h4 class="debug-heading">
-          <span>Game Run</span>
-          <span class="telemetry-badge ${runState?.state === "running" ? "live" : "offline"}">
-            ${runState ? ({ building: "Building", running: "Running", done: runState.stopped ? "Stopped" : "Exited" })[runState.state] : "Not Started"}
-          </span>
-        </h4>
-        ${runState?.error && html`<p class="hint">${runState.error}</p>`}
-        ${exit && html`
-          <p class="run-verdict ${exit.crashed ? "crashed" : "normal"}">
-            ${!exit.known ? "No game log was written, so a crash cannot be ruled in or out."
-              : exit.crashed ? html`The game crashed: ${exit.signs.flatMap((sign, i) => [i ? "; " : "", ...withFiles(sign)])}`
-              : "The game exited normally."}
-          </p>
-          ${exit.exception && html`<code class="run-exception">${exit.exception}</code>`}
-        `}
+        <hgroup class="debug-heading">
+          <h4>Game Run</h4>
+          ${runState?.error && html`<p class="run-message hint">${runState.error}</p>`}
+          ${exit && html`
+            <p class="run-message run-verdict ${exit.crashed ? "crashed" : "normal"}">
+              ${!exit.known ? "No game log was written, so a crash cannot be ruled in or out."
+                : exit.crashed ? html`The game crashed: ${exit.signs.flatMap((sign, i) => [i ? "; " : "", ...withFiles(sign)])}`
+                : "The game exited normally."}
+            </p>
+          `}
+          <span class="telemetry-badge" data-state=${status.state}>${status.label}</span>
+        </hgroup>
+        ${exit?.exception && html`<code class="run-exception">${exit.exception}</code>`}
         ${runLog.length > 0 && html`
-          <pre class="run-log"><samp>${runLog.slice(-12).join("\n")}</samp></pre>
+          <pre class="run-log" ref=${logEl}><samp>${runLog.slice(-12).join("\n")}</samp></pre>
         `}
         ${!runState && html`<p class="hint">Press Run to build, install, and launch the game with telemetry.</p>`}
       </section>

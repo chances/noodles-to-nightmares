@@ -276,7 +276,105 @@ Deno.test("a run relays the game's telemetry, output, and exit verdict as events
   assertStringIncludes(text, 'event: debug\ndata: {"type":"debug","channel":9');
   assertStringIncludes(text, 'event: log\ndata: {"line":"Compiled main.txt"}');
   assertStringIncludes(text, 'event: exit\ndata: {"kind":"exit","code":30193');
-  assertStringIncludes(text, 'event: run\ndata: {"state":"done","code":0,"stopped":false}');
+  assertStringIncludes(
+    text,
+    'event: run\ndata: {"state":"done","code":0,"stopped":false}',
+  );
+});
+
+Deno.test("a run's output reaches the stream without ANSI console codes", async () => {
+  const encoder = new TextEncoder();
+  const stream = (text: string) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(text));
+        controller.close();
+      },
+    });
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      spawnRun: () => ({
+        pid: 1,
+        stdout: stream(
+          "\x1b[32mCompiled main.txt\x1b[0m\n\x1b[2K\x1b[1G\x1b[36mWaiting for the game\x1b[39m\n",
+        ),
+        stderr: stream("\x1b[33mwarning: slow\x1b[m\n"),
+        status: Promise.resolve({ code: 0 }),
+      }),
+    },
+  );
+  const events = await api.request("/api/telemetry");
+  const reader = events.body!.getReader();
+  const started = await api.request(`/api/run?project=${repo}`, {
+    method: "POST",
+    headers: { origin: "http://localhost" },
+  });
+  await started.body?.cancel();
+
+  const decoder = new TextDecoder();
+  let text = "";
+  while (!text.includes('"state":"done"')) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value);
+  }
+  await reader.cancel();
+
+  const lines = [...text.matchAll(/event: log\ndata: (\{.*\})/g)].map((m) =>
+    JSON.parse(m[1]).line
+  );
+  assertEquals(lines.sort(), [
+    "Compiled main.txt",
+    "Waiting for the game",
+    "warning: slow",
+  ]);
+});
+
+Deno.test("the game stays connected while a launched run is quiet between readings", async () => {
+  const encoder = new TextEncoder();
+  let out!: ReadableStreamDefaultController<Uint8Array>;
+  let exit!: (status: { code: number }) => void;
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      spawnRun: () => ({
+        pid: 1,
+        stdout: new ReadableStream<Uint8Array>({ start: (c) => (out = c) }),
+        stderr: new ReadableStream<Uint8Array>({ start: () => {} }),
+        status: new Promise((resolve) => (exit = resolve)),
+      }),
+    },
+  );
+  const events = await api.request("/api/telemetry");
+  const reader = events.body!.getReader();
+  const started = await api.request(`/api/run?project=${repo}`, {
+    method: "POST",
+    headers: { origin: "http://localhost" },
+  });
+  await started.body?.cancel();
+  out.enqueue(encoder.encode(
+    '@telemetry {"kind":"launch","exe":"gta3-game.exe"}\n' +
+      '@telemetry {"kind":"packet","event":{"type":"debug","channel":9,"kind":"i","value":1,"t":1}}\n',
+  ));
+
+  // One reading, then silence for longer than the 2.5 s the editor waits before calling the game gone
+  const decoder = new TextDecoder();
+  let text = "";
+  const quietUntil = Date.now() + 3600;
+  while (Date.now() < quietUntil) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value);
+  }
+  await reader.cancel();
+  out.close();
+  exit({ code: 0 });
+
+  const pings = [...text.matchAll(/event: ping\ndata: (\{.*\})/g)].map((m) =>
+    JSON.parse(m[1]).connected
+  );
+  assertEquals(pings.at(-1), true);
 });
 
 Deno.test("a run that cannot start answers 500 with the reason and can be tried again", async () => {

@@ -20,4 +20,4 @@ Buildings and vehicles pop in and out in `main.txt` and `missions/1_shady_job.tx
 - `main.txt:104-105` calls `LoadSpecialCharacter` into slots 1 and 2 with no `HasSpecialCharacterLoaded` check.
 
 ## Reference
-Library commands and the request, wait, use cycle: [`lessons/0004-the-streaming-class.html`](../../lessons/0004-the-streaming-class.html).
+Library commands and the request, wait, use cycle: [`lessons/0004-the-streaming-class.html`](../lessons/0004-the-streaming-class.html).

@@ -54,6 +54,49 @@ Deno.test("an unpinned global in a mission is reported", () => {
   assertStringIncludes(problems[0], "$thief");
 });
 
+Deno.test("a CLEO script that uses a pinned global without including its pin file is reported", () => {
+  const problems = lintScripts({
+    pins: pins("Alloc($player, 4402)\n"),
+    missions: {},
+    cleo: { "cleo/capture.txt": "{$CLEO .cs}\nwhile $player > 0\nend\n" },
+  });
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0], "cleo/capture.txt");
+  assertStringIncludes(problems[0], "$player");
+  assertStringIncludes(problems[0], "variables.txt");
+});
+
+Deno.test("a CLEO script that includes the pin file passes", () => {
+  const problems = lintScripts({
+    pins: pins("Alloc($player, 4402)\n"),
+    missions: {},
+    cleo: {
+      "cleo/capture.txt":
+        "{$CLEO .cs}\n{$INCLUDE ../variables.txt}\nwhile $player > 0\nend\n",
+    },
+  });
+  assertEquals(problems, []);
+});
+
+Deno.test("a CLEO script that main never starts is reported", () => {
+  const input = {
+    pins: pins("Alloc($player, 4402)\n"),
+    missions: {},
+    cleo: { "cleo/capture.txt": "{$CLEO .cs}\n{$INCLUDE ../variables.txt}\n" },
+  };
+  const problems = lintScripts({ ...input, main: "wait 0\n" });
+  assertEquals(problems.length, 1);
+  assertStringIncludes(problems[0], "capture.cs");
+  assertStringIncludes(problems[0], "START_CUSTOM_THREAD");
+  assertEquals(
+    lintScripts({
+      ...input,
+      main: '0600: START_CUSTOM_THREAD "capture.cs"\n',
+    }),
+    [],
+  );
+});
+
 Deno.test("names in strings, comments, and directives are ignored", () => {
   const problems = lintScripts({
     pins: pins("Alloc($player, 4402)\n"),

@@ -74,7 +74,7 @@ Streaming.MarkModelAsNoLongerNeeded(#MALE01)</pre>
 <blockquote class="callout" data-variant="danger"><code>Streaming.LoadModel</code> and <code>Streaming.IsModelLoaded</code> appear in <code>main.txt</code> and the mission file. Neither name is in the library's <code>gta3.json</code> on GitHub master, and neither string appears in the Sanny install's <code>data</code> folder. The library names are <code>RequestModel</code> and <code>HasModelLoaded</code>. Where the project names come from is not established, so the semantics of those lines are unverified.</blockquote>
 
 <h2>4. Where the Cycle Can Go Wrong</h2>
-<p>Three details of the library data matter when streaming misbehaves: the <code>LevelName</code> enum has no value 0, a request that is never followed by <code>MarkModelAsNoLongerNeeded</code> keeps its memory, and <code>Streaming.Switch</code> toggles streaming of "additional models like peds, cars, and maps". The open pop-in bug and its test plan live in <a href="../reports/bugs/building-vehicle-pop-cycle.md">building-vehicle-pop-cycle.md</a>.</p>
+<p>Three details of the library data matter when streaming misbehaves: the <code>LevelName</code> enum has no value 0, a request that is never followed by <code>MarkModelAsNoLongerNeeded</code> keeps its memory, and <code>Streaming.Switch</code> toggles streaming of "additional models like peds, cars, and maps". The open pop-in bug and its test plan live in <a href="../bugs/building-vehicle-pop-cycle.md">building-vehicle-pop-cycle.md</a>.</p>
 
 <h2>5. Check Yourself</h2>
 <p>Per the library, which command reports that a requested model can be used to create an entity?</p>

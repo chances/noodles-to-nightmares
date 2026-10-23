@@ -37,6 +37,9 @@ Camera.SetBehindPlayer
 Player.SetNeverGetsTired($player, True)
 Player.SetControl($player, False)
 
+// Stream the player's position and F8 captures to the mission editor (cleo/capture.txt)
+0600: START_CUSTOM_THREAD "capture.cs"
+
 // QUESTION: This removes the bridge barriers?
 World.SetVisibilityOfClosestObjectOfType(BRIDGE_BARRIER_X, BRIDGE_BARRIER_Y, BRIDGE_BARRIER_Z, BRIDGE_BARRIER_RADIUS, #INDHELIX_BARRIER, false)
 World.SwapNearestBuildingModel(BRIDGE_BARRIER_X, BRIDGE_BARRIER_Y, BRIDGE_BARRIER_Z, BRIDGE_BARRIER_RADIUS, #INDHELIX_BARRIER, #LOD_LAND014)
