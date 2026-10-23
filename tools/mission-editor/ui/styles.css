@@ -448,6 +448,12 @@ button.link:hover {
   background: none;
 }
 
+/* A state name in a link keeps the link's size and line box, in monospace, so it sits on the same baseline. */
+button.link code {
+  font: inherit;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
 /* Hidden from view, still read by screen readers. */
 .sr-only {
   position: absolute;
@@ -665,6 +671,24 @@ button.link:hover {
   font: inherit;
 }
 
+/* The zoom group sits left, Reset Layout sits at the far end of the heading. */
+.graph-controls {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--gap);
+}
+
+.graph-controls .reset-layout {
+  margin-inline-start: auto;
+}
+
+/* Fixed width, so the percentage does not shift the buttons as it changes. */
+.graph-controls .zoom-readout {
+  min-inline-size: 4.5em;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Grab is reserved for dragging a state card, which a later phase adds. */
 .node {
   cursor: pointer;
@@ -727,6 +751,15 @@ button.link:hover {
 .edge.active {
   stroke: var(--accent);
   stroke-width: 2;
+}
+
+/* A cutscene region sits behind the nodes and edges, and clicks pass through it to the canvas. */
+.cutscene-region {
+  fill: color-mix(in srgb, var(--gold) 12%, transparent);
+  stroke: var(--gold);
+  stroke-opacity: 0.6;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
 }
 
 .arrow path {

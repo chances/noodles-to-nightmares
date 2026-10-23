@@ -1,4 +1,6 @@
 import { assertEquals } from "@std/assert";
+import { fromFileUrl } from "@std/path";
+import { loadMission } from "./fsm-file.ts";
 import { problems } from "./problems.ts";
 import { defineMission } from "./types.ts";
 import { cond } from "./vocabulary.ts";
@@ -25,7 +27,7 @@ Deno.test("locals are checked for names and the CLEO limit of 16", () => {
     type: "int",
   }));
   assertEquals(problems({ ...ok, locals }).map((p) => p.message), [
-    "The mission needs 17 locals, but a CLEO script has 16",
+    "The mission needs 17 locals, but a CLEO script has 16.",
   ]);
   assertEquals(
     problems({
@@ -33,7 +35,7 @@ Deno.test("locals are checked for names and the CLEO limit of 16", () => {
       locals: [{ name: "a", type: "int" }, { name: "a", type: "int" }],
     })
       .map((p) => p.message),
-    ["Two locals are named a"],
+    ["Two locals are named a."],
   );
 });
 
@@ -45,7 +47,7 @@ Deno.test("a wait without a next state is an error on that state", () => {
   const found = problems(broken);
   assertEquals(found[0], {
     severity: "error",
-    message: "A waits on a condition but has no Next state",
+    message: "A waits on a condition but has no Next state.",
     state: "A",
   });
 });
@@ -60,7 +62,7 @@ Deno.test("a latch no monitor makes is an error on the state that reads it", () 
   };
   assertEquals(problems(broken)[0], {
     severity: "error",
-    message: "latchDriveHint is read or set, but no monitor makes it",
+    message: "latchDriveHint is read or set, but no monitor makes it.",
     state: "A",
   });
   const fixed = {
@@ -80,8 +82,8 @@ Deno.test("empty conditions and steps are errors", () => {
     p,
   ) => p.message);
   assertEquals(messages, [
-    "The mission's fail list has an empty condition",
-    "A has an empty enter step",
+    "The mission's fail list has an empty condition.",
+    "A has an empty enter step.",
   ]);
 });
 
@@ -95,7 +97,7 @@ Deno.test("a conditional step with no condition is an error", () => {
   };
   assertEquals(
     problems(broken)[0].message,
-    "A conditional step has no condition",
+    "A conditional step has no condition.",
   );
 });
 
@@ -106,10 +108,76 @@ Deno.test("warnings: stranded, unreachable, and no finish", () => {
   };
   const messages = problems(warned).map((p) => p.message);
   assertEquals(messages, [
-    "WIN has no way out and does not finish the mission",
-    "ORPHAN has no way out and does not finish the mission",
-    "Nothing leads to ORPHAN",
-    "No state finishes the mission",
+    "WIN has no way out and does not finish the mission.",
+    "ORPHAN has no way out and does not finish the mission.",
+    "Nothing leads to ORPHAN.",
+    "No state finishes the mission.",
+  ]);
+});
+
+Deno.test("linked states of one kind are a warning to simplify", () => {
+  const chain = defineMission({
+    header: ["Chain"],
+    start: "A",
+    onFail: "A",
+    fail: [cond.playerDead()],
+    states: {
+      A: { kind: "cutscene", beats: [{ wait: 100 }], next: "B" },
+      B: { kind: "cutscene", next: "C" },
+      C: { kind: "cutscene", finish: true },
+    },
+  });
+  assertEquals(problems(chain).map((p) => p.message), [
+    "Consider simplifying states: A, B, and C are all cutscene states linked together.",
+  ]);
+});
+
+Deno.test("a kind is inferred from the sections a state has, as the editor does", () => {
+  const inferred = defineMission({
+    header: ["Inferred"],
+    start: "A",
+    onFail: "A",
+    fail: [cond.playerDead()],
+    states: {
+      A: { beats: [{ wait: 100 }], next: "B" },
+      B: { beats: [{ wait: 100 }], next: "C" },
+      C: { finish: true },
+    },
+  });
+  assertEquals(problems(inferred).map((p) => p.message), [
+    "Consider simplifying states: A and B are both cutscene states linked together.",
+  ]);
+});
+
+Deno.test("states of different kinds, or of one kind not linked, are not a simplify warning", () => {
+  const mixed = defineMission({
+    header: ["Mixed"],
+    start: "A",
+    onFail: "A",
+    fail: [],
+    states: {
+      A: { kind: "cutscene", next: "B" },
+      B: { kind: "tutorial", next: "C" },
+      C: { kind: "cutscene", finish: true },
+    },
+  });
+  assertEquals(
+    problems(mixed).filter((p) => p.message.startsWith("Consider simplifying")),
+    [],
+  );
+});
+
+Deno.test("Shady Job's three introduction cutscenes are flagged to simplify", async () => {
+  const doc = await loadMission(
+    fromFileUrl(new URL("../../missions", import.meta.url)),
+    "1_shady_job",
+  );
+  const simplify = problems(doc!.mission).filter((p) =>
+    p.message.startsWith("Consider simplifying")
+  );
+  assertEquals(simplify.map((p) => p.message), [
+    "Consider simplifying states: INTRO, SAL_CUTSCENE, and END_INTRO are all cutscene states linked together.",
+    "Consider simplifying states: FETCH_PACKAGE and DELIVER are both objective states linked together.",
   ]);
 });
 
@@ -124,7 +192,7 @@ Deno.test("monitor and constant names must be identifiers, and unique", () => {
   };
   const messages = problems(broken).map((p) => p.message);
   assertEquals(messages, [
-    "Two monitors are named hint",
-    'Constant "bad name" needs a name that starts with a letter',
+    "Two monitors are named hint.",
+    'Constant "bad name" needs a name that starts with a letter.',
   ]);
 });

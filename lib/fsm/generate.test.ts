@@ -5,6 +5,7 @@ import {
   assertThrows,
 } from "@std/assert";
 import { generate } from "./generate.ts";
+import { cutsceneRegions } from "./graph.ts";
 import { syncMissions } from "./sync.ts";
 import { defineMission } from "./types.ts";
 import { cond, step } from "./vocabulary.ts";
@@ -266,6 +267,59 @@ Deno.test("an onFail state the fail check watches is rejected", () => {
     () => generate(bad, "x"),
     Error,
     "onFail state LOSE must set fail: false",
+  );
+});
+
+const scene = defineMission({
+  header: ["Scene"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [],
+  states: {
+    A: { kind: "cutscene", next: "B" },
+    B: { kind: "cutscene", next: "C" },
+    C: { next: "D" },
+    D: { finish: true },
+    LOSE: { next: "A" },
+  },
+});
+
+Deno.test("cutsceneRegions groups the cutscene states that link to each other", () => {
+  assertEquals(cutsceneRegions(scene), [["A", "B"]]);
+});
+
+Deno.test("a cutscene region sets the flag and letterbox on entry and clears them on exit", () => {
+  const text = generate(scene, "x");
+  assertStringIncludes(
+    text,
+    "$onMission = true\n$onCutscene = true\nHud.SwitchWidescreen(true)\n",
+  );
+  // Inside the region a transition needs no cutscene lines
+  assertStringIncludes(
+    text,
+    ":stateA\n  TIMERA = 0\n  state = STATE_B\n  return",
+  );
+  assertStringIncludes(
+    text,
+    "  $onCutscene = false\n  Hud.SwitchWidescreen(false)\n  state = STATE_C\n  return",
+  );
+  assertStringIncludes(
+    text,
+    "  $onCutscene = true\n  Hud.SwitchWidescreen(true)\n  state = STATE_A\n  return",
+  );
+});
+
+Deno.test("a region that finishes the mission clears its flags first", () => {
+  const ending = defineMission({
+    header: ["Ending"],
+    start: "A",
+    onFail: "A",
+    fail: [],
+    states: { A: { kind: "cutscene", finish: true } },
+  });
+  assertStringIncludes(
+    generate(ending, "x"),
+    "  $onCutscene = false\n  Hud.SwitchWidescreen(false)\n  finishMission()",
   );
 });
 

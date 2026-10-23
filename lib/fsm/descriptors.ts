@@ -307,18 +307,6 @@ export const stepDescriptors: StepDescriptor[] = [
     }],
   },
   {
-    name: "cutsceneFlag",
-    label: "Cutscene Flag",
-    group: "Player",
-    lines: ["$onCutscene = {on}"],
-    fields: [{
-      name: "on",
-      label: "In Cutscene",
-      type: "toggle",
-      default: "true",
-    }],
-  },
-  {
     name: "requestModel",
     label: "Request Model",
     group: "World",

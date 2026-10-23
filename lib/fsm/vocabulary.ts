@@ -57,8 +57,6 @@ export const step = {
   rememberPlayerCar: (): Step => ["Player.StoreCarIsIn($player, $myCar)"],
   /** Gives the player control back (`true`) or takes it away (`false`). */
   playerControl: (on: boolean): Step => [`Player.SetControl($player, ${on})`],
-  /** Sets the global `$onCutscene` flag. */
-  cutsceneFlag: (on: boolean): Step => [`$onCutscene = ${on}`],
   requestModel: (model: Expr): Step => [`Streaming.RequestModel(${model})`],
   loadModels: (): Step => ["Streaming.LoadAllModelsNow()"],
   /** Restarts TIMERB, the clock `cond.timeLimit` reads. */

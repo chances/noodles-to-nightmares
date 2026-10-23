@@ -70,7 +70,6 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ["failBanner", {}, step.failBanner()],
     ["rememberPlayerCar", {}, step.rememberPlayerCar()],
     ["playerControl", { on: "false" }, step.playerControl(false)],
-    ["cutsceneFlag", { on: "true" }, step.cutsceneFlag(true)],
     ["requestModel", { model: "827" }, step.requestModel(827)],
     ["loadModels", {}, step.loadModels()],
     ["startTimer", {}, step.startTimer()],

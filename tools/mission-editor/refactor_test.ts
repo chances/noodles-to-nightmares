@@ -23,7 +23,12 @@ Deno.test("renaming a monitor rewrites every line that reads or sets its latch",
   const mission = await tutorial();
   assertEquals(renameMonitor(mission, "isDriving", "drivingNow"), true);
   const names = await loadKnown(missions, mission);
-  assertEquals(problems(mission, names), []);
+  assertEquals(problems(mission, names), [{
+    severity: "warning",
+    message:
+      "Consider simplifying states: ARRIVE and HOME_TUTORIAL are both cutscene states linked together.",
+    state: "ARRIVE",
+  }]);
 
   const source = generate(mission, "0_tutorial");
   assertStringIncludes(source, "latchDrivingNow");
@@ -55,7 +60,12 @@ Deno.test("renaming a state rewrites its STATE_ constant in lines of Sanny text"
     `  Text.PrintHelpString("STATE_GO_HOME stays")`,
     "end",
   ]]);
-  assertEquals(problems(draft.mission as Mission), []);
+  assertEquals(problems(draft.mission as Mission), [{
+    severity: "warning",
+    message:
+      "Consider simplifying states: ARRIVE and HOME_TUTORIAL are both cutscene states linked together.",
+    state: "ARRIVE",
+  }]);
 });
 
 Deno.test("a rename changes whole words outside strings, and nothing longer", () => {

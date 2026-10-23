@@ -48,7 +48,7 @@ const messages = (m: Mission, k?: Known) =>
 
 Deno.test("a STATE_ constant for a state that does not exist is an error", () => {
   assertEquals(messages(withLines("state = STATE_NOWHERE")), [
-    "error: STATE_NOWHERE is used, but the mission has no such state",
+    "error: STATE_NOWHERE is used, but the mission has no such state.",
   ]);
   assertEquals(messages(withLines("state = STATE_WIN")), []);
 });
@@ -62,8 +62,8 @@ Deno.test("an undeclared constant or global is an error, once the project's name
   );
   assertEquals(messages(lines), []);
   assertEquals(messages(lines, known), [
-    "error: GONE_Y is used, but no constant or include declares it",
-    "error: $missing is used, but variables.txt does not declare it",
+    "error: GONE_Y is used, but no constant or include declares it.",
+    "error: $missing is used, but variables.txt does not declare it.",
   ]);
 });
 
@@ -80,7 +80,7 @@ Deno.test("names in strings, comments, members, and models are not code", () => 
 Deno.test("removing a constant leaves its uses flagged", () => {
   const withoutConst = { ...withLines("x = REWARD"), consts: {} };
   assertEquals(messages(withoutConst, known), [
-    "error: REWARD is used, but no constant or include declares it",
+    "error: REWARD is used, but no constant or include declares it.",
   ]);
 });
 
@@ -94,7 +94,7 @@ Deno.test("removing a monitor leaves its latch flagged", () => {
     },
   };
   assertEquals(messages(gone), [
-    "error: latchDriveHint is read or set, but no monitor makes it",
+    "error: latchDriveHint is read or set, but no monitor makes it.",
   ]);
 });
 
@@ -109,7 +109,7 @@ const withCond = (...conds: Cond[]): Mission => ({
 
 Deno.test("a variable declared without an Alloc pin has no slot, so a mission cannot use it", () => {
   assertEquals(messages(withLines("$unpinned = 1"), known), [
-    "error: $unpinned has no Alloc pin in variables.txt, so it has no slot",
+    "error: $unpinned has no Alloc pin in variables.txt, so it has no slot.",
   ]);
 });
 
@@ -120,7 +120,7 @@ Deno.test("a spot that is not in the geography is one error, not three missing c
     );
   assertEquals(messages(step("SAFEHOUSE"), known), []);
   assertEquals(messages(step("NOWHERE"), known), [
-    "error: Spot NOWHERE is not in the geography",
+    "error: Spot NOWHERE is not in the geography.",
   ]);
 });
 
@@ -132,7 +132,7 @@ Deno.test("a map icon that is not a RadarSprite member is an error, with or with
   for (const names of [undefined, known]) {
     assertEquals(messages(blip("Savehouse"), names), []);
     assertEquals(messages(blip("Savehose"), names), [
-      "error: RadarSprite.Savehose does not exist",
+      "error: RadarSprite.Savehose does not exist.",
     ]);
   }
 });
@@ -150,10 +150,10 @@ Deno.test("a variable of the wrong declared type is an error", () => {
     );
   assertEquals(messages(blip("$SafeBlip"), known), []);
   assertEquals(messages(blip("$myCar"), known), [
-    "error: Blip Variable needs a Blip variable, but $myCar is a Car",
+    "error: Blip Variable needs a Blip variable, but $myCar is a Car.",
   ]);
   assertEquals(messages(blip("$Blip"), known), [
-    "error: $Blip is used, but variables.txt does not declare it",
+    "error: $Blip is used, but variables.txt does not declare it.",
   ]);
 });
 
@@ -224,7 +224,9 @@ Deno.test("the tutorial and its project files declare every name it uses", async
   assertEquals(names !== undefined, true);
   assertEquals(
     problems(doc!.mission, names).map((p) => `${p.severity}: ${p.message}`),
-    [],
+    [
+      "warning: Consider simplifying states: ARRIVE and HOME_TUTORIAL are both cutscene states linked together.",
+    ],
   );
 });
 

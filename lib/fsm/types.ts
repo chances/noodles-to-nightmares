@@ -25,7 +25,7 @@ export interface Monitor {
   once: Step[];
 }
 
-/** What a state is for. The editor offers default sections by kind; the generator ignores it. */
+/** What a state is for. The editor offers default sections by kind; the generator reads only `cutscene`, which sets the cutscene flag and letterbox. */
 export const STATE_KINDS = [
   "cutscene",
   "tutorial",

@@ -19,9 +19,14 @@ import {
   stateLabel,
   whileBlock,
 } from "./emit.ts";
+import { cutsceneRegions } from "./graph.ts";
 import type { Beat, Cond, Const, Mission, State } from "./types.ts";
 
 const comments = (notes: string[] = []) => notes.map((note) => `// ${note}`);
+
+/** Entering a cutscene region sets the cutscene flag and letterbox; leaving it clears both. */
+const CUTSCENE_ON = ["$onCutscene = true", "Hud.SwitchWidescreen(true)"];
+const CUTSCENE_OFF = ["$onCutscene = false", "Hud.SwitchWidescreen(false)"];
 
 function constLine(name: string, value: Const): string {
   return Array.isArray(value)
@@ -66,6 +71,10 @@ export function generate(mission: Mission, source: string): string {
   const leaves = new Set(
     entries.filter(([, state]) => state.onExit?.length).map(([id]) => id),
   );
+  const regionOf = new Map<string, number>();
+  cutsceneRegions(mission).forEach((region, index) => {
+    for (const id of region) regionOf.set(id, index);
+  });
 
   const scratch = new Set<string>();
   const track = (conds: Cond[] = []) => {
@@ -84,9 +93,21 @@ export function generate(mission: Mission, source: string): string {
   /** Calls the routine that runs the state's `onExit` steps, when it has one. */
   const leave = (id: string) => leaves.has(id) ? [`${leaveLabel(id)}()`] : [];
 
+  /** The cutscene lines a transition from `from` to `to` needs: none inside a region, off when leaving one, on when entering one. */
+  const flagsFor = (from: string, to: string): string[] => {
+    const before = regionOf.get(from);
+    const after = regionOf.get(to);
+    if (before === after) return [];
+    return [
+      ...(before === undefined ? [] : CUTSCENE_OFF),
+      ...(after === undefined ? [] : CUTSCENE_ON),
+    ];
+  };
+
   /** Leaves `id` for `target` and returns to the dispatcher. */
   const go = (id: string, target: string): string[] => [
     ...leave(id),
+    ...flagsFor(id, target),
     `state = ${stateConst(target)}`,
     "return",
   ];
@@ -99,7 +120,10 @@ export function generate(mission: Mission, source: string): string {
     ...(failable(state)
       ? [
         "failCheck()",
-        ...ifBlock([cmp("state", "==", failTarget)], [...leave(id), "return"]),
+        ...ifBlock(
+          [cmp("state", "==", failTarget)],
+          [...leave(id), ...flagsFor(id, mission.onFail), "return"],
+        ),
       ]
       : []),
   ];
@@ -142,7 +166,8 @@ export function generate(mission: Mission, source: string): string {
     }
 
     if (state.finish) {
-      body.push("finishMission()");
+      // Finishing leaves the mission from inside a region, so it clears the cutscene flags itself
+      body.push(...(regionOf.has(id) ? CUTSCENE_OFF : []), "finishMission()");
     } else if (state.next && !state.until) {
       // The route always fires, so the state needs no tick loop
       body.push(...route);
@@ -190,6 +215,7 @@ export function generate(mission: Mission, source: string): string {
     ...[...scratch].map((local) => `int ${local} = 0`),
     "",
     "$onMission = true",
+    ...(regionOf.has(mission.start) ? CUTSCENE_ON : []),
     "",
     "while true",
     ...indent(["wait 0", ...dispatch]),

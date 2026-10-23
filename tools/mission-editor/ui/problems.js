@@ -3,9 +3,17 @@
 
 import { html, useEffect, useRef } from "/vendor/preact.js";
 import { Overlay } from "./overlay.js";
+import { stateRefs } from "./mission-ops.js";
 
 const count = (problems, severity) => problems.filter((p) => p.severity === severity).length;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** Prose with each state name drawn as a link to that state, in code font. */
+export function Prose({ text, states = [], onSelect }) {
+  return stateRefs(text, states).map((part, i) => part.state
+    ? html`<button key=${i} class="link" title=${`Select ${part.state}`} onClick=${() => onSelect(part.state)}><code>${part.state}</code></button>`
+    : html`<span key=${i}>${part.text}</span>`);
+}
 
 /** A check for no problems, a cross for errors, and an exclamation in a diamond for warnings only. */
 function PillIcon({ level }) {
@@ -26,22 +34,22 @@ export function ProblemsPill({ problems, open, onToggle }) {
 }
 
 /** Every problem, errors first. Selecting a problem selects its state. */
-export function ProblemsList({ problems, onSelect }) {
+export function ProblemsList({ problems, states, onSelect }) {
   if (!problems.length) return html`<p class="hint">Nothing to fix.</p>`;
   return html`
     <ul class="problems">
       ${problems.map((p, i) => html`
         <li key=${i} data-level=${p.severity}>
           <span class="chip" data-level=${p.severity}>${p.severity === "error" ? "Error" : "Warning"}</span>
-          <span>${p.message}</span>
-          ${p.state && html`<button class="link" onClick=${() => onSelect(p.state)}>Go To ${p.state}</button>`}
+          <span><${Prose} text=${p.message} states=${states} onSelect=${onSelect} /></span>
+          ${p.state && !stateRefs(p.message, states).some((part) => part.state === p.state) && html`<button class="link" onClick=${() => onSelect(p.state)}>Go To <code>${p.state}</code></button>`}
         </li>`)}
     </ul>
   `;
 }
 
 /** An overlay under the header pill. It closes on Escape or a click outside. */
-export function ProblemsPanel({ problems, onSelect, onClose }) {
+export function ProblemsPanel({ problems, states, onSelect, onClose }) {
   const root = useRef(null);
   useEffect(() => {
     const outside = (e) => {
@@ -59,7 +67,7 @@ export function ProblemsPanel({ problems, onSelect, onClose }) {
     <${Overlay} align="end">
       <section id="problems-panel" class="problems-panel" aria-label="Problems" ref=${root}>
         <h2>Problems</h2>
-        <${ProblemsList} problems=${problems} onSelect=${onSelect} />
+        <${ProblemsList} problems=${problems} states=${states} onSelect=${onSelect} />
       </section>
     <//>
   `;

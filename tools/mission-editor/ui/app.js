@@ -7,8 +7,8 @@ import { AssetsFilterBar, AssetsFilterButton, AssetsPane, useAssetFilters } from
 import { DebugControls, DebuggerPane } from "./debugger-pane.js";
 import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
-import { addState } from "./mission-ops.js";
-import { GraphPane } from "./graph-pane.js";
+import { addState, layout } from "./mission-ops.js";
+import { GraphControls, GraphPane } from "./graph-pane.js";
 import { RedoIcon, StopIcon, UndoIcon } from "./icons.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
@@ -116,7 +116,9 @@ function saveSizes(sizes) {
 function Pane({ title, hideTitle = false, trail = null, bar = null, children, innerRef, class: className = "" }) {
   return html`
     <section class="pane ${className}" ref=${innerRef}>
-      ${hideTitle ? html`<h2 class="sr-only">${title}</h2>` : html`<hgroup><h2>${title}</h2>${trail}</hgroup>`}
+      ${hideTitle && !trail
+        ? html`<h2 class="sr-only">${title}</h2>`
+        : html`<hgroup><h2 class=${hideTitle ? "sr-only" : ""}>${title}</h2>${trail}</hgroup>`}
       ${bar && html`<div class="pane-bar">${bar}</div>`}
       <div class="pane-body">${children}</div>
     </section>
@@ -208,6 +210,11 @@ function App() {
       ? { data: { ...current, edges: transitions(current.mission), node: loadedMission.data.node } }
       : loadedMission;
   const [picked, setSelected] = useState(savedSelection?.node ?? null);
+  const [zoom, setZoom] = useState(1);
+  // Recomputes the default layout, so the saved positions give way to it.
+  const resetLayout = () => edit("Reset Layout", (d) => {
+    d.layout = layout(d.mission, mission.data.node);
+  });
   const previousStem = useRef(stem);
   useEffect(() => {
     if (previousStem.current === stem) return;
@@ -322,7 +329,7 @@ function App() {
         </div>
         <div class="menu-anchor">
           <${ProblemsPill} problems=${problems} open=${showProblems} onToggle=${() => setShowProblems(!showProblems)} />
-          ${showProblems && html`<${ProblemsPanel} problems=${problems} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
+          ${showProblems && html`<${ProblemsPanel} problems=${problems} states=${Object.keys(mission.data?.mission.states ?? {})} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
         </div>
         ${runState?.state === "running"
           ? html`<button class="danger-fill stop-game" onClick=${stopGame} title="Stop the game"><${StopIcon} />Stop</button>`
@@ -376,9 +383,10 @@ function App() {
         <//>
       </aside>
       <div class="center">
-        <${Pane} title="Graph" hideTitle class="graph">
+        <${Pane} title="Graph" hideTitle class="graph"
+          trail=${mission.data && html`<${GraphControls} zoom=${zoom} setZoom=${setZoom} onResetLayout=${resetLayout} />`}>
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to draw its graph."
-            ready=${(m) => html`<${GraphPane} doc=${m} edges=${m.edges} node=${m.node} selected=${selected} onSelect=${setSelected} />`} />
+            ready=${(m) => html`<${GraphPane} doc=${m} edges=${m.edges} node=${m.node} selected=${selected} onSelect=${setSelected} zoom=${zoom} setZoom=${setZoom} />`} />
         <//>
       </div>
       <aside class="right" ref=${panes.right}>

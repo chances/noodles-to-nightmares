@@ -339,7 +339,7 @@ export function AssetsPane({ telemetry, filterState }) {
       `}
       <div class="spots-list">
         <h4 class="spots-heading">Spots (${filteredSpots.length}${filteredSpots.length !== spots.length ? ` of ${spots.length}` : ""})</h4>
-        <p class="hint">Also known as a Point of Interest (POI).</p>
+        <p class="hint">Also known as a <abbr title="Point of Interest">POI</abbr>.</p>
         ${filteredSpots.length === 0 ? html`
           <div class="empty-spots-hint">
             <p>No spots match the selected filters.</p>

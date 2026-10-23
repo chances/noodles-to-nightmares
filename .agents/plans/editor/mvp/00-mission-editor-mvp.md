@@ -31,3 +31,4 @@ Unfinished work from the retired v1 and state machine plans that the MVP does no
 | Search for era scripting languages as design references | Research; the first search returned nothing |
 | Port the remaining missions, delete dead code, and refactor | Later phases of the state machine plan |
 | Cross-thread channels, ownership lints, and the CLEO state plugin | Own plan: [cross-thread-state-and-cleo-plugin.md](../../cross-thread-state-and-cleo-plugin.md) |
+| Automatically merge states that link to each other with one kind | The "Consider simplifying states" warning only suggests a merge; how states combine is open |

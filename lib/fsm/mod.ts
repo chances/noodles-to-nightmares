@@ -24,7 +24,7 @@ export {
 } from "./fsm-file.ts";
 export type { FsmDoc, MissionSource } from "./fsm-file.ts";
 export { generate } from "./generate.ts";
-export { layout, NODE, transitions } from "./graph.ts";
+export { cutsceneRegions, layout, NODE, transitions } from "./graph.ts";
 export type { Edge, Point } from "./graph.ts";
 export { problems } from "./problems.ts";
 export type { ConstInfo, GlobalInfo, Known, Problem } from "./problems.ts";

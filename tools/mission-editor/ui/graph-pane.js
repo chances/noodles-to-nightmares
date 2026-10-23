@@ -1,10 +1,11 @@
 // deno-fmt-ignore-file
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
-import { html, useEffect, useLayoutEffect, useRef, useState } from "/vendor/preact.js";
-import { stateKindIcon } from "./icons.js";
+import { html, useEffect, useLayoutEffect, useRef } from "/vendor/preact.js";
+import { ResetLayoutIcon, stateKindIcon, ZoomInIcon, ZoomOutIcon } from "./icons.js";
 import { kindOf } from "./sections.js";
 import { roleKey, roles } from "./states-pane.js";
+import { cutsceneRegions, regionHull } from "./mission-ops.js";
 
 const PADDING = 24;
 const ARCH = 48;
@@ -83,9 +84,9 @@ function usePan(onDeselect) {
 }
 
 /** Ctrl+scroll (also a trackpad pinch) zooms the graph around the pointer; plain scroll still scrolls the pane. */
-function useZoom(canvas) {
-  const [zoom, setZoom] = useState(1);
-  const current = useRef(1);
+function useZoom(canvas, zoom, setZoom) {
+  const current = useRef(zoom);
+  current.current = zoom;
   const shift = useRef(null);
 
   useEffect(() => {
@@ -116,19 +117,40 @@ function useZoom(canvas) {
     shift.current = null;
   }, [zoom]);
 
-  return zoom;
 }
 
-export function GraphPane({ doc, edges, node, selected, onSelect }) {
+const ZOOM_STEP = 1.25;
+const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+
+/** Zoom out, zoom in, and reset (showing the zoom percentage), then Reset Layout at the far end of the heading. */
+export function GraphControls({ zoom, setZoom, onResetLayout }) {
+  return html`
+    <div class="graph-controls">
+      <div class="button-group" role="group" aria-label="Zoom">
+        <button disabled=${zoom <= ZOOM_MIN} onClick=${() => setZoom(clampZoom(zoom / ZOOM_STEP))} title="Zoom out"><${ZoomOutIcon} /><span class="sr-only">Zoom out</span></button>
+        <button disabled=${zoom >= ZOOM_MAX} onClick=${() => setZoom(clampZoom(zoom * ZOOM_STEP))} title="Zoom in"><${ZoomInIcon} /><span class="sr-only">Zoom in</span></button>
+        <button class="zoom-readout" onClick=${() => setZoom(1)} title="Reset zoom">${Math.round(zoom * 100)}%</button>
+      </div>
+      <button class="reset-layout" onClick=${onResetLayout} title="Reset Layout"><${ResetLayoutIcon} /><span class="sr-only">Reset Layout</span></button>
+    </div>
+  `;
+}
+
+export function GraphPane({ doc, edges, node, selected, onSelect, zoom, setZoom }) {
   const ids = Object.keys(doc.mission.states);
   const xs = ids.map((id) => doc.layout[id].x);
   const ys = ids.map((id) => doc.layout[id].y);
-  const left = Math.min(...xs) - PADDING;
+  const regions = cutsceneRegions(doc.mission).map((ids) => ({ ids, points: regionHull(ids, doc.layout, node, PADDING) }));
+  const hullX = regions.flatMap((r) => r.points.map(([x]) => x));
+  const hullY = regions.flatMap((r) => r.points.map(([, y]) => y));
+  const left = Math.min(Math.min(...xs) - PADDING, ...hullX);
+  const top = Math.min(Math.min(...ys) - PADDING, ...hullY);
   // Only back edges arch out past the right side, so only they need the extra room.
   const arches = edges.some((e) => doc.layout[e.to].y < doc.layout[e.from].y);
-  const top = Math.min(...ys) - PADDING;
-  const width = Math.max(...xs) + node.width + PADDING + (arches ? ARCH : 0) - left;
-  const height = Math.max(...ys) + node.height + PADDING - top;
+  const right = Math.max(Math.max(...xs) + node.width + PADDING + (arches ? ARCH : 0), ...hullX);
+  const bottom = Math.max(Math.max(...ys) + node.height + PADDING, ...hullY);
+  const width = right - left;
+  const height = bottom - top;
   const touches = (edge) => selected && (edge.from === selected || edge.to === selected);
   const key = (e, id) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -139,7 +161,7 @@ export function GraphPane({ doc, edges, node, selected, onSelect }) {
 
   const canvas = useRef(null);
   const pan = usePan(() => onSelect(null));
-  const zoom = useZoom(canvas);
+  useZoom(canvas, zoom, setZoom);
 
   return html`
     <div class="graph-canvas" ref=${canvas} ...${pan}>
@@ -159,6 +181,11 @@ export function GraphPane({ doc, edges, node, selected, onSelect }) {
           <path d="M0,0 L10,5 L0,10 z" />
         </marker>
       </defs>
+      ${regions.map((r) => html`
+        <polygon key=${r.ids.join(">")} class="cutscene-region" points=${r.points.map(([x, y]) => `${x},${y}`).join(" ")}>
+          <title>${`Cutscene: ${r.ids.join(", ")}`}</title>
+        </polygon>
+      `)}
       ${edges.map((edge) => html`
         <path
           key=${`${edge.from}>${edge.to}:${edge.kind}`}

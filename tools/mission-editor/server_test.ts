@@ -109,7 +109,12 @@ Deno.test("serves the project's Sanny files as paths from the missions folder", 
 Deno.test("serves a mission's problems with its table", async () => {
   const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
     .json();
-  assertEquals(body.problems, []);
+  assertEquals(body.problems, [{
+    severity: "warning",
+    message:
+      "Consider simplifying states: ARRIVE and HOME_TUTORIAL are both cutscene states linked together.",
+    state: "ARRIVE",
+  }]);
 });
 
 Deno.test("saving writes a .fsm.json that loads back, and refuses a bad table", async () => {

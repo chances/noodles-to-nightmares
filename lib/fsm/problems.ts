@@ -54,13 +54,35 @@ const STRING = /"[^"]*"|'[^']*'/g;
 const stripNonCode = (line: string) =>
   line.replace(STRING, '""').replace(/\/\/.*$/, "");
 
+/** The kind the editor shows a state as. Mirrors `kindOf` in tools/mission-editor/ui/sections.js. */
+function effectiveKind(state: State): string {
+  if (state.kind) return state.kind;
+  if (state.finish) return "ending";
+  if (state.on?.length) return state.onEnter?.length ? "encounter" : "choice";
+  if (state.until?.length) {
+    return state.onEnter?.length ? "objective" : "interaction";
+  }
+  if (state.beats?.length) return "cutscene";
+  return "";
+}
+
+/** A problem message ends with a period, so the editor's "Go To" link after it reads as a new sentence. */
+const sentence = (message: string) =>
+  /[.!?]$/.test(message) ? message : `${message}.`;
+
+/** Joins names with Oxford commas: "A", "A and B", "A, B, and C". */
+const listOf = (names: string[]) =>
+  names.length <= 2
+    ? names.join(" and ")
+    : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+
 /** Every problem in `mission`, errors first. Pass `known` to also check constants and globals against the project's Sanny files. */
 export function problems(mission: Mission, known?: Known): Problem[] {
   const found: Problem[] = [];
   const error = (message: string, state?: string) =>
-    found.push({ severity: "error", message, state });
+    found.push({ severity: "error", message: sentence(message), state });
   const warn = (message: string, state?: string) =>
-    found.push({ severity: "warning", message, state });
+    found.push({ severity: "warning", message: sentence(message), state });
 
   // The names this table declares itself. Sanny rejects a `latch…` local or `STATE_…` constant that nothing declares.
   const latches = new Set(
@@ -295,6 +317,40 @@ export function problems(mission: Mission, known?: Known): Problem[] {
   }
   if (!states.some(([, state]) => state.finish)) {
     warn("No state finishes the mission");
+  }
+
+  // Linked states of one kind could share a state. Linking runs along transitions in either direction.
+  const kinds = new Map(
+    Object.entries(mission.states).map((
+      [id, state],
+    ) => [id, effectiveKind(state)]),
+  );
+  const links = new Map<string, Set<string>>();
+  for (const { from, to } of transitions(mission)) {
+    const kind = kinds.get(from);
+    if (!kind || kind !== kinds.get(to)) continue;
+    for (const [a, b] of [[from, to], [to, from]]) {
+      const peers = links.get(a) ?? new Set<string>();
+      peers.add(b);
+      links.set(a, peers);
+    }
+  }
+  const grouped = new Set<string>();
+  for (const id of links.keys()) {
+    if (grouped.has(id)) continue;
+    const group = new Set([id]);
+    for (const member of group) {
+      for (const peer of links.get(member) ?? []) group.add(peer);
+    }
+    for (const member of group) grouped.add(member);
+    const names = Object.keys(mission.states).filter((name) => group.has(name));
+    const be = names.length === 2 ? "are both" : "are all";
+    warn(
+      `Consider simplifying states: ${listOf(names)} ${be} ${
+        kinds.get(id)
+      } states linked together`,
+      names[0],
+    );
   }
 
   return [

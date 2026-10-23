@@ -3,6 +3,7 @@
 
 import { html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
 import { Plus } from "./add-state.js";
+import { Prose } from "./problems.js";
 import { deleteState, inboundTo, nameError, renameState } from "./document.js";
 import { renameMonitor } from "./refactor.js";
 import { stateKindIcon } from "./icons.js";
@@ -21,7 +22,7 @@ import { CondList, Combo, EditorContext, FieldInput, StepList } from "./step-con
 const lines = (text) => text.split("\n");
 
 function StateLink({ id, onSelect }) {
-  return html`<button class="link" title=${`Select ${id}`} onClick=${() => onSelect(id)}>${id}</button>`;
+  return html`<button class="link" title=${`Select ${id}`} onClick=${() => onSelect(id)}><code>${id}</code></button>`;
 }
 
 /** `action` is a control for the heading row, such as Add Branch; it sits beside the remove button. */
@@ -57,11 +58,11 @@ function DeleteDialog({ id, mission, onConfirm, onClose }) {
     <dialog ref=${open} onClose=${(e) => { if (e.currentTarget.returnValue === "delete") onConfirm(); onClose(); }}>
       <h2>Delete ${id}?</h2>
       ${blocked
-        ? html`<p>${id} is ${blocked}. Pick another ${isStart ? "start" : "fail"} state in the mission form, then delete it.</p>`
+        ? html`<p><code>${id}</code> is ${blocked}. Pick another ${isStart ? "start" : "fail"} state in the mission form, then delete it.</p>`
         : edges.length
-          ? html`<p>These states will lose their link to ${id}:</p>
-              <ul class="notes">${edges.map((e, i) => html`<li key=${i}>${e.from}: ${e.kind === "next" ? "Next state is cleared" : "Branch is removed"}</li>`)}</ul>`
-          : html`<p>Nothing leads to ${id}.</p>`}
+          ? html`<p>These states will lose their link to <code>${id}</code>:</p>
+              <ul class="notes">${edges.map((e, i) => html`<li key=${i}><code>${e.from}</code>: ${e.kind === "next" ? "Next state is cleared" : "Branch is removed"}</li>`)}</ul>`
+          : html`<p>Nothing leads to <code>${id}</code>.</p>`}
       ${!blocked && html`<p class="hint">Undo (Ctrl+Z) brings it back.</p>`}
       <form method="dialog" class="actions">
         <button value="cancel" autofocus>Keep State</button>
@@ -238,7 +239,7 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
     <div class="inspector">
       ${mine.length > 0 && html`
         <ul class="problems">
-          ${mine.map((p, i) => html`<li key=${i} data-level=${p.severity}><span class="chip" data-level=${p.severity}>${p.severity === "error" ? "Error" : "Warning"}</span><span>${p.message}</span></li>`)}
+          ${mine.map((p, i) => html`<li key=${i} data-level=${p.severity}><span class="chip" data-level=${p.severity}>${p.severity === "error" ? "Error" : "Warning"}</span><span><${Prose} text=${p.message} states=${states} onSelect=${onSelect} /></span></li>`)}
         </ul>`}
       <${Section} heading="Flow">
         <dl class="facts">

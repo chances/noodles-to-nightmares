@@ -29,6 +29,15 @@ export const RedoIcon = () => icon(html`<path d="M15 14l5-5-5-5" /><path d="M20 
 /** A classic funnel icon for filtering. */
 export const FilterIcon = () => icon(html`<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />`);
 
+/** A magnifier with a plus: zoom in. */
+export const ZoomInIcon = () => icon(html`<circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" />`);
+
+/** A magnifier with a minus: zoom out. */
+export const ZoomOutIcon = () => icon(html`<circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M8 11h6" />`);
+
+/** A circular arrow: reset the graph layout. */
+export const ResetLayoutIcon = () => icon(html`<path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 4v5h-5" />`);
+
 /** Cutscene: film camera on a tripod. */
 export const CutsceneIcon = (props) =>
   icon(html`<rect x="4" y="5" width="10" height="8" rx="1.5" /><circle cx="6.5" cy="3" r="1.5" /><circle cx="11.5" cy="3" r="1.5" /><polygon points="14 7 19.5 4 19.5 14 14 11" /><path d="M9 13v2.5M9 15.5L4.5 22M9 15.5l4.5 6.5M9 15.5v6.5" />`, props);
