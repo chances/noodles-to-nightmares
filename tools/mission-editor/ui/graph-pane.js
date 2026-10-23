@@ -162,6 +162,10 @@ export function GraphPane({ doc, edges, node, selected, onSelect, zoom, setZoom 
   const canvas = useRef(null);
   const pan = usePan(() => onSelect(null));
   useZoom(canvas, zoom, setZoom);
+  // A state picked elsewhere, such as a state link, scrolls its node into view.
+  useEffect(() => {
+    canvas.current?.querySelector('.node[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selected]);
 
   return html`
     <div class="graph-canvas" ref=${canvas} ...${pan}>

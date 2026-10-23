@@ -7,7 +7,7 @@ const SLOT = /\{(\w+)\}/g;
 const PATTERNS = {
   text: '[^"\\n]*',
   number: "\\d+",
-  expr: "-?\\d+(?:\\.\\d+)?|[A-Za-z_$][\\w$]*",
+  expr: "-?\\d+(?:\\.\\d+)?|#?[A-Za-z_$][\\w$]*",
   handle: "\\$\\w+",
   name: "\\w+",
   latch: "[A-Z]\\w*",
@@ -44,7 +44,7 @@ export function formatNumber(text) {
 const FORMATS = {
   text: (text) => text.replace(/["\n]/g, ""),
   number: (text) => text.replace(/\D/g, "").replace(/^0+(?=\d)/, ""),
-  expr: (text) => text.replace(/[^A-Za-z0-9_$.-]/g, ""),
+  expr: (text) => text.replace(/[^A-Za-z0-9_$.#-]/g, "").replace(/(?!^)#/g, ""),
   handle: (text) => "$" + text.replace(/[^\w]/g, ""),
   name: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
   spot: (text) => text.toUpperCase().replace(/[^A-Z0-9_]/g, ""),

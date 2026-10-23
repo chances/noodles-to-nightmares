@@ -307,6 +307,12 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     }
     steps(state.onEnter, `${id} has an empty enter step`, id);
     steps(state.onExit, `${id} has an empty exit step`, id);
+    if (state.timeLimit !== undefined && !(state.timeLimit > 0)) {
+      error(`${id}'s time limit must be above 0 seconds.`, id);
+    }
+    if (state.timeLimit !== undefined && state.finish) {
+      error(`${id} has a time limit and finishes the mission.`, id);
+    }
 
     if (!state.next && !state.on?.length && !state.finish) {
       warn(`${id} has no way out and does not finish the mission`, id);

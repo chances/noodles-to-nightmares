@@ -77,6 +77,72 @@ Deno.test("a watched state waits out a beat in a TIMERA loop that runs the watch
   );
 });
 
+const timed = defineMission({
+  header: ["Timed"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [cond.playerDead()],
+  states: {
+    A: { timeLimit: 90, onEnter: [step.help("In A")], next: "B" },
+    B: { fail: false, finish: true },
+    LOSE: { fail: false, next: "A" },
+  },
+});
+
+Deno.test("a state with a time limit restarts TIMERB on entry and goes to the fail state when it passes", () => {
+  const text = generate(timed, "x");
+  assertStringIncludes(text, ":stateA\n  TIMERA = 0\n  TIMERB = 0\n");
+  assertStringIncludes(
+    text,
+    [
+      "    if",
+      "      TIMERB > 90000",
+      "    then",
+      "      state = STATE_LOSE",
+      "      return",
+      "    end",
+    ].join("\n"),
+  );
+});
+
+Deno.test("a state without a time limit never reads TIMERB", () => {
+  const text = generate(fixture, "x");
+  assert(!text.includes("TIMERB"));
+});
+
+Deno.test("a time limit must be above 0 and cannot finish the mission", () => {
+  assertThrows(() =>
+    generate(
+      defineMission({
+        header: ["Bad"],
+        start: "A",
+        onFail: "LOSE",
+        fail: [cond.playerDead()],
+        states: {
+          A: { timeLimit: 0, finish: true },
+          LOSE: { fail: false, finish: true },
+        },
+      }),
+      "x",
+    )
+  );
+  assertThrows(() =>
+    generate(
+      defineMission({
+        header: ["Bad"],
+        start: "A",
+        onFail: "LOSE",
+        fail: [cond.playerDead()],
+        states: {
+          A: { timeLimit: 30, finish: true },
+          LOSE: { fail: false, finish: true },
+        },
+      }),
+      "x",
+    )
+  );
+});
+
 Deno.test("a state with until ticks in its own loop and leaves by return", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(

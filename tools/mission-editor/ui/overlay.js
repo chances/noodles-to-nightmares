@@ -1,4 +1,5 @@
 import { html, render, useLayoutEffect, useRef } from "/vendor/preact.js";
+import { autoUpdate, computePosition, flip, offset, shift, size } from "/vendor/floating-ui-dom.js";
 
 const EDGE = 8;
 
@@ -38,42 +39,29 @@ export function Overlay(
     if (free) return;
     const anchor = marker.current?.parentElement;
     if (!anchor) return;
-    const place = () => {
-      const box = anchor.getBoundingClientRect();
-      const view = document.documentElement;
-      const top = box.bottom + gap;
-      el.style.setProperty("inset-block-start", `${top}px`);
-      el.style.setProperty("--anchor-inline-size", `${box.width}px`);
-      el.style.setProperty(
-        "max-block-size",
-        `${Math.max(view.clientHeight - top - EDGE, 0)}px`,
-      );
-      el.style.setProperty(
-        "max-inline-size",
-        `${view.clientWidth - 2 * EDGE}px`,
-      );
-      if (align === "end") {
-        el.style.setProperty("inset-inline-start", "auto");
-        el.style.setProperty(
-          "inset-inline-end",
-          `${Math.max(view.clientWidth - box.right, EDGE)}px`,
-        );
-      } else {
-        el.style.setProperty("inset-inline-end", "auto");
-        el.style.setProperty(
-          "inset-inline-start",
-          `${Math.max(box.left, EDGE)}px`,
-        );
-      }
-      if (fit) el.style.setProperty("inline-size", `${box.width}px`);
+    const place = async () => {
+      const { x, y } = await computePosition(anchor, el, {
+        strategy: "fixed",
+        placement: align === "end" ? "bottom-end" : "bottom-start",
+        middleware: [
+          offset(gap),
+          flip({ padding: EDGE }),
+          shift({ padding: EDGE }),
+          size({
+            padding: EDGE,
+            apply({ availableHeight, availableWidth, rects }) {
+              el.style.maxBlockSize = `${Math.max(availableHeight, 0)}px`;
+              el.style.maxInlineSize = `${Math.max(availableWidth, 0)}px`;
+              el.style.setProperty("--anchor-inline-size", `${rects.reference.width}px`);
+              if (fit) el.style.inlineSize = `${rects.reference.width}px`;
+            },
+          }),
+        ],
+      });
+      el.style.insetInlineStart = `${x}px`;
+      el.style.insetBlockStart = `${y}px`;
     };
-    place();
-    addEventListener("resize", place);
-    addEventListener("scroll", place, true);
-    return () => {
-      removeEventListener("resize", place);
-      removeEventListener("scroll", place, true);
-    };
+    return autoUpdate(anchor, el, place);
   });
 
   return html`<span ref=${marker} hidden />`;

@@ -1,7 +1,7 @@
 // deno-fmt-ignore-file
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
-import { html } from "/vendor/preact.js";
+import { html, useEffect, useRef } from "/vendor/preact.js";
 import { stateKindIcon } from "./icons.js";
 import { kindOf } from "./sections.js";
 
@@ -23,8 +23,13 @@ export function StatesPane({ doc, selected, onSelect }) {
   const ids = Object.keys(doc.mission.states).sort((a, b) =>
     doc.layout[a].x - doc.layout[b].x || doc.layout[a].y - doc.layout[b].y
   );
+  // A state picked elsewhere, such as a state link, scrolls its row into view.
+  const list = useRef(null);
+  useEffect(() => {
+    list.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
   return html`
-    <ul class="state-list">
+    <ul class="state-list" ref=${list}>
       ${ids.map((id) => html`
         <li key=${id}>
           <button

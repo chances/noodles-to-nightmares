@@ -55,6 +55,12 @@ export function generate(mission: Mission, source: string): string {
     if (state.finish && (state.next || state.until || state.on?.length)) {
       throw new Error(`${source}: ${id} has finish with next, until, or on`);
     }
+    if (state.timeLimit !== undefined && !(state.timeLimit > 0)) {
+      throw new Error(`${source}: ${id} has a time limit that is not above 0`);
+    }
+    if (state.timeLimit !== undefined && state.finish) {
+      throw new Error(`${source}: ${id} has a time limit and finishes the mission`);
+    }
   }
   const failable = (state: State) =>
     mission.fail.length > 0 && state.fail !== false;
@@ -112,9 +118,10 @@ export function generate(mission: Mission, source: string): string {
     "return",
   ];
 
-  const watched = (state: State) => monitors.length > 0 || failable(state);
+  const watched = (state: State) =>
+    monitors.length > 0 || failable(state) || state.timeLimit !== undefined;
 
-  /** What a tick checks besides the state's own transitions: the monitors, then the fail check. */
+  /** What a tick checks besides the state's own transitions: the monitors, the fail check, then the time limit. */
   const watch = (id: string, state: State): string[] => [
     ...(monitors.length ? ["runMonitors()"] : []),
     ...(failable(state)
@@ -126,6 +133,17 @@ export function generate(mission: Mission, source: string): string {
         ),
       ]
       : []),
+    ...(state.timeLimit === undefined
+      ? []
+      : ifBlock(
+        [{ test: `TIMERB > ${state.timeLimit * 1000}` }],
+        [
+          ...leave(id),
+          ...flagsFor(id, mission.onFail),
+          `state = ${failTarget}`,
+          "return",
+        ],
+      )),
   ];
 
   function beatLines(id: string, state: State, beat: Beat): string[] {
@@ -150,6 +168,7 @@ export function generate(mission: Mission, source: string): string {
     const body = [
       ...comments(state.notes),
       "TIMERA = 0",
+      ...(state.timeLimit === undefined ? [] : ["TIMERB = 0"]),
       ...(state.resetLatches ? latches.map((l) => `${l} = false`) : []),
       ...(state.onEnter ?? []).flat(),
       ...(state.beats ?? []).flatMap((beat) => beatLines(id, state, beat)),
@@ -168,7 +187,7 @@ export function generate(mission: Mission, source: string): string {
     if (state.finish) {
       // Finishing leaves the mission from inside a region, so it clears the cutscene flags itself
       body.push(...(regionOf.has(id) ? CUTSCENE_OFF : []), "finishMission()");
-    } else if (state.next && !state.until) {
+    } else if (state.next && !state.until && state.timeLimit === undefined) {
       // The route always fires, so the state needs no tick loop
       body.push(...route);
     } else {

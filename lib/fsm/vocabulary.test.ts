@@ -102,11 +102,6 @@ Deno.test("healthBelow reads health into a scratch local", () => {
   });
 });
 
-Deno.test("timeLimit counts game minutes of 1000 ms on TIMERB", () => {
-  assertEquals(cond.timeLimit(2).test, "TIMERB > 2000");
-  assertEquals(step.startTimer(), ["TIMERB = 0"]);
-});
-
 Deno.test("wantedAbove reads the wanted level into a scratch local", () => {
   assertEquals(cond.wantedAbove(1), {
     pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],

@@ -57,6 +57,11 @@ export interface State<S extends string = string> {
   on?: { when: Cond[]; goto: S }[];
   /** After the story beats, finish the mission through `finishMission()`. */
   finish?: boolean;
+  /**
+   * Seconds the state may last. TIMERB restarts on entry, and once it passes this many seconds (1000 ms each) the
+   * mission goes to `onFail`. Only a state with this set is timed.
+   */
+  timeLimit?: number;
 }
 
 export type Const = number | [value: number, comment: string];

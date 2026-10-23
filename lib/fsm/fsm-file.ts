@@ -36,6 +36,7 @@ const state = v.object({
   next: v.optional(v.string()),
   on: v.optional(v.array(v.object({ when: conds, goto: v.string() }))),
   finish: v.optional(v.boolean()),
+  timeLimit: v.optional(v.number()),
 });
 const mission = v.object({
   header: lines,

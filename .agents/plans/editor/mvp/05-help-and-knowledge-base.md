@@ -22,6 +22,11 @@ A circled "?" info icon sits on each card and vocabulary entry. Hover shows a su
 - The dialog is non-modal and closes without losing the mission state.
 - The descriptor test fails when a summary is missing.
 
+## Docs Notes
+
+- Start Time Limit Clock only resets TIMERB to 0 (`TIMERB = 0`). It sets no limit, so the entry must say so.
+- The limit is the Time limit exceeded condition (`TIMERB > {minutes}000`), which defaults to 120 game minutes (`TIMERB > 120000`). A game minute is 1000 ms.
+
 ## Related
 
 Overlay rules for menus and panels are in the project memory, and the dialog must go through the same overlay host.

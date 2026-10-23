@@ -185,7 +185,7 @@ function BranchesForm({ rules, states, onChange }) {
   `;
 }
 
-function SectionBody({ id, state, states, change }) {
+function SectionBody({ id, state, states, change, link, onFail }) {
   switch (id) {
     case "onEnter": return html`<${StepList} steps=${state.onEnter ?? []} emptyText="Nothing runs on entry." onChange=${(v) => change("Enter Steps", (s) => { s.onEnter = v; })} />`;
     case "onExit": return html`<${StepList} steps=${state.onExit ?? []} emptyText="Nothing runs on exit." onChange=${(v) => change("Exit Steps", (s) => { s.onExit = v; })} />`;
@@ -196,6 +196,13 @@ function SectionBody({ id, state, states, change }) {
       <p class="hint">After the story beats, the first branch whose conditions hold picks the next state.</p>
       <${BranchesForm} rules=${state.on ?? []} states=${states} onChange=${(v) => change("Branches", (s) => { s.on = v; })} />`;
     case "latches": return html`<p>Every monitor can fire again after this state is entered.</p>`;
+    case "timeLimit": return html`
+      <p class="hint">Measured from entry to this state. Exceeding the limit goes to ${link(onFail)}.</p>
+      <div class="duration-field">
+        <input type="number" min="1" step="1" aria-label="Time limit in seconds" value=${state.timeLimit ?? ""}
+          onInput=${(e) => { const seconds = Number(e.currentTarget.value); change("Time Limit", (s) => { s.timeLimit = seconds; }, "timeLimit"); }} />
+        <span>seconds (wall-time)</span>
+      </div>`;
     case "notes": return html`<textarea rows=${Math.max(2, (state.notes ?? []).length)} aria-label="Notes" value=${(state.notes ?? []).join("\n")}
       onInput=${(e) => { const text = e.currentTarget.value; change("Notes", (s) => { s.notes = lines(text); }, "notes"); }}></textarea>`;
   }
@@ -227,6 +234,8 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
     setOpened((o) => ({ ...o, [`${id}:${section.id}`]: true }));
     // Latches are the one section that holds a flag, so adding it sets the flag.
     if (section.id === "latches") change("Add Section", (s) => { s.resetLatches = true; });
+    // A time limit needs a value to be a limit at all, so the section starts at one minute.
+    if (section.id === "timeLimit") change("Add Section", (s) => { s.timeLimit = 60; });
   };
   const remove = (section) => () => {
     setOpened((o) => ({ ...o, [`${id}:${section.id}`]: false }));
@@ -264,7 +273,7 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
       ${SECTIONS.filter(isOpen).map((section) => html`
         <${Section} key=${`${id}:${section.id}`} heading=${section.heading} onRemove=${remove(section)}
           action=${section.id === "branches" && html`<button class="icon" aria-label="Add a branch to this state" title="Add Branch" onClick=${() => change("Add Branch", (s) => { s.on = [...(s.on ?? []), { when: [], goto: states[0] }]; })}><${Plus} /></button>`}>
-          <${SectionBody} id=${section.id} state=${state} states=${states} change=${change} />
+          <${SectionBody} id=${section.id} state=${state} states=${states} change=${change} link=${link} onFail=${mission.onFail} />
         <//>`)}
 
       ${absent.length > 0 && html`

@@ -21,6 +21,7 @@ export const SECTIONS = [
   { id: "branches", heading: "Branches", field: "on" },
   { id: "onExit", heading: "Exit Steps", field: "onExit" },
   { id: "latches", heading: "Reset Monitors", field: "resetLatches" },
+  { id: "timeLimit", heading: "Time Limit", field: "timeLimit" },
   { id: "notes", heading: "Notes", field: "notes" },
 ];
 

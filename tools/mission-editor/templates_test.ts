@@ -72,11 +72,129 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ["playerControl", { on: "false" }, step.playerControl(false)],
     ["requestModel", { model: "827" }, step.requestModel(827)],
     ["loadModels", {}, step.loadModels()],
-    ["startTimer", {}, step.startTimer()],
     [
       "soundAt",
       { spot: "PAYPHONE", sound: "SoundPayphoneRinging" },
       step.soundAt("PAYPHONE", "SoundPayphoneRinging"),
+    ],
+    ["clearUi", {}, step.clearUi()],
+    ["wait", { ms: "0" }, step.wait(0)],
+    [
+      "loadSpecialCharacter",
+      { slot: "1", model: "#SPECIAL01", name: "FRANKIE" },
+      step.loadSpecialCharacter(1, "#SPECIAL01", "FRANKIE"),
+    ],
+    [
+      "charCreate",
+      { model: "#SPECIAL01", spot: "NOODLES_SAL", char: "sal" },
+      step.charCreate("#SPECIAL01", "NOODLES_SAL", "sal"),
+    ],
+    [
+      "charPersonality",
+      { char: "sal", stat: "ToughGuy" },
+      step.charPersonality("sal", "ToughGuy"),
+    ],
+    ["charFacePlayer", { char: "sal" }, step.charFacePlayer("sal")],
+    ["charLookPlayer", { char: "sal" }, step.charLookPlayer("sal")],
+    [
+      "charAnimGroup",
+      { char: "sal", animGroup: "Man" },
+      step.charAnimGroup("sal", "Man"),
+    ],
+    [
+      "cameraAtChar",
+      { char: "sal", switch: "JumpCut" },
+      step.cameraAtChar("sal", "JumpCut"),
+    ],
+    [
+      "cameraFixedAtChar",
+      { spot: "NOODLES_SECURITY_CAM", char: "sal", switch: "JumpCut" },
+      step.cameraFixedAtChar("NOODLES_SECURITY_CAM", "sal", "JumpCut"),
+    ],
+    ["cameraInterpolation", { ms: "750" }, step.cameraInterpolation(750)],
+    ["cameraBehindPlayer", {}, step.cameraBehindPlayer()],
+    [
+      "cameraGenerateCars",
+      { on: "false" },
+      step.cameraGenerateCars(false),
+    ],
+    [
+      "charHeading",
+      { var: "salHeading", char: "sal" },
+      step.charHeading("salHeading", "sal"),
+    ],
+    [
+      "invertHeading",
+      { var: "faceSalHeading", source: "salHeading" },
+      step.invertHeading("faceSalHeading", "salHeading"),
+    ],
+    ["playerFaceChar", { char: "sal" }, step.playerFaceChar("sal")],
+    [
+      "playerHeading",
+      { angle: "faceSalHeading" },
+      step.playerHeading("faceSalHeading"),
+    ],
+    ["playerLookChar", { char: "sal" }, step.playerLookChar("sal")],
+    ["playerStopLooking", {}, step.playerStopLooking()],
+    ["charStopLooking", { char: "sal" }, step.charStopLooking("sal")],
+    [
+      "charRunning",
+      { char: "sal", running: "true" },
+      step.charRunning("sal", true),
+    ],
+    [
+      "charGoto",
+      { char: "sal", spot: "ROSA_SPAWN" },
+      step.charGoto("sal", "ROSA_SPAWN"),
+    ],
+    ["charRemove", { char: "sal" }, step.charRemove("sal")],
+    ["ensureVanBlip", {}, step.ensureVanBlip()],
+    [
+      "carCreate",
+      { car: "$myCar", model: "#RUMPO", spot: "SUPPLY_VAN" },
+      step.carCreate("$myCar", "#RUMPO", "SUPPLY_VAN"),
+    ],
+    [
+      "carModel",
+      { var: "$myCarModel", model: "#RUMPO" },
+      step.carModel("$myCarModel", "#RUMPO"),
+    ],
+    [
+      "blipForCoord",
+      { var: "deliveryBlip", spot: "DELIVERY" },
+      step.blipForCoord("deliveryBlip", "DELIVERY"),
+    ],
+    [
+      "blipForPickup",
+      { var: "pickupBlip", pickup: "packagePickup" },
+      step.blipForPickup("pickupBlip", "packagePickup"),
+    ],
+    [
+      "blipRemoveVar",
+      { var: "payphoneBlip" },
+      step.blipRemoveVar("payphoneBlip"),
+    ],
+    [
+      "pickupCreate",
+      { pickup: "packagePickup", model: "1321", spot: "PACKAGE_PICKUP" },
+      step.pickupCreate("packagePickup", 1321, "PACKAGE_PICKUP"),
+    ],
+    [
+      "pickupRemove",
+      { pickup: "packagePickup" },
+      step.pickupRemove("packagePickup"),
+    ],
+    [
+      "phoneGrab",
+      { spot: "PAYPHONE", var: "payphoneHandle" },
+      step.phoneGrab("PAYPHONE", "payphoneHandle"),
+    ],
+    ["phoneOn", { var: "payphoneHandle" }, step.phoneOn("payphoneHandle")],
+    ["phoneOff", { var: "payphoneHandle" }, step.phoneOff("payphoneHandle")],
+    [
+      "debugLog",
+      { key: "DEBUG_PLAYER", value: "$player" },
+      step.debugLog("DEBUG_PLAYER", "$player"),
     ],
   ];
   assertEquals(cases.map(([name]) => name), stepDescriptors.map((d) => d.name));
@@ -134,7 +252,6 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
     ["charSpottedPlayer", { char: "sal" }, cond.charSpottedPlayer("sal")],
     ["saveFinished", {}, cond.saveFinished()],
     ["modelLoaded", { model: "827" }, cond.modelLoaded(827)],
-    ["timeLimit", { minutes: "120" }, cond.timeLimit(120)],
     ["wantedAbove", { max: "1" }, cond.wantedAbove(1)],
     [
       "carHealthBelow",
@@ -143,6 +260,26 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
     ],
     ["latchSet", { id: "driveHint" }, cond.latchSet("driveHint")],
     ["latchClear", { id: "driveHint" }, cond.latchClear("driveHint")],
+    [
+      "variableEquals",
+      { name: "$skipCutscene", value: "false" },
+      cond.variableEquals("$skipCutscene", "false"),
+    ],
+    [
+      "pickupNotCollected",
+      { pickup: "$pickup" },
+      cond.pickupNotCollected("$pickup"),
+    ],
+    [
+      "timeLimitExceeded",
+      { seconds: "60" },
+      cond.timeLimitExceeded(60),
+    ],
+    [
+      "timeLimitNotExceeded",
+      { seconds: "60" },
+      cond.timeLimitNotExceeded(60),
+    ],
   ];
   // `playerNear3D` is listed twice: once with a typed radius, once with the default radius and no sphere.
   assertEquals(
@@ -251,6 +388,46 @@ Deno.test("mission 0's steps and conditions all read as typed controls, except t
     }
   }
   assertEquals(untyped, []);
+});
+
+Deno.test("Shady Job's steps and conditions read as typed controls, except the lines listed here", async () => {
+  const doc = await loadMission(missions, "1_shady_job");
+  const m = doc!.mission;
+  const untyped: string[] = [];
+  const steps = (list: Step[] = []) => {
+    for (const s of list) {
+      // A beat with no `do` loads as one empty step, which has nothing to type.
+      if (s.every((line) => line === "")) continue;
+      if (
+        !parseLines(stepDescriptors, s) &&
+        !parseWhen(stepDescriptors, condDescriptors, s)
+      ) untyped.push(s.join(" | "));
+    }
+  };
+  const conds = (list: Cond[] = []) => {
+    for (const c of list) {
+      if (!parseCond(condDescriptors, c)) untyped.push(c.test);
+    }
+  };
+  conds(m.fail);
+  for (const s of Object.values(m.states)) {
+    steps(s.onEnter);
+    steps(s.onExit);
+    conds(s.until);
+    for (const rule of s.on ?? []) conds(rule.when);
+    for (const beat of s.beats ?? []) {
+      conds(beat.when);
+      steps(beat.do);
+    }
+  }
+  assertEquals(untyped, [
+    "load_special_character {slotId} 1 {modelName} 'FRANKIE'",
+    "Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal) | Char.SetPersonality(sal, PedStat.ToughGuy) | Char.TurnToFacePlayer(sal, $player) | Char.LookAtPlayerAlways(sal, $player) | Char.SetAnimGroup(sal, AnimGroup.Man) | wait 0",
+    "request_model {modelId} #RUMPO",
+    "load_all_models_now",
+    "Car.TurnToFaceCoord($myCar, PAYPHONE_X, PAYPHONE_BLIP_Y)",
+    "payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)",
+  ]);
 });
 
 Deno.test("a conditional step reads back into conditions, a then body, and an else body", () => {

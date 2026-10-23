@@ -1435,6 +1435,23 @@ small.error {
   padding-inline-start: var(--gap);
 }
 
+/* A number with its unit on one line. The input keeps its own width instead of filling the column. */
+.duration-field {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.duration-field input {
+  inline-size: 10ch;
+}
+
+/* Every select in a list of steps or conditions fills the column, so the Add buttons and the field selects match. */
+.typed-list select {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
 select.add {
   align-self: flex-start;
   max-inline-size: 100%;

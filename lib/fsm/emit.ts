@@ -55,10 +55,16 @@ export function ifBlock(
   mode: "and" | "or" = "and",
 ): string[] {
   if (then.length === 0 && otherwise.length === 0) return [];
+  // Sanny rejects `if not` with its condition on the next line, so a negated single condition stays on the `if` line.
+  const [only] = conds;
+  const head = conds.length !== 1
+    ? [`if ${mode}`, ...indent(conds.map((c) => c.test))]
+    : only.test.startsWith("not ")
+    ? [`if ${only.test}`]
+    : ["if", ...indent([only.test])];
   return [
     ...conds.flatMap((c) => c.pre ?? []),
-    conds.length === 1 ? "if" : `if ${mode}`,
-    ...indent(conds.map((c) => c.test)),
+    ...head,
     "then",
     ...indent(then),
     ...(otherwise.length ? ["else", ...indent(otherwise)] : []),

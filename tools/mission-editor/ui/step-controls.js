@@ -3,7 +3,6 @@
 
 import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
 import { Overlay } from "./overlay.js";
-import { SplitButton } from "./split-button.js";
 import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
 
 /** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
@@ -279,6 +278,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
     onChange(next);
   };
 
+  // TODO: Add a "JavaScript/TypeScript" item for CLEO JS scripts beside Sanny Builder.
   return html`
     <div class="typed-list">
       ${items.length === 0 && html`<p class="hint">${emptyText}</p>`}
@@ -286,24 +286,15 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
         <ul class="items">
           ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} onMove=${move(i)} />`)}
         </ul>`}
-      ${kind === "step"
-        // Most steps are an if/then/else, so the button adds one and the menu holds everything else.
-        ? html`<${SplitButton} label="Add Condition" title="Add Condition" ariaLabel="Add a conditional step to this list" onMain=${() => add("__when")}
-            menuTitle="More Steps" menuAriaLabel="Choose a step to add" onPick=${add}
-            groups=${[
-              ...groups.map((group) => ({ heading: group, items: descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => ({ value: d.name, label: d.label })) })),
-              // TODO: Add a "JavaScript/TypeScript" item for CLEO JS scripts beside Sanny Builder.
-              { heading: "Custom", items: [{ value: "__sanny", label: "Sanny Builder" }] },
-            ]} />`
-        : html`
-          <select class="add" aria-label=${addLabel} value="" onChange=${(e) => { const name = e.currentTarget.value; e.currentTarget.value = ""; add(name); }}>
-            <option value="">${addLabel}</option>
-            ${groups.map((group) => html`
-              <optgroup key=${group} label=${group}>
-                ${descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
-              </optgroup>`)}
-            <option value="__sanny">Custom Sanny</option>
-          </select>`}
+      <select class="add" aria-label=${addLabel} value="" onChange=${(e) => { const name = e.currentTarget.value; e.currentTarget.value = ""; add(name); }}>
+        <option value="">${addLabel}</option>
+        ${kind === "step" && html`<option value="__when">If / Then / Else</option>`}
+        ${groups.map((group) => html`
+          <optgroup key=${group} label=${group}>
+            ${descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
+          </optgroup>`)}
+        <option value="__sanny">Custom Sanny</option>
+      </select>
     </div>
   `;
 }
