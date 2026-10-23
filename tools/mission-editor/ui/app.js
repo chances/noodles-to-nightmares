@@ -180,14 +180,14 @@ function Splitter({ side, label, pane, value, onResize, onReset, measure }) {
 const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
 
 /** Gives the step and condition controls inside it the vocabulary and the mission's monitors. */
-function Vocabulary({ vocabulary, mission, names, children }) {
+function Vocabulary({ vocabulary, mission, names, sannyFiles, children }) {
   // The mission's own constants come first and follow its edits; the project's files add the rest.
   const own = Object.entries(mission.consts ?? {}).map(([name, v]) => {
     const value = Array.isArray(v) ? v[0] : v;
     return { name, kind: Number.isInteger(value) ? "int" : "float", value: String(value), comment: Array.isArray(v) ? v[1] : undefined, source: "This mission" };
   });
   const constants = [...own, ...(names?.constants ?? []).filter((c) => !(c.name in (mission.consts ?? {})))];
-  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: names?.globals ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id) }}>${children}<//>`;
+  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: names?.globals ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id), sannyFiles: sannyFiles ?? [] }}>${children}<//>`;
 }
 
 function App() {
@@ -367,7 +367,7 @@ function App() {
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to list its states."
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
         <//>
-        <${Pane} title="Assets"><${AssetsPane} telemetry=${telemetry} /><//>
+        <${Pane} title="Asset Catalog"><${AssetsPane} telemetry=${telemetry} /><//>
       </aside>
       <div class="center">
         <${Pane} title="Graph" hideTitle class="graph">
@@ -382,7 +382,7 @@ function App() {
           bar=${mode === "edit" && mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
           ${mode === "debug" ? html`<${DebuggerPane} telemetry=${telemetry} captures=${captures} runState=${runState} runLog=${runLog} exit=${exit} debugValues=${debugValues} debugLog=${debugLog} names=${names} />` : html`<${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
             ready=${(m) => html`
-              <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission} names=${m.names}>
+              <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission} names=${m.names} sannyFiles=${m.sannyFiles}>
                 <${InspectorPane} doc=${m} edges=${m.edges} problems=${problems} selected=${selected} onSelect=${setSelected} edit=${edit} />
               <//>`} />`}
 

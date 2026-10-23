@@ -56,6 +56,26 @@ export function defaultDirs(): ProjectDirs {
   };
 }
 
+/**
+ * The `.txt` Sanny files a mission can include: those in the project's root and `utils/`, as paths from the
+ * `missions/` folder, the way a mission's `includes` names them.
+ */
+async function listSannyFiles(missions: string): Promise<string[]> {
+  const root = join(missions, "..");
+  const files: string[] = [];
+  for (const dir of [".", "utils"]) {
+    const entries = await Array.fromAsync(Deno.readDir(join(root, dir))).catch(
+      () => [],
+    );
+    for (const entry of entries) {
+      if (entry.isFile && entry.name.endsWith(".txt")) {
+        files.push(`../${dir === "." ? "" : `${dir}/`}${entry.name}`);
+      }
+    }
+  }
+  return files.sort();
+}
+
 /** Runs `work`, turning a thrown error into a 422 whose message the UI shows. */
 async function unprocessable<T>(work: () => Promise<T>): Promise<T> {
   try {
@@ -158,6 +178,7 @@ export function createApp(
         problems: problems(loaded.mission, known),
         // The constants and globals the typeaheads offer, from the project's Sanny files.
         names: listNames(known),
+        sannyFiles: await listSannyFiles(join(resolve(project), "missions")),
       });
     },
   );

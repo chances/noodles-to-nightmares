@@ -7,14 +7,21 @@ import { Overlay } from "./overlay.js";
 const count = (problems, severity) => problems.filter((p) => p.severity === severity).length;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** The header pill: red with errors, yellow with only warnings. Clicking it opens the Problems panel. */
+/** A check for no problems, a cross for errors, and an exclamation in a diamond for warnings only. */
+function PillIcon({ level }) {
+  if (level === "error") return html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>`;
+  if (level === "warning") return html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12Z" /><path d="M12 8v5M12 16.5h.01" /></svg>`;
+  return html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>`;
+}
+
+/** The header pill: a red cross with errors, a yellow warning with only warnings, a green check with neither. Clicking it opens the Problems panel. */
 export function ProblemsPill({ problems, open, onToggle }) {
   const errors = count(problems, "error");
   const warnings = count(problems, "warning");
   const level = errors ? "error" : warnings ? "warning" : "ok";
   const text = errors ? plural(errors, "Error") : warnings ? plural(warnings, "Warning") : "No Problems";
   return html`
-    <button class="pill" data-level=${level} aria-expanded=${open} aria-controls="problems-panel" onClick=${onToggle}>${text}</button>
+    <button class="pill" data-level=${level} aria-expanded=${open} aria-controls="problems-panel" onClick=${onToggle}><${PillIcon} level=${level} />${text}</button>
   `;
 }
 

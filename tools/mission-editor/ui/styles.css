@@ -9,10 +9,10 @@
   --muted: #a7adb5;
   --accent: #ffb347;
   --on-accent: #1c1e22;
-  --role-start: #00ff88;
-  --role-on-fail: #ff0033;
-  --role-finish: #d4af37;
-  --danger: color-mix(in srgb, var(--role-on-fail) 55%, var(--text));
+  --green: #00ff88;
+  --red: #ff0033;
+  --gold: #d4af37;
+  --danger: color-mix(in srgb, var(--red) 55%, var(--text));
   --gap: 8px;
   --pane-pad: 12px;
   --control-size: 1.75rem;
@@ -321,26 +321,26 @@ button.row[aria-pressed="true"] {
 .chip {
   flex: none;
   padding-inline: 6px;
-  border: 1px solid var(--role, var(--line));
+  border: 1px solid var(--tone, var(--line));
   border-radius: 999px;
   color: var(--text);
   font-size: 11px;
 }
 
 [data-role="start"] {
-  --role: var(--role-start);
+  --tone: var(--green);
 }
 
 [data-role="on-fail"] {
-  --role: var(--role-on-fail);
+  --tone: var(--red);
 }
 
 [data-role="finish"] {
-  --role: var(--role-finish);
+  --tone: var(--gold);
 }
 
 .role-bar {
-  fill: var(--role, transparent);
+  fill: var(--tone, transparent);
 }
 
 .inspector {
@@ -1123,7 +1123,7 @@ input.mono {
 }
 
 [aria-invalid="true"] {
-  border-color: var(--role-on-fail);
+  border-color: var(--red);
 }
 
 small.error {
@@ -1377,13 +1377,13 @@ button.icon.danger {
 }
 
 button.danger-fill {
-  border-color: var(--role-on-fail);
-  background: var(--role-on-fail);
+  border-color: var(--red);
+  background: var(--red);
   color: #fff;
 }
 
 button.danger-fill:hover {
-  background: color-mix(in srgb, var(--role-on-fail) 85%, #fff);
+  background: color-mix(in srgb, var(--red) 85%, #fff);
 }
 
 .rename {
@@ -1470,37 +1470,45 @@ button.danger-fill:hover {
 }
 
 button.pill {
-  border-color: var(--role);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-color: var(--tone);
   border-radius: 999px;
   color: var(--text);
 }
 
+button.pill svg {
+  color: var(--tone);
+}
+
 button.pill[data-level="error"] {
-  --role: var(--role-on-fail);
+  --tone: var(--red);
 }
 
 button.pill[data-level="warning"] {
-  --role: var(--role-finish);
+  --tone: var(--gold);
 }
 
 button.pill[data-level="ok"] {
-  --role: var(--role-start);
+  --tone: var(--green);
 }
 
 button.pill:hover,
 button.pill[aria-expanded="true"] {
-  background: color-mix(in srgb, var(--role) 14%, transparent);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
 }
 
 button.pill:focus-visible {
-  outline-color: var(--role);
+  outline-color: var(--tone);
 }
 
 .problems-panel {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  inline-size: min(480px, 90vw);
+  inline-size: fit-content;
+  max-inline-size: 100vw;
   padding: 12px;
   overflow: auto;
   border: 1px solid var(--line);
@@ -1526,11 +1534,11 @@ button.pill:focus-visible {
 }
 
 .chip[data-level="error"] {
-  --role: var(--role-on-fail);
+  --tone: var(--red);
 }
 
 .chip[data-level="warning"] {
-  --role: var(--role-finish);
+  --tone: var(--gold);
 }
 
 dialog .actions {
@@ -1801,10 +1809,10 @@ button.stop-game {
   --tone: var(--accent);
 }
 .telemetry-badge[data-state="running"] {
-  --tone: var(--role-start);
+  --tone: var(--green);
 }
 .telemetry-badge[data-state="error"] {
-  --tone: var(--role-on-fail);
+  --tone: var(--red);
 }
 .player-hud-grid {
   position: relative;
@@ -1830,7 +1838,7 @@ button.stop-game {
 button.icon.copied,
 button.icon.copied:hover {
   border-color: transparent;
-  color: var(--role-start);
+  color: var(--green);
 }
 .hud-label {
   font-size: 10px;

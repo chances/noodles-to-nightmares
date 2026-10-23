@@ -1,7 +1,7 @@
 // deno-fmt-ignore-file
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
-import { html, useEffect, useRef, useState } from "/vendor/preact.js";
+import { html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
 import { Plus } from "./add-state.js";
 import { deleteState, inboundTo, nameError, renameState } from "./document.js";
 import { renameMonitor } from "./refactor.js";
@@ -9,7 +9,7 @@ import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS, takeOpened } from "./s
 import { missionLabel } from "./mission-label.js";
 import { formatName, formatNumber, reformat } from "./templates.js";
 import { roleKey, roles } from "./states-pane.js";
-import { CondList, FieldInput, StepList } from "./step-controls.js";
+import { CondList, Combo, EditorContext, FieldInput, StepList } from "./step-controls.js";
 
 // @remarks The Script pane is the form for the selected state, or the Mission form when nothing is selected. Beats are
 // edited in the Beat pane, not here. Every keystroke commits through `edit`, one undoable command per change, with
@@ -323,6 +323,21 @@ function MissionForm({ doc, edit }) {
   }, key);
   const [newConst, setNewConst] = useState("");
   const constError = newConst in (mission.consts ?? {}) ? `A constant named ${newConst} already exists.` : "";
+  const { sannyFiles } = useContext(EditorContext);
+  const [adding, setAdding] = useState(false);
+  const addBox = useRef(null);
+  useEffect(() => { addBox.current?.querySelector("input")?.focus(); }, [adding]);
+  const included = mission.includes ?? ["../utils/missions.txt"];
+  const fileOptions = sannyFiles.map((value) => ({ value }));
+  const addable = sannyFiles.filter((file) => !included.includes(file));
+  const setIncludes = (label, next) => change(label, (m) => { m.includes = next; });
+  const moveInclude = (i, by) => {
+    const to = i + by;
+    if (to < 0 || to >= included.length) return;
+    const next = [...included];
+    [next[i], next[to]] = [next[to], next[i]];
+    setIncludes("Move Include", next);
+  };
 
   return html`
     <div class="inspector">
@@ -377,11 +392,30 @@ function MissionForm({ doc, edit }) {
         </ul>
       <//>
 
-      <${Section} heading="Includes">
-        <p class="hint">${mission.includes ? "Sanny files included after the generated code, one path per line." : "The default, ../utils/missions.txt, is included."}</p>
-        <textarea rows=${3} aria-label="Includes" value=${(mission.includes ?? ["../utils/missions.txt"]).join("\n")}
-          onInput=${(e) => { const text = e.currentTarget.value; change("Includes", (m) => { m.includes = lines(text); }, "includes"); }}></textarea>
-        ${mission.includes && html`<button onClick=${() => change("Default Includes", (m) => { delete m.includes; })}>Use Default Include</button>`}
+      <${Section} heading="Includes"
+        action=${html`<button class="icon" aria-label="Add an include" title="Add Include" onClick=${() => setAdding(!adding)}><${Plus} /></button>${mission.includes && html`<button onClick=${() => change("Default Includes", (m) => { delete m.includes; })}>Use Default Include</button>`}`}>
+        <p class="hint">${mission.includes ? "Sanny files included after the generated code, in this order." : "The default, ../utils/missions.txt, is included."}</p>
+        ${included.length === 0 && html`<p class="hint">No Sanny files are included.</p>`}
+        <ol class="items">
+          ${included.map((path, i) => html`
+            <li class="item" key=${i}>
+              <div class="item-head">
+                <span class="item-label">Include ${i + 1}</span>
+                <span class="item-tools">
+                  <button class="tool" aria-label=${`Move include ${i + 1} up`} title="Move Up" onClick=${() => moveInclude(i, -1)}>↑</button>
+                  <button class="tool" aria-label=${`Move include ${i + 1} down`} title="Move Down" onClick=${() => moveInclude(i, 1)}>↓</button>
+                  <button class="tool danger" aria-label=${`Remove include ${i + 1}`} title="Remove Include" onClick=${() => setIncludes("Remove Include", included.filter((_, j) => j !== i))}>✕</button>
+                </span>
+              </div>
+              <${Combo} value=${path} options=${fileOptions} label=${`Sanny file for include ${i + 1}`} missing="is not a Sanny file in this project"
+                onCommit=${(next) => setIncludes("Include", included.map((p, j) => (j === i ? next : p)))} />
+            </li>`)}
+        </ol>
+        ${adding && addable.length > 0 && html`
+          <div ref=${addBox}>
+            <${Combo} value="" options=${addable.map((value) => ({ value }))} label="Add Include" missing="is not a Sanny file in this project"
+              onCommit=${(next) => { setIncludes("Add Include", [...included, next]); setAdding(false); }} />
+          </div>`}
       <//>
     </div>
   `;

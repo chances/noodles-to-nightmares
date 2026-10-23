@@ -29,7 +29,8 @@ export function AssetsPane({ telemetry }) {
         </div>
       `}
       <div class="spots-list">
-        <h4 class="spots-heading">Spots (POI) Catalog (${spots.length})</h4>
+        <h4 class="spots-heading">Spots (${spots.length})</h4>
+        <p class="hint">Also known as a Point of Interest (POI).</p>
         ${spots.map((s) => html`
           <div key=${s.id} class="spot-item" title=${`ID: ${s.id}\nPos: [${s.pos.join(", ")}]\nDistrict: ${s.district}`}>
             <div class="spot-meta">

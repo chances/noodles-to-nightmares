@@ -95,6 +95,17 @@ Deno.test("serves the constants and globals the project's files declare", async 
   );
 });
 
+Deno.test("serves the project's Sanny files as paths from the missions folder", async () => {
+  const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
+    .json();
+  assert(body.sannyFiles.includes("../utils/missions.txt"));
+  assert(body.sannyFiles.includes("../constants.txt"));
+  assertEquals(
+    body.sannyFiles.some((f: string) => f.includes("0_tutorial")),
+    false,
+  );
+});
+
 Deno.test("serves a mission's problems with its table", async () => {
   const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
     .json();

@@ -7,16 +7,17 @@ import { SplitButton } from "./split-button.js";
 import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
 
 /** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
-export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], monitorIds: [] });
+export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], monitorIds: [], sannyFiles: [] });
 
 let comboCount = 0;
 
 /**
  * A typeahead over `options` (`{ value, meta, search }`): typing filters the list, and picking one commits its
  * value. A strict combo (a spot) commits only a pick. A free one (a number or a variable) also commits what is
- * typed once `field` accepts it, so the list suggests and never limits.
+ * typed once `field` accepts it, so the list suggests and never limits. An empty `value` is an add field: it
+ * flags nothing as unknown.
  */
-function Combo({ field, value, options, free, label, note, missing = "is not in the geography", onCommit }) {
+export function Combo({ field, value, options, free, label, note, missing = "is not in the geography", onCommit }) {
   const [draft, setDraft] = useState(value);
   const [typed, setTyped] = useState(null);
   const [open, setOpen] = useState(false);
@@ -35,7 +36,7 @@ function Combo({ field, value, options, free, label, note, missing = "is not in 
   // An emptied field with a placeholder takes the placeholder's value, e.g. the default radius.
   const resolve = (text) => (text === "" && field.placeholder ? field.placeholder : text);
   const valid = !free || isValid(field, resolve(draft));
-  const unknown = !free && options.length > 0 && !options.some((o) => o.value === value);
+  const unknown = !free && value !== "" && options.length > 0 && !options.some((o) => o.value === value);
 
   const close = () => {
     const closed = closedCombo(last.current);
