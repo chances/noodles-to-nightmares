@@ -23,6 +23,26 @@ export function stateConst(id: string): string {
   return `STATE_${id}`;
 }
 
+const pascal = (id: string) =>
+  id.toLowerCase().split("_").map((word) =>
+    word ? word[0].toUpperCase() + word.slice(1) : ""
+  ).join("");
+
+/** The label of a state's routine, e.g. `GO_HOME` becomes `stateGoHome`. */
+export function stateLabel(id: string): string {
+  return `state${pascal(id)}`;
+}
+
+/** The label of the routine that runs a state's `onExit` steps, e.g. `leaveGoHome`. */
+export function leaveLabel(id: string): string {
+  return `leave${pascal(id)}`;
+}
+
+/** A `while` loop. Its body must contain a `wait`. */
+export function whileBlock(test: string, body: string[]): string[] {
+  return [`while ${test}`, ...indent(body), "end"];
+}
+
 /** An `if` block. Several conditions combine with `mode`; an empty `then` emits nothing. */
 export function ifBlock(
   conds: Cond[],

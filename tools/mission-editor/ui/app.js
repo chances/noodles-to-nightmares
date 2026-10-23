@@ -4,15 +4,16 @@
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
 import { AddStateDialog, Plus } from "./add-state.js";
 import { AssetsPane } from "./assets-pane.js";
-import { DebuggerPane } from "./debugger-pane.js";
+import { DebugControls, DebuggerPane } from "./debugger-pane.js";
 import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
 import { addState } from "./mission-ops.js";
 import { GraphPane } from "./graph-pane.js";
+import { RedoIcon, StopIcon, UndoIcon } from "./icons.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
 import { loadNodeSelection, saveNodeSelection } from "./node-selection.js";
-import { ProblemsList, ProblemsPanel, ProblemsPill } from "./problems.js";
+import { ProblemsPanel, ProblemsPill } from "./problems.js";
 import { ProjectMenu } from "./project-menu.js";
 import { KIND_SECTIONS, openOnShow } from "./sections.js";
 import { StatesPane } from "./states-pane.js";
@@ -79,19 +80,24 @@ function Loaded({ mission, empty, ready }) {
 const STORAGE_KEY = "mission-editor.pane-sizes";
 const MIN_CENTER = 240;
 const MIN_GRAPH = 120;
+const MIN_ASSETS = 80;
 const KEY_STEP = 16;
-// `sign` is how far the pane grows per pixel the splitter moves along its axis.
+// `sign` is how far the pane grows per pixel the splitter moves along its axis. Every pane here is saved.
 const PANES = {
   left: { axis: "x", sign: 1, limits: [160, 420] },
   right: { axis: "x", sign: -1, limits: [200, 420] },
   timeline: { axis: "y", sign: -1, limits: [80, 640] },
+  // The States pane's height; the Assets pane below it takes the rest of the left sidebar.
+  states: { axis: "y", sign: 1, limits: [80, 640] },
 };
 const KEYS = { x: { ArrowLeft: -KEY_STEP, ArrowRight: KEY_STEP }, y: { ArrowUp: -KEY_STEP, ArrowDown: KEY_STEP } };
 const size = (axis, el) => (axis === "x" ? el.offsetWidth : el.offsetHeight);
 
+/** The saved pixel sizes of the panes in PANES; anything else in storage is dropped. */
 function loadSizes() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {};
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {};
+    return Object.fromEntries(Object.keys(PANES).filter((side) => Number.isFinite(saved[side])).map((side) => [side, saved[side]]));
   } catch {
     return {};
   }
@@ -171,25 +177,6 @@ function Splitter({ side, label, pane, value, onResize, onReset, measure }) {
   `;
 }
 
-/** Lists every problem. Errors block the export itself, which arrives with the generated Sanny. */
-function ExportDialog({ problems, onSelect, onClose }) {
-  const dialog = useRef(null);
-  const open = (el) => {
-    dialog.current = el;
-    if (el && !el.open) el.showModal();
-  };
-  const errors = problems.filter((p) => p.severity === "error").length;
-  return html`
-    <dialog ref=${open} onClose=${onClose}>
-      <h2>Export</h2>
-      ${errors > 0 && html`<p class="error" role="alert">Export is blocked until the errors are fixed.</p>`}
-      <${ProblemsList} problems=${problems} onSelect=${(id) => { dialog.current.close(); onSelect(id); }} />
-      ${errors === 0 && html`<p class="hint">The generated Sanny, the compile check, and the local count appear here.</p>`}
-      <form method="dialog"><button autofocus>Close</button></form>
-    </dialog>
-  `;
-}
-
 const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
 
 /** Gives the step and condition controls inside it the vocabulary and the mission's monitors. */
@@ -244,7 +231,7 @@ function App() {
   const [vocabulary, setVocabulary] = useState(null);
   useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [], spots: [], enums: {} })); }, []);
   const [mode, setMode] = useState("edit");
-  const { connected, telemetry, capture, captures, setCapture, runInGame, running } = useTelemetry(projectQuery);
+  const { connected, telemetry, capture, captures, setCapture, runInGame, stopGame, running, runState, runLog, exit, debugValues, debugLog, names } = useTelemetry(projectQuery);
   useEffect(() => {
     if (connected) {
       setMode("debug");
@@ -264,14 +251,16 @@ function App() {
     return () => document.removeEventListener("keydown", keys);
   });
   const [custom, setCustom] = useState(loadSizes);
-  const [measured, setMeasured] = useState({ left: 0, right: 0, timeline: 0 });
+  const [measured, setMeasured] = useState({ left: 0, right: 0, timeline: 0, states: 0 });
   const main = useRef(null);
-  const panes = { left: useRef(null), right: useRef(null), timeline: useRef(null) };
+  const panes = { left: useRef(null), right: useRef(null), timeline: useRef(null), states: useRef(null) };
 
-  // Clamp a requested size so the center keeps its minimum width, the graph keeps its minimum height, and the other sidebar keeps its width.
+  // Clamp a requested size so the center keeps its minimum width, the graph keeps its minimum height, the other sidebar keeps its width, and the Assets pane keeps its minimum height.
   const measure = (side, px) => {
     const { axis, limits: [min, max] } = PANES[side];
-    const room = axis === "x"
+    const room = side === "states"
+      ? panes.left.current.clientHeight - MIN_ASSETS
+      : axis === "x"
       ? main.current.clientWidth - MIN_CENTER - panes[side === "left" ? "right" : "left"].current.offsetWidth
       : main.current.clientHeight - MIN_GRAPH;
     return Math.round(Math.max(min, Math.min(px, max, room)));
@@ -321,13 +310,17 @@ function App() {
         <span class="save-status" role="status" data-state=${save.state}>
           ${save.state === "error" ? "Save failed" : SAVE_TEXT[save.state] ?? ""}
         </span>
-        <button disabled=${!canUndo} onClick=${undo} title="Undo (Ctrl+Z)">Undo</button>
-        <button disabled=${!canRedo} onClick=${redo} title="Redo (Ctrl+Y)">Redo</button>
+        <div class="button-group" role="group" aria-label="History">
+          <button disabled=${!canUndo} onClick=${undo} title="Undo (Ctrl+Z)"><${UndoIcon} /><span class="sr-only">Undo</span></button>
+          <button disabled=${!canRedo} onClick=${redo} title="Redo (Ctrl+Y)"><${RedoIcon} /><span class="sr-only">Redo</span></button>
+        </div>
         <div class="menu-anchor">
           <${ProblemsPill} problems=${problems} open=${showProblems} onToggle=${() => setShowProblems(!showProblems)} />
           ${showProblems && html`<${ProblemsPanel} problems=${problems} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
         </div>
-        <button class="primary run-in-game" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${running ? "Running..." : "▶ Run"}</button>
+        ${runState?.state === "running"
+          ? html`<button class="danger-fill stop-game" onClick=${stopGame} title="Stop the game"><${StopIcon} />Stop</button>`
+          : html`<button class="primary run-in-game" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${runState?.state === "building" ? "Building..." : "▶ Run"}</button>`}
         <div class="mode-switch">
           <button class="mode-btn ${mode === 'edit' ? 'active' : ''}" onClick=${() => setMode('edit')}>Edit</button>
           <button class="mode-btn ${mode === 'debug' ? 'active' : ''}" onClick=${() => setMode('debug')}>Debug</button>
@@ -355,8 +348,17 @@ function App() {
         onResize=${resize("right")}
         onReset=${reset}
       />
+      <${Splitter}
+        side="states"
+        pane=${panes.states}
+        label="Resize the States and Assets panes"
+        value=${measured.states}
+        measure=${measure}
+        onResize=${resize("states")}
+        onReset=${reset}
+      />
       <aside class="left" ref=${panes.left}>
-        <${Pane} title="States"
+        <${Pane} title="States" innerRef=${panes.states}
           trail=${html`<button class="icon" aria-label="Add a state to this mission" title="Add State" disabled=${!mission.data} onClick=${() => setAdding(true)}><${Plus} /></button>`}>
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to list its states."
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
@@ -372,9 +374,9 @@ function App() {
       <aside class="right" ref=${panes.right}>
         <${Pane} title=${mode === "debug" ? "Debugger" : "Script"}
 
-          trail=${mode === "edit" && mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
+          trail=${mode === "debug" ? html`<${DebugControls} />` : mission.data && selected && html`<${InspectorCrumb} doc=${mission.data} onSelect=${setSelected} />`}
           bar=${mode === "edit" && mission.data && html`<${InspectorTitle} doc=${mission.data} selected=${selected} edit=${edit} onSelect=${setSelected} />`}>
-          ${mode === "debug" ? html`<${DebuggerPane} connected=${connected} telemetry=${telemetry} captures=${captures} />` : html`<${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
+          ${mode === "debug" ? html`<${DebuggerPane} telemetry=${telemetry} captures=${captures} runState=${runState} runLog=${runLog} exit=${exit} debugValues=${debugValues} debugLog=${debugLog} names=${names} />` : html`<${Loaded} mission=${vocabulary ? mission : { loading: true }} empty="Add a .states.ts or .fsm.json beside a mission to script its states."
             ready=${(m) => html`
               <${Vocabulary} vocabulary=${vocabulary} mission=${m.mission} names=${m.names}>
                 <${InspectorPane} doc=${m} edges=${m.edges} problems=${problems} selected=${selected} onSelect=${setSelected} edit=${edit} />

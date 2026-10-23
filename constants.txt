@@ -8,8 +8,11 @@ const SALVATORE = 100
 // Blips
 const PAYPHONE = 8 // RadarSprite.Diablo
 
+// Telemetry: the mission editor listens on this UDP port (plugins/sockets)
+const TELEMETRY_PORT = 8089
+
 // Debug log points
-// Mapped to an INI section and key by utils/debug.txt
+// Each is a channel that sockets.cleo streams to the mission editor; the editor reads this list for the names
 const DEBUG_ROSA_HEADING = 1
 const DEBUG_SAL_HEADING = 2
 const DEBUG_SAL_FACE_HEADING = 3

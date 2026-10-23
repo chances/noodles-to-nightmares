@@ -12,6 +12,47 @@
         "Fee for the job"
       ]
     },
+    "locals": [
+      {
+        "name": "sal",
+        "type": "Char"
+      },
+      {
+        "name": "salHeading",
+        "type": "float",
+        "value": "0.0"
+      },
+      {
+        "name": "faceSalHeading",
+        "type": "float",
+        "value": "0.0"
+      },
+      {
+        "name": "payphoneHandle",
+        "type": "int",
+        "value": 0
+      },
+      {
+        "name": "payphoneBlip",
+        "type": "int",
+        "value": 0
+      },
+      {
+        "name": "packagePickup",
+        "type": "int",
+        "value": 0
+      },
+      {
+        "name": "pickupBlip",
+        "type": "int",
+        "value": 0
+      },
+      {
+        "name": "deliveryBlip",
+        "type": "int",
+        "value": 0
+      }
+    ],
     "includes": [
       "../utils/missions.txt",
       "../utils/debug.txt"
@@ -402,7 +443,7 @@
         ],
         "until": [
           {
-            "test": "Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_RADIUS, PAYPHONE_RADIUS, true)"
+            "test": "Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_RADIUS, PAYPHONE_RADIUS, false)"
           }
         ],
         "next": "RING_PHONE"
@@ -441,7 +482,7 @@
         ],
         "until": [
           {
-            "test": "Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 3.0, 3.0, 3.0, true)"
+            "test": "Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 2.0, 2.0, 2.0, true)"
           }
         ],
         "next": "ANSWER_CALL"

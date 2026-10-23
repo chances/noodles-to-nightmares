@@ -1,11 +1,22 @@
 /**
  * run.ts
  *
- * Launches GTA III from the installation directory specified in .env.
+ * Launches GTA III from the installation directory specified in .env, waits for it to exit, and captures the
+ * telemetry that sockets.cleo streams meanwhile (see telemetry.ts) to dist/telemetry/run-<stamp>.jsonl.
+ * `--events` also prints each packet and the exit verdict as event lines (see run-events.ts).
  */
 
-import { join } from "@std/path";
+import { dirname, join } from "@std/path";
+import { diagnoseExit } from "./game-exit.ts";
 import { say } from "./log.ts";
+import { eventLine, type RunEvent } from "./run-events.ts";
+import {
+  debugNames,
+  startCapture,
+  type Summary,
+  TELEMETRY_PORT,
+  type TimedPacket,
+} from "./telemetry.ts";
 
 const gta3Base = Deno.env.get("GTA3");
 if (!gta3Base) {
@@ -36,11 +47,121 @@ try {
   // Fall back to gta3.exe
 }
 
+// Capture sockets.cleo telemetry (debug readings, positions, F8 captures) until the game exits
+const names = debugNames(await Deno.readTextFile("constants.txt"));
+const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+const logPath = join("dist", "telemetry", `run-${stamp}.jsonl`);
+await Deno.mkdir(dirname(logPath), { recursive: true });
+// With --events, every packet and the exit verdict are also printed as event lines for the program that launched
+// this one, e.g. the mission editor (see run-events.ts)
+const events = Deno.args.includes("--events");
+const emit = (event: RunEvent) => {
+  if (events) console.log(eventLine(event));
+};
+emit({ kind: "names", names: Object.fromEntries(names) });
+const capture = await startCapture(
+  TELEMETRY_PORT,
+  logPath,
+  events ? (event) => emit({ kind: "packet", event }) : undefined,
+);
+if (capture) {
+  say.skip(`Capturing telemetry on UDP ${TELEMETRY_PORT} to ${logPath}`);
+} else {
+  say.warn(
+    `UDP ${TELEMETRY_PORT} is in use (the mission editor?), so telemetry is not captured`,
+  );
+}
+
 say.info(`Launching Grand Theft Auto III: ${targetExe}`);
 
 const command = new Deno.Command(targetExe, {
   cwd: gta3Base,
 });
 
+const launchedAt = Date.now();
 const child = command.spawn();
-await child.status;
+emit({ kind: "launch", exe: targetExe });
+say.wait("Waiting for the game to exit");
+const status = await child.status;
+const summary = await capture?.stop();
+
+reportExit(status.code);
+if (summary) report(summary, logPath);
+
+/** A game log's text, or "" when it is missing or was last written before this launch. */
+async function freshLog(...path: string[]): Promise<string> {
+  const file = join(gta3Base!, ...path);
+  try {
+    const modified = (await Deno.stat(file)).mtime?.getTime() ?? 0;
+    return modified >= launchedAt ? await Deno.readTextFile(file) : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Says whether the game quit or crashed, by its logs: the exit code is not a signal (see game-exit.ts). */
+async function reportExit(code: number) {
+  const diagnosis = diagnoseExit({
+    cleo: await freshLog("cleo.log"),
+    scrlog: await freshLog("scrlog.log"),
+    modloader: await freshLog("modloader", "modloader.log"),
+  });
+  emit({ kind: "exit", code, ...diagnosis });
+  if (!diagnosis.known) {
+    say.skip(
+      `The game exited with code ${code}; it wrote no log, so a crash cannot be ruled in or out`,
+    );
+  } else if (diagnosis.crashed) {
+    say.error(`The game crashed: ${diagnosis.signs.join("; ")}`);
+    if (diagnosis.exception) say.fail(`  ${diagnosis.exception}`);
+  } else {
+    say.pass("The game exited normally");
+    if (code !== 0) {
+      say.skip(
+        `Exit code ${code} is the last window message's wParam, not an error`,
+      );
+    }
+  }
+}
+
+/** The channel's DEBUG_* name, or its number. */
+function channelName(channel: number): string {
+  return names.get(channel) ?? `CHANNEL_${channel}`;
+}
+
+function describe(event: TimedPacket): string {
+  const time = `+${(event.t / 1000).toFixed(1)}s`.padEnd(9);
+  if (event.type === "debug") {
+    return `${time}${channelName(event.channel)} ${event.kind} ${event.value}`;
+  }
+  const [x, y, z] = event.pos.map((n) => n.toFixed(1));
+  return `${time}${event.type.toUpperCase()} ${x}, ${y}, ${z} h${
+    event.heading.toFixed(0)
+  }`;
+}
+
+function report(summary: Summary, path: string) {
+  if (summary.packets === 0) {
+    say.skip("No telemetry received. Is sockets.cleo installed?");
+    return;
+  }
+  say.heading("Telemetry");
+  const channels = [...summary.channels].sort(([a], [b]) => a - b);
+  for (const [channel, stats] of channels) {
+    const range = stats.min === stats.max
+      ? ""
+      : `  range ${stats.min}..${stats.max}`;
+    say.text(
+      `${
+        channelName(channel).padEnd(26)
+      }${stats.kind}  n=${stats.count}  last=${stats.last}${range}`,
+    );
+  }
+  say.text(
+    `Positions ${summary.positions}, F8 captures ${summary.captures}` +
+      (summary.lastPosition ? `, last ${describe(summary.lastPosition)}` : ""),
+  );
+  say.skip("Last events:");
+  for (const event of summary.recent) say.skip(`  ${describe(event)}`);
+  say.skip(`Log: ${path}`);
+}

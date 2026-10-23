@@ -39,6 +39,10 @@ A desktop editor for mission state machines, to live in a new submodule at `tool
 ## Open Items
 
 - `deno task editor:build` stopped with "There is not enough space on the disk" (drive `C:` is nearly full); the desktop binary is unbuilt, and the output name came out as `MissionEditor.dll`, so check the `--output` extension on Windows.
-- The Export dialog lists problems; the generated Sanny, the compile check, and the local count are unbuilt.
+- The editor has no Export dialog; the generated Sanny, the compile check, and the local count have no UI.
+- The debugger pane's Pause / Resume, Step Out, Step Over, and Step In buttons are disabled; they need the bidirectional UDP control of Phase 5 in `geography-system-and-cleo-plugin.md`.
+- The debugger pane's Script Watches rows show a channel's name, kind, and latest value; they have no age column, and a stale row does not dim.
+- Nothing reads `dist/telemetry/run-<stamp>.jsonl` after a run; the game-logtail MCP tails the game's logs only, and the old `debug_ini` log gets no readings.
+- `server.ts` imports `scripts/telemetry.ts` and `scripts/run-events.ts` from outside the editor package; `deno desktop` has not built that graph (see the disk-space item above).
 - The editor has no form for `mission.locals` (declared mission locals such as `Char sal`); mission 1 declares them in its `.fsm.json`.
 - A `handle` field matches `$name` only, so steps on mission locals (`Blip.Remove(payphoneBlip)`) stay raw text boxes.

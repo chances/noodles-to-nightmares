@@ -28,7 +28,6 @@ const fixture = defineMission({
     B: {
       fail: false,
       onEnter: [step.help("In B")],
-      onExit: [step.help("Out of B")],
       finish: true,
     },
     LOSE: { fail: false, resetLatches: true, next: "A" },
@@ -40,49 +39,107 @@ Deno.test("declares a numbered constant per state and the FSM locals", () => {
   assertStringIncludes(text, "const STATE_A = 0");
   assertStringIncludes(text, "const STATE_LOSE = 2");
   assertStringIncludes(text, "int state = STATE_A");
-  assertStringIncludes(text, "int beat = 0");
   assertStringIncludes(text, "int latchHint = false");
   assertStringIncludes(text, "GENERATED from missions/fixture.states.ts");
+  assert(!text.includes("int beat"));
+  assert(!text.includes("enterState"));
 });
 
-Deno.test("a beat runs its steps once, then waits on TIMERA", () => {
+Deno.test("a dispatcher calls the routine of the current state", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(
     text,
-    'Text.PrintString("One", 1000)\n      TIMERA = 0\n      beat = 1',
+    "while true\n  wait 0\n\n  if\n    state == STATE_A\n  then\n    stateA()\n  end",
   );
-  assertStringIncludes(text, "TIMERA >= 500");
+  assertStringIncludes(text, ":stateA\n");
+  assertStringIncludes(text, ":stateLose\n");
 });
 
-Deno.test("fail check covers only states that allow it", () => {
+Deno.test("a watched state waits out a beat in a TIMERA loop that runs the watchers", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(
     text,
-    "      state == STATE_A\n    then\n      exitState()\n      state = STATE_LOSE",
+    [
+      '  Text.PrintString("One", 1000)',
+      "  TIMERA = 0",
+      "  while TIMERA < 500",
+      "    wait 0",
+      "    runMonitors()",
+      "    failCheck()",
+      "    if",
+      "      state == STATE_LOSE",
+      "    then",
+      "      return",
+      "    end",
+      "  end",
+    ].join("\n"),
   );
-  // Only state A allows the fail check, so it is a single condition, not an `or` of states
-  assert(!text.includes("if or\n      state == STATE_A"));
 });
 
-Deno.test("transitions call exitState and enterState when a state has onExit", () => {
+Deno.test("a state with until ticks in its own loop and leaves by return", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(
     text,
-    "exitState()\n        state = STATE_B\n        enterState()",
+    [
+      "  while true",
+      "    wait 0",
+      "    runMonitors()",
+      "    failCheck()",
+      "    if",
+      "      state == STATE_LOSE",
+      "    then",
+      "      return",
+      "    end",
+      "    if",
+      "      Player.HasBeenArrested($player)",
+      "    then",
+      "      state = STATE_B",
+      "      return",
+      "    end",
+      "  end",
+    ].join("\n"),
   );
-  assertStringIncludes(text, ":exitState");
 });
 
-Deno.test("resetLatches clears every latch on entry", () => {
+Deno.test("failCheck sets the onFail state and only exists when a state can fail", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(
     text,
-    "state == STATE_LOSE\n  then\n    latchHint = false",
+    ":failCheck\n  if\n    Player.IsDead($player)\n  then\n    state = STATE_LOSE\n  end\n  return",
   );
+  // States with fail: false never call it
+  const lose = text.slice(
+    text.indexOf(":stateLose"),
+    text.indexOf(":failCheck"),
+  );
+  assert(!lose.includes("failCheck()"));
+});
+
+Deno.test("a state with onExit calls its leave routine before it hands over", () => {
+  const exiting = defineMission({
+    header: ["Exit"],
+    start: "A",
+    onFail: "LOSE",
+    fail: [],
+    states: {
+      A: { onExit: [step.help("Out of A")], next: "B" },
+      B: { finish: true },
+      LOSE: { next: "A" },
+    },
+  });
+  const text = generate(exiting, "x");
+  assertStringIncludes(text, "  leaveA()\n  state = STATE_B\n  return");
+  assertStringIncludes(text, ":leaveA\n");
+  assert(!text.includes("failCheck"));
+});
+
+Deno.test("resetLatches clears every latch when the state is entered", () => {
+  const text = generate(fixture, "x");
+  assertStringIncludes(text, ":stateLose\n  TIMERA = 0\n  latchHint = false");
 });
 
 Deno.test("a state with finish calls finishMission", () => {
-  assertStringIncludes(generate(fixture, "x"), "finishMission()");
+  assertStringIncludes(generate(fixture, "x"), "finishMission()\n  return");
 });
 
 Deno.test("declared locals are emitted before the latches", () => {
@@ -116,17 +173,15 @@ Deno.test("branches are an if/else chain that ends in next", () => {
   assertStringIncludes(
     text,
     [
-      "    if",
-      "      Player.HasBeenArrested($player)",
-      "    then",
-      "      exitState()",
-      "      state = STATE_LOSE",
-      "      enterState()",
-      "    else",
-      "      exitState()",
-      "      state = STATE_B",
-      "      enterState()",
-      "    end",
+      "  if",
+      "    Player.HasBeenArrested($player)",
+      "  then",
+      "    state = STATE_LOSE",
+      "    return",
+      "  else",
+      "    state = STATE_B",
+      "    return",
+      "  end",
     ].join("\n"),
   );
 });
@@ -151,7 +206,7 @@ Deno.test("a state nothing watches runs its beats as plain waits", () => {
         until: [cond.playerBusted()],
         next: "WIN",
       },
-      WIN: { finish: true },
+      WIN: { fail: false, finish: true },
       LOSE: { fail: false, next: "A" },
     },
   });
@@ -159,24 +214,22 @@ Deno.test("a state nothing watches runs its beats as plain waits", () => {
   assertStringIncludes(
     text,
     [
+      '  Text.PrintString("One", 1000)',
+      "  wait 500",
+      "  if",
+      "    Player.IsInAnyCar($player)",
+      "  then",
+      '    Text.PrintString("Two", 1000)',
+      "    wait 250",
+      "  end",
+      "  while true",
+      "    wait 0",
       "    if",
-      "      beat == 0",
-      "    then",
-      '      Text.PrintString("One", 1000)',
-      "      wait 500",
-      "      if",
-      "        Player.IsInAnyCar($player)",
-      "      then",
-      '        Text.PrintString("Two", 1000)',
-      "        wait 250",
-      "      end",
-      "      beat = 1",
-      "    end",
+      "      Player.HasBeenArrested($player)",
     ].join("\n"),
   );
-  assert(!text.includes("TIMERA >="));
-  // A state the fail check watches keeps the tick-driven beats
-  assert(generate(fixture, "missions/fixture.states.ts").includes("TIMERA >="));
+  assert(!text.includes("TIMERA <"));
+  assert(!text.includes(":failCheck"));
 });
 
 Deno.test("an unknown target state is rejected", () => {
@@ -190,6 +243,30 @@ Deno.test("until without next is rejected", () => {
     states: { ...fixture.states, A: { until: [cond.playerBusted()] } },
   };
   assertThrows(() => generate(bad, "x"), Error, "until but no next");
+});
+
+Deno.test("finish with next is rejected", () => {
+  const bad = {
+    ...fixture,
+    states: { ...fixture.states, B: { fail: false, finish: true, next: "A" } },
+  };
+  assertThrows(
+    () => generate(bad, "x"),
+    Error,
+    "finish with next, until, or on",
+  );
+});
+
+Deno.test("an onFail state the fail check watches is rejected", () => {
+  const bad = {
+    ...fixture,
+    states: { ...fixture.states, LOSE: { next: "A" } },
+  };
+  assertThrows(
+    () => generate(bad, "x"),
+    Error,
+    "onFail state LOSE must set fail: false",
+  );
 });
 
 Deno.test("the committed generated missions match their tables", async () => {

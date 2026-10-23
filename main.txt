@@ -87,12 +87,12 @@ while true
   if and
     Streaming.IsCollisionInMemory(LevelName.Industrial)
     // FIXME: Only do this if the player is in Little Italy
-    Streaming.IsModelLoaded(332)
-    Streaming.IsModelLoaded(409)
-    Streaming.IsModelLoaded(445)
-    Streaming.IsModelLoaded(827)
-    Streaming.IsModelLoaded(1038)
-    Streaming.IsModelLoaded(1251)
+    Streaming.HasModelLoaded(332)
+    Streaming.HasModelLoaded(409)
+    Streaming.HasModelLoaded(445)
+    Streaming.HasModelLoaded(827)
+    Streaming.HasModelLoaded(1038)
+    Streaming.HasModelLoaded(1251)
   then
     break
   else
@@ -213,13 +213,17 @@ function tryTriggerMission()
         if $NoodlesBlip == 0
         then
           // Add a contect blip to Punk Noodles
-          Blip.AddSpriteForContactPoint(NOODLES_BLIP_X, NOODLES_Y, NOODLES_Z, RadarSprite.Asuka, $NoodlesBlip)
+          // NOTE: A contact point blip (02A7) draws its own sphere; a coord blip (02A8) has none
+          Blip.AddSpriteForCoord(NOODLES_BLIP_X, NOODLES_Y, NOODLES_Z, RadarSprite.Asuka, $NoodlesBlip)
         end
 
         // Trigger: Start the mission inside Punk Noodles
         if Player.LocateStoppedOnFoot3D($player, NOODLES_X, NOODLES_Y, NOODLES_Z, 2.5, 2.5, 2.5, true)
         then
           clearUI()
+          // A contact point blip hides itself while on a mission; a coord blip does not, so remove it. The stale
+          // handle keeps the `$NoodlesBlip == 0` check above from adding it again
+          Blip.Remove($NoodlesBlip)
           register_mission_given
           0600: START_CUSTOM_THREAD "1_shady_job.cm"
         end

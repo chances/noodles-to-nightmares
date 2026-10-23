@@ -1,18 +1,16 @@
 //================================
+//---- Functions: New Opcodes ----
+//================================
+// Opcode 0B31 of plugins/sockets (sockets.cleo), used by utils/debug.txt. It is declared here, ahead of every
+// function, because a {$OPCODE} line inside utils/debug.txt makes Sanny report a duplicate saveGame in main.txt.
+{$OPCODE 0B31=4,udp_send_debug %1d% %2d% %3d% %4d%}
+
+//================================
 //------- Functions: Saves -------
 //================================
 // See https://docs.sannybuilder.com/language/functions
 
-function saveGame() 
-  Game.ActivateSaveMenu()
-  while true
-    wait 0
-    if Game.HasSaveGameFinished()
-    then
-      break
-    end
-  end
-end
+// NOTE: saveGame() is declared in utils/missions.txt, which main.txt includes too
 
 /// Try to save the game if the user goes to their safehouse
 function trySaveGame()

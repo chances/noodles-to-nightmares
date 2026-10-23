@@ -1,60 +1,46 @@
 //================================
 //------- Functions: Debug -------
 //================================
-// Tools that write readings to CLEO\debug.ini in the game folder, so values can be read from disk instead of off the screen.
-// Needs CLEO's III.IniFiles.cleo plugin in CLEO\CLEO_PLUGINS, and constants.txt for the DEBUG_* log points.
+// Tools that stream readings to the mission editor over UDP (plugins/sockets, opcode 0B31), so values are read
+// off the editor's debugger pane instead of the screen or a file.
+// Needs sockets.cleo in CLEO\CLEO_PLUGINS and constants.txt for TELEMETRY_PORT and the DEBUG_* channels.
 //
 // Notes:
-// - A bare file name makes Win32 use the Windows directory, so the path needs a folder.
-// - CLEO III cannot pass strings into functions, so callers pass a DEBUG_* constant from constants.txt and each
-//   function below maps it to a literal ini section and key.
-// - To add a log point, add a const to constants.txt and a case to each function below.
+// - A caller passes a DEBUG_* constant from constants.txt as the channel. Adding a log point is one const there.
+// - The plugin sends a reading only when it changes (or once a second), so calling every frame costs a compare.
+// - Nothing is written to disk and nothing waits for a listener: with no editor open the packets are dropped.
+// - The editor's debugger pane and `deno task run` read the DEBUG_* names out of constants.txt (scripts/telemetry.ts).
 
-/// Logs a float reading under the ini section and key of the given DEBUG_* log point
+// Opcode 0B31 is declared in ./functions.txt as udp_send_debug, which every script includes first:
+//   0B31: port, channel, kind, value
+
+// Reading kinds understood by opcode 0B31
+const DEBUG_KIND_INT = 0
+const DEBUG_KIND_FLOAT = 1
+const DEBUG_KIND_COUNT = 2
+const DEBUG_KIND_TRACE = 3
+
+/// Logs a float reading on the given DEBUG_* channel
 function debugLogFloat(point: int, value: float)
-  switch point
-    case DEBUG_ROSA_HEADING
-      IniFile.WriteFloat(value, "CLEO\debug.ini", "Rosa", "Heading")
-    case DEBUG_SAL_HEADING
-      IniFile.WriteFloat(value, "CLEO\debug.ini", "Sal", "Heading")
-    case DEBUG_SAL_FACE_HEADING
-      IniFile.WriteFloat(value, "CLEO\debug.ini", "Sal", "FaceHeading")
-  end
+  0B31: TELEMETRY_PORT point DEBUG_KIND_FLOAT value
 end
 
-/// Logs an int reading under the ini section and key of the given DEBUG_* log point
+/// Logs an int reading on the given DEBUG_* channel
 function debugLogInt(point: int, value: int)
-  switch point
-    case DEBUG_ROSA_HEADING
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Rosa", "Heading")
-    case DEBUG_SAL_HEADING
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "Heading")
-    case DEBUG_SAL_FACE_HEADING
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Sal", "FaceHeading")
-    case DEBUG_VAN_BLIP
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Van")
-    case DEBUG_PAYPHONE_BLIP
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Payphone")
-    case DEBUG_PICKUP_BLIP
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "Pickup")
-    case DEBUG_VAN
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "VanHandle")
-    case DEBUG_PLAYER
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Blips", "PlayerHandle")
-    case DEBUG_MY_CAR
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Car", "Handle")
-    case DEBUG_MY_CAR_MODEL
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Car", "Model")
-    case DEBUG_MY_CAR_UPSIDEDOWN
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Car", "Upsidedown")
-    case DEBUG_MY_CAR_IN_WATER
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Car", "InWater")
-    case DEBUG_PLAYER_IN_MY_CAR
-      IniFile.WriteInt(value, "CLEO\debug.ini", "Car", "PlayerInside")
-  end
+  0B31: TELEMETRY_PORT point DEBUG_KIND_INT value
 end
 
-/// Logs a character's heading, in degrees, under the given DEBUG_* log point
+/// Adds one to the counter on the given DEBUG_* channel; the plugin keeps the count
+function debugCount(point: int)
+  0B31: TELEMETRY_PORT point DEBUG_KIND_COUNT 0
+end
+
+/// Records a step of a trace on the given DEBUG_* channel; every call is sent, so the editor sees the order
+function debugTrace(point: int, step: int)
+  0B31: TELEMETRY_PORT point DEBUG_KIND_TRACE step
+end
+
+/// Logs a character's heading, in degrees, on the given DEBUG_* channel
 function debugLogHeading(point: int, ped: Char)
   float heading = Char.GetHeading(ped)
   debugLogFloat(point, heading)

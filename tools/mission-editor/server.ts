@@ -26,6 +26,13 @@ import {
   stepDescriptors,
   transitions,
 } from "@noodles/fsm";
+import { parseEventLine } from "../../scripts/run-events.ts";
+import {
+  listenTelemetry,
+  type Packet,
+  TELEMETRY_PORT,
+} from "../../scripts/telemetry.ts";
+import { killTree } from "./process-tree.ts";
 import { createProject, listProjects, openProject } from "./projects.ts";
 import type { ProjectDirs } from "./projects.ts";
 
@@ -59,8 +66,42 @@ async function unprocessable<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-/** `log` prints one line per request; the desktop app turns it on and the tests leave it off. */
-export function createApp(dirs: ProjectDirs, { log = false } = {}) {
+/** A started `deno task run --events`: its output streams and its end. */
+export interface GameRun {
+  pid: number;
+  stdout: ReadableStream<Uint8Array>;
+  stderr: ReadableStream<Uint8Array>;
+  status: Promise<{ code: number }>;
+}
+
+/**
+ * Starts `deno task run --events` in the project: build, install, launch, and relay the game's telemetry.
+ *
+ * @remarks Runs `deno` from the PATH, not `Deno.execPath()`: in the desktop app the executable is the app itself,
+ * and `<app> task run` would not run the project's task. The app needs `--allow-run=deno` to start it.
+ */
+function startGameRun(project: string): GameRun {
+  return new Deno.Command("deno", {
+    args: ["task", "run", "--events"],
+    cwd: project,
+    stdout: "piped",
+    stderr: "piped",
+  }).spawn();
+}
+
+/**
+ * `log` prints one line per request; the desktop app turns it on and the tests leave it off. `spawnRun` starts a
+ * run of the game and `stopRun` ends it with everything it started, the game included; the tests replace both so
+ * no game launches.
+ */
+export function createApp(
+  dirs: ProjectDirs,
+  {
+    log = false,
+    spawnRun = startGameRun,
+    stopRun = (run: GameRun) => killTree(run.pid),
+  } = {},
+) {
   const app = new Hono();
 
   if (log) app.use(logger());
@@ -163,69 +204,148 @@ export function createApp(dirs: ProjectDirs, { log = false } = {}) {
   // POI catalog from data/geography.json
   app.get("/api/geography", (c) => c.json(GEOGRAPHY));
 
-  // Run/build active mission in game
-  app.post("/api/run", vValidator("query", projectQuery), async (c) => {
-    const { project } = c.req.valid("query");
-    const cmd = new Deno.Command(Deno.execPath(), {
-      args: ["task", "build:missions"],
-      cwd: resolve(project),
-    });
-    const output = await cmd.output();
-    return c.json({
-      success: output.success,
-      output: new TextDecoder().decode(output.stdout),
-    });
-  });
-
-  // UDP Live Telemetry SSE Bridge
+  // Live telemetry from the game (plugins/sockets), as SSE events on /api/telemetry. Packets come from this
+  // editor's own UDP listener, or, while a run is in progress, from the run's output (see below).
   let latestTelemetry = {
     connected: false,
     lastSeen: 0,
     pos: [0, 0, 0],
     heading: 0,
   };
+  /** The newest reading of each debug channel, so a viewer that connects late sees them all. */
+  const latestDebug = new Map<number, unknown>();
+  let debugChannelNames: Record<string, string> = {};
   const listeners = new Set<(event: string, data: unknown) => void>();
-  let udpStarted = false;
+  const broadcast = (event: string, data: unknown) => {
+    for (const fn of listeners) fn(event, data);
+  };
 
-  const startUdp = () => {
-    if (udpStarted) return;
+  const publish = (packet: Packet) => {
+    const now = Date.now();
+    if (packet.type === "debug") {
+      const payload = {
+        type: "debug",
+        channel: packet.channel,
+        kind: packet.kind,
+        value: packet.value,
+        time: now,
+      };
+      latestTelemetry = { ...latestTelemetry, connected: true, lastSeen: now };
+      latestDebug.set(packet.channel, payload);
+      broadcast("debug", payload);
+      return;
+    }
+    latestTelemetry = {
+      connected: true,
+      lastSeen: now,
+      pos: packet.pos,
+      heading: packet.heading,
+    };
+    broadcast(packet.type === "capture" ? "capture" : "telemetry", {
+      type: packet.type,
+      pos: packet.pos,
+      heading: packet.heading,
+      time: now,
+    });
+  };
+
+  let udp: { close: () => Promise<void> } | null = null;
+  const startUdp = async () => {
+    if (udp || running) return;
+    // A null result means the port is taken, e.g. by a run started from a terminal
+    udp = await listenTelemetry(TELEMETRY_PORT, publish);
+  };
+
+  // Run in game: `deno task run --events` builds, installs, and launches GTA III. The run captures telemetry on
+  // the same UDP port, so the editor lets go of it until the run ends and takes the game's packets, the exit
+  // verdict, and the rest of the output from the run's event lines instead (see scripts/run-events.ts).
+  let running = false;
+  let current: { child: GameRun; stopped: boolean } | null = null;
+  app.post("/api/run", vValidator("query", projectQuery), async (c) => {
+    if (running) {
+      throw new HTTPException(409, { message: "The game is already running" });
+    }
+    const { project } = c.req.valid("query");
+    running = true;
+    await udp?.close();
+    udp = null;
+    broadcast("run", { state: "building" });
+    let child: GameRun;
     try {
-      const socket = Deno.listenDatagram({ port: 8089, transport: "udp" });
-      udpStarted = true;
-      (async () => {
-        const dec = new TextDecoder();
-        for await (const [bytes] of socket) {
-          const raw = dec.decode(bytes).trim();
-          const isCapture = raw.startsWith("CAPTURE:");
-          const isPos = raw.startsWith("POS:");
-          if (isPos || isCapture) {
-            const coords = raw.slice(isCapture ? 8 : 4).split(",").map(Number);
-            const pos = [coords[0] || 0, coords[1] || 0, coords[2] || 0];
-            const heading = coords[3] || 0;
-            const now = Date.now();
-            latestTelemetry = { connected: true, lastSeen: now, pos, heading };
-            const payload = {
-              type: isCapture ? "capture" : "pos",
-              pos,
-              heading,
-              time: now,
-            };
-            for (const fn of listeners) {
-              fn(isCapture ? "capture" : "telemetry", payload);
-            }
-          }
-        }
-      })();
-    } catch {
-      // Port in use or unpermitted in tests
+      child = spawnRun(resolve(project));
+    } catch (error) {
+      // e.g. no `deno` on the PATH, or the app was started without --allow-run
+      running = false;
+      void startUdp();
+      throw new HTTPException(500, {
+        message: `Could not start the run: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      });
+    }
+    current = { child, stopped: false };
+    void relayRun(current);
+    return c.json({ started: true }, 202);
+  });
+
+  // Stop: ends the run and the game it started. The game then leaves no shutdown marker, so there is no exit
+  // verdict; the run's `done` event says `stopped` instead.
+  app.post("/api/stop", async (c) => {
+    if (!current) {
+      throw new HTTPException(409, { message: "No run is in progress" });
+    }
+    current.stopped = true;
+    await stopRun(current.child);
+    return c.json({ stopping: true }, 202);
+  });
+
+  /** Forwards one line of the run's output: an event line to its SSE event, any other line to the log. */
+  const relayLine = (line: string) => {
+    const event = parseEventLine(line);
+    if (!event) {
+      if (line.trim()) broadcast("log", { line });
+    } else if (event.kind === "names") {
+      debugChannelNames = event.names;
+      broadcast("names", event.names);
+    } else if (event.kind === "launch") {
+      broadcast("run", { state: "running" });
+    } else if (event.kind === "packet") {
+      publish(event.event);
+    } else {
+      broadcast("exit", event);
     }
   };
 
+  async function relayRun(run: { child: GameRun; stopped: boolean }) {
+    const { child } = run;
+    const relay = async (stream: ReadableStream<Uint8Array>) => {
+      const reader = stream.pipeThrough(new TextDecoderStream()).getReader();
+      let rest = "";
+      for (
+        let chunk = await reader.read();
+        !chunk.done;
+        chunk = await reader.read()
+      ) {
+        const lines = (rest + chunk.value).split(/\r?\n/);
+        rest = lines.pop() ?? "";
+        lines.forEach(relayLine);
+      }
+      if (rest) relayLine(rest);
+    };
+    await Promise.all([relay(child.stdout), relay(child.stderr)]);
+    const status = await child.status;
+    running = false;
+    current = null;
+    broadcast("run", {
+      state: "done",
+      code: status.code,
+      stopped: run.stopped,
+    });
+    void startUdp();
+  }
+
   app.get("/api/telemetry", (c) => {
-    startUdp();
-    c.header("Content-Type", "text/event-stream");
-    c.header("Cache-Control", "no-cache");
-    c.header("Connection", "keep-alive");
+    void startUdp();
 
     let timer: ReturnType<typeof setInterval> | undefined;
     const body = new ReadableStream({
@@ -245,6 +365,9 @@ export function createApp(dirs: ProjectDirs, { log = false } = {}) {
           connected: now - latestTelemetry.lastSeen < 2500,
           pos: latestTelemetry.pos,
           heading: latestTelemetry.heading,
+          debug: [...latestDebug.values()],
+          names: debugChannelNames,
+          running,
         });
 
         const onEvent = (evt: string, data: unknown) => send(evt, data);
@@ -268,7 +391,15 @@ export function createApp(dirs: ProjectDirs, { log = false } = {}) {
       },
     });
 
-    return new Response(body);
+    // The headers belong on this Response: `c.header` is ignored once a handler returns its own Response, and
+    // an EventSource refuses a stream that is not `text/event-stream`
+    return new Response(body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   });
 
   app.use("*", serveStatic({ root: uiDir }));

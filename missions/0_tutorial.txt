@@ -19,373 +19,256 @@ const STATE_LOSE = 5
 
 // Mission-private state is CLEO locals, which need no global slot (16 per script)
 int state = STATE_INTRO
-int beat = 0
 int latchIsDriving = false
 int latchDyingWarning = false
 int health = 0
 
 $onMission = true
 
-enterState()
-
 while true
   wait 0
-
-  runMonitors()
-
-  if or
-    Player.IsDead($player)
-    Player.HasBeenArrested($player)
-  then
-    if or
-      state == STATE_INTRO
-      state == STATE_GO_HOME
-    then
-      state = STATE_LOSE
-      enterState()
-    end
-  end
 
   if
     state == STATE_INTRO
   then
-    if
-      beat == 0
-    then
-      TIMERA = 0
-      beat = 1
-    end
-    if
-      beat == 1
-    then
-      if
-        TIMERA >= 5000
-      then
-        beat = 2
-      end
-    end
-    if
-      beat == 2
-    then
-      Text.PrintString("Fuck me, that shift was long. I reek of noodles.", 3500)
-      TIMERA = 0
-      beat = 3
-    end
-    if
-      beat == 3
-    then
-      if
-        TIMERA >= 4000
-      then
-        beat = 4
-      end
-    end
-    if
-      beat == 4
-    then
-      Text.PrintBigString("The Carpool Shortcut", 5000, TextStyle.BottomRight)
-      TIMERA = 0
-      beat = 5
-    end
-    if
-      beat == 5
-    then
-      if
-        TIMERA >= 7500
-      then
-        beat = 6
-      end
-    end
-    if
-      beat == 6
-    then
-      Text.PrintString("The sooner I'm home in bed, the better.", 3000)
-      TIMERA = 0
-      beat = 7
-    end
-    if
-      beat == 7
-    then
-      if
-        TIMERA >= 3000
-      then
-        beat = 8
-      end
-    end
-    if
-      beat == 8
-    then
-      $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
-      Text.PrintHelpString("This map will guide you around town.")
-      Hud.FlashObject(HudObject.Radar)
-      TIMERA = 0
-      beat = 9
-    end
-    if
-      beat == 9
-    then
-      if
-        TIMERA >= 3000
-      then
-        beat = 10
-      end
-    end
-    if
-      beat == 10
-    then
-      Hud.FlashObject(0)
-      TIMERA = 0
-      beat = 11
-    end
-    if
-      beat == 11
-    then
-      if
-        TIMERA >= 2500
-      then
-        beat = 12
-      end
-    end
-    if
-      beat >= 12
-    then
-      state = STATE_GO_HOME
-      enterState()
-    end
+    stateIntro()
   end
 
   if
     state == STATE_GO_HOME
   then
-    // QUESTION: Why is Rosa's apartment collision not correct?
-    if
-      Player.LocateAnyMeans3D($player, SAFEHOUSE_ARRIVE_X, SAFEHOUSE_ARRIVE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
-    then
-      state = STATE_ARRIVE
-      enterState()
-    end
+    stateGoHome()
   end
 
   if
     state == STATE_ARRIVE
   then
-    if
-      beat == 0
-    then
-      Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
-      Camera.SetInterpolationParameters(0, 1250)
-      Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
-      beat = 1
-    end
-    if
-      beat == 1
-    then
-      if
-        latchIsDriving == false
-      then
-        Text.PrintString("Ugh, that was a long walk.", 2500)
-        TIMERA = 0
-        beat = 2
-      else
-        beat = 3
-      end
-    end
-    if
-      beat == 2
-    then
-      if
-        TIMERA >= 2500
-      then
-        beat = 3
-      end
-    end
-    if
-      beat == 3
-    then
-      // TODO: Save the player's car in this "garage".
-      // TODO: Add parking lines to the model. See Marco's Bistro for parking lines
-      Audio.PlayMissionPassedTune(1)
-      register_mission_passed 'NooM_0'
-      Player.AddScore($player, REWARD)
-      Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
-      TIMERA = 0
-      beat = 4
-    end
-    if
-      beat == 4
-    then
-      if
-        TIMERA >= 5500
-      then
-        beat = 5
-      end
-    end
-    if
-      beat >= 5
-    then
-      state = STATE_HOME_TUTORIAL
-      enterState()
-    end
+    stateArrive()
   end
 
   if
     state == STATE_HOME_TUTORIAL
   then
-    // Payphone and front-door tutorial
-    if
-      beat == 0
-    then
-      Text.PrintHelpString("This is your home.")
-      TIMERA = 0
-      beat = 1
-    end
-    if
-      beat == 1
-    then
-      if
-        TIMERA >= 3000
-      then
-        beat = 2
-      end
-    end
-    if
-      beat == 2
-    then
-      Text.PrintHelpString("Come back here anytime to save the game.")
-      TIMERA = 0
-      beat = 3
-    end
-    if
-      beat == 3
-    then
-      if
-        TIMERA >= 4000
-      then
-        beat = 4
-      end
-    end
-    if
-      beat == 4
-    then
-      // All done!
-      Camera.DoFade(750, Fade.Out)
-      Hud.LoadSplash('SPLASH1')
-      TIMERA = 0
-      beat = 5
-    end
-    if
-      beat == 5
-    then
-      if
-        TIMERA >= 1250
-      then
-        beat = 6
-      end
-    end
-    if
-      beat == 6
-    then
-      // TODO: Model and then teleport to Rosa's apartment unit
-      Camera.RestoreJumpcut()
-      Camera.DoFade(750, Fade.In)
-      TIMERA = 0
-      beat = 7
-    end
-    if
-      beat == 7
-    then
-      if
-        TIMERA >= 1000
-      then
-        beat = 8
-      end
-    end
-    if
-      beat == 8
-    then
-      Text.PrintString("TGIF! I really needed that rent money.", 3250)
-      TIMERA = 0
-      beat = 9
-    end
-    if
-      beat == 9
-    then
-      if
-        TIMERA >= 7500
-      then
-        beat = 10
-      end
-    end
-    if
-      beat >= 10
-    then
-      state = STATE_WIN
-      enterState()
-    end
+    stateHomeTutorial()
   end
 
   if
     state == STATE_WIN
   then
-    finishMission()
+    stateWin()
   end
 
   if
     state == STATE_LOSE
   then
-    if
-      beat == 0
-    then
-      Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
-      TIMERA = 0
-      beat = 1
-    end
-    if
-      beat == 1
-    then
-      if
-        TIMERA >= 3000
-      then
-        beat = 2
-      end
-    end
-    if
-      beat >= 2
-    then
-      state = STATE_GO_HOME
-      enterState()
-    end
+    stateLose()
   end
 end
 
-// Never reached: finishMission() terminates the thread
+// Never reached: the loop above runs until finishMission() terminates the thread
 05DC: terminate_custom_thread
 
-:enterState
-  beat = 0
+:stateIntro
+  TIMERA = 0
+  TIMERA = 0
+  while TIMERA < 5000
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  Text.PrintString("Fuck me, that shift was long. I reek of noodles.", 3500)
+  TIMERA = 0
+  while TIMERA < 4000
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  Text.PrintBigString("The Carpool Shortcut", 5000, TextStyle.BottomRight)
+  TIMERA = 0
+  while TIMERA < 7500
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  Text.PrintString("The sooner I'm home in bed, the better.", 3000)
+  TIMERA = 0
+  while TIMERA < 3000
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  Text.PrintHelpString("This map will guide you around town.")
+  Hud.FlashObject(HudObject.Radar)
+  TIMERA = 0
+  while TIMERA < 3000
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  Hud.FlashObject(0)
+  TIMERA = 0
+  while TIMERA < 2500
+    wait 0
+    runMonitors()
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+  end
+  state = STATE_GO_HOME
+  return
+
+:stateGoHome
+  // QUESTION: Why is Rosa's apartment collision not correct?
   TIMERA = 0
   if
-    state == STATE_GO_HOME
+    latchIsDriving == false
   then
+    Text.PrintHelpString("Find your way home.")
+  else
+    Text.PrintString("Did you steal this car?", 3000)
+  end
+  $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+  while true
+    wait 0
+    runMonitors()
+    failCheck()
     if
-      latchIsDriving == false
+      state == STATE_LOSE
     then
-      Text.PrintHelpString("Find your way home.")
-    else
-      Text.PrintString("Did you steal this car?", 3000)
+      return
     end
-    $SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)
+    if
+      Player.LocateAnyMeans3D($player, SAFEHOUSE_ARRIVE_X, SAFEHOUSE_ARRIVE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
+    then
+      state = STATE_ARRIVE
+      return
+    end
   end
+  return
+
+:stateArrive
+  TIMERA = 0
+  Blip.Remove($SafeBlip)
+  Camera.SetFixedPosition(PAYPHONE_CALL_CAM_X, PAYPHONE_CALL_CAM_Y, PAYPHONE_CALL_CAM_Z, 0, 0, 0)
+  Camera.SetInterpolationParameters(0, 1250)
+  Camera.PointAtPlayer($player, CameraMode.Fixed, SwitchType.Interpolation)
   if
-    state == STATE_ARRIVE
+    latchIsDriving == false
   then
-    Blip.Remove($SafeBlip)
+    Text.PrintString("Ugh, that was a long walk.", 2500)
+    TIMERA = 0
+    while TIMERA < 2500
+      wait 0
+      runMonitors()
+    end
   end
-  if
-    state == STATE_LOSE
+  // TODO: Save the player's car in this "garage".
+  // TODO: Add parking lines to the model. See Marco's Bistro for parking lines
+  Audio.PlayMissionPassedTune(1)
+  register_mission_passed 'NooM_0'
+  Player.AddScore($player, REWARD)
+  Text.PrintWithNumberBig('M_PASS', REWARD, 5000, TextStyle.Middle)
+  TIMERA = 0
+  while TIMERA < 5500
+    wait 0
+    runMonitors()
+  end
+  state = STATE_HOME_TUTORIAL
+  return
+
+:stateHomeTutorial
+  // Payphone and front-door tutorial
+  TIMERA = 0
+  Text.PrintHelpString("This is your home.")
+  TIMERA = 0
+  while TIMERA < 3000
+    wait 0
+    runMonitors()
+  end
+  Text.PrintHelpString("Come back here anytime to save the game.")
+  TIMERA = 0
+  while TIMERA < 4000
+    wait 0
+    runMonitors()
+  end
+  // All done!
+  Camera.DoFade(750, Fade.Out)
+  Hud.LoadSplash('SPLASH1')
+  TIMERA = 0
+  while TIMERA < 1250
+    wait 0
+    runMonitors()
+  end
+  // TODO: Model and then teleport to Rosa's apartment unit
+  Camera.RestoreJumpcut()
+  Camera.DoFade(750, Fade.In)
+  TIMERA = 0
+  while TIMERA < 1000
+    wait 0
+    runMonitors()
+  end
+  Text.PrintString("TGIF! I really needed that rent money.", 3250)
+  TIMERA = 0
+  while TIMERA < 7500
+    wait 0
+    runMonitors()
+  end
+  state = STATE_WIN
+  return
+
+:stateWin
+  TIMERA = 0
+  finishMission()
+  return
+
+:stateLose
+  TIMERA = 0
+  latchIsDriving = false
+  latchDyingWarning = false
+  Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
+  TIMERA = 0
+  while TIMERA < 3000
+    wait 0
+    runMonitors()
+  end
+  state = STATE_GO_HOME
+  return
+
+:failCheck
+  if or
+    Player.IsDead($player)
+    Player.HasBeenArrested($player)
   then
-    latchIsDriving = false
-    latchDyingWarning = false
+    state = STATE_LOSE
   end
   return
 

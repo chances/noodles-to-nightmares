@@ -21,6 +21,8 @@
   --left: clamp(var(--sidebar-min), 30vw, 420px);
   --right: clamp(var(--sidebar-min), 28vw, 420px);
   --timeline: clamp(120px, 30vh, 640px);
+  /* The States pane's height in the left sidebar; the Assets pane takes the rest. */
+  --states: 50%;
 }
 
 * {
@@ -113,7 +115,7 @@ aside,
 }
 
 .left {
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: minmax(0, var(--states)) minmax(0, 1fr);
   border-inline-end: 1px solid var(--line);
 }
 
@@ -173,8 +175,9 @@ aside,
   flex: none;
 }
 
+/* The border between stacked panes. A bottom border on the lower pane doubled the border of the row below. */
 .pane + .pane {
-  border-block-end: 1px solid var(--line);
+  border-block-start: 1px solid var(--line);
 }
 
 /* The timeline and the Beat pane share the bottom row; the Beat pane is as wide as the Script pane above it. */
@@ -184,11 +187,6 @@ aside,
   grid-template-rows: minmax(0, 1fr);
   min-block-size: 0;
   border-block-start: 1px solid var(--line);
-}
-
-.lower .pane + .pane,
-.lower > aside .pane {
-  border-block-end: 0;
 }
 
 .beat {
@@ -716,6 +714,15 @@ button.link:hover {
   cursor: row-resize;
 }
 
+/* Across the left sidebar, short of the column splitter at its edge. */
+.splitter[data-side="states"] {
+  inset-inline-start: 0;
+  inline-size: calc(var(--left) - 4px);
+  inset-block-start: calc(var(--states) - 4px);
+  block-size: 9px;
+  cursor: row-resize;
+}
+
 .splitter::after {
   content: "";
   position: absolute;
@@ -730,7 +737,8 @@ button.link:hover {
   inset-inline: 3px;
 }
 
-.splitter[data-side="timeline"]::after {
+.splitter[data-side="timeline"]::after,
+.splitter[data-side="states"]::after {
   inset-inline: 0;
   inset-block: 3px;
 }
@@ -779,6 +787,39 @@ button.primary {
 
 button.primary:hover {
   background: color-mix(in srgb, var(--accent) 85%, var(--text));
+}
+
+/* Icon buttons chained into one segmented control: shared edges, rounded only at the ends. */
+.button-group {
+  display: inline-flex;
+}
+
+.button-group > button {
+  position: relative;
+  justify-content: center;
+  min-inline-size: var(--control-size);
+  padding-inline: 0;
+  border-radius: 0;
+}
+
+.button-group > button:first-child {
+  border-start-start-radius: 4px;
+  border-end-start-radius: 4px;
+}
+
+.button-group > button:last-child {
+  border-start-end-radius: 4px;
+  border-end-end-radius: 4px;
+}
+
+/* One border between segments, not two */
+.button-group > button + button {
+  margin-inline-start: -1px;
+}
+
+.button-group > button:hover,
+.button-group > button:focus-visible {
+  z-index: 1;
 }
 
 dialog {
@@ -1559,6 +1600,11 @@ button.run-in-game:hover:not(:disabled) {
   background: #2ea043;
 }
 
+/* Stop replaces Run while the game runs, in the danger fill. */
+button.stop-game {
+  gap: 6px;
+}
+
 /* F8 Capture Toast */
 .capture-toast {
   position: fixed;
@@ -1754,6 +1800,7 @@ button.run-in-game:hover:not(:disabled) {
   border: 1px solid #ff003344;
 }
 .player-hud-grid {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
@@ -1765,6 +1812,18 @@ button.run-in-game:hover:not(:disabled) {
 .hud-stat {
   display: flex;
   flex-direction: column;
+}
+/* The copy button sits in the card's top-right corner; the card is its positioning context. */
+.hud-copy {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-end: 6px;
+}
+/* A copied checkmark is green until the button resets. */
+button.icon.copied,
+button.icon.copied:hover {
+  border-color: transparent;
+  color: var(--role-start);
 }
 .hud-label {
   font-size: 10px;
@@ -1780,6 +1839,83 @@ button.run-in-game:hover:not(:disabled) {
 .hud-actions {
   display: flex;
   gap: 6px;
+}
+.watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.watch-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding-block: 4px;
+  padding-inline: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.watch-kind {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.watch-value {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text);
+}
+.debugger-pane code,
+.debugger-pane samp,
+.debugger-pane kbd {
+  font-family: monospace;
+  font-size: 0.95em;
+}
+.debugger-pane code {
+  padding-block: 1px;
+  padding-inline: 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+}
+.debugger-pane kbd {
+  padding-block: 1px;
+  padding-inline: 5px;
+  border: 1px solid var(--line);
+  border-block-end-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+.run-verdict {
+  margin: 0;
+  font-size: 12px;
+}
+.run-verdict.crashed {
+  color: #ff0033;
+}
+.run-verdict.normal {
+  color: #00ff88;
+}
+.run-exception {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.run-log {
+  margin: 0;
+  padding-block: 6px;
+  padding-inline: 8px;
+  max-block-size: 140px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: pre-wrap;
 }
 .captures-list {
   display: flex;

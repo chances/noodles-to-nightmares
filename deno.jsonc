@@ -5,7 +5,7 @@
     "build": "deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/build.ts",
     "build:missions": "deno run --allow-read --allow-write scripts/sync-missions.ts",
     "install": "deno task build && deno run --env-file=.env --allow-env --allow-read --allow-write --allow-run scripts/install.ts",
-    "run": "deno task install && deno run --env-file=.env --allow-env --allow-read --allow-run scripts/run.ts",
+    "run": "deno task install && deno run --env-file=.env --allow-env --allow-read --allow-write=dist/telemetry --allow-net=127.0.0.1:8089 --allow-run scripts/run.ts",
     "map-editor": "deno run --env-file=.env --allow-env --allow-read --allow-run scripts/map-editor.ts",
     // Mission Editor
     // FIXME: HMR is innefectual in desktop app; fix tools/mission-editor/deno.json dev task

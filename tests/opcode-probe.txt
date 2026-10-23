@@ -1,0 +1,84 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini}
+{$OPCODE 0B31=4,udp_send_debug %1d% %2d% %3d% %4d%}
+nop
+
+// DEBUG: Bare-bones probe for sockets.cleo opcode 0B31 (UDP debug readings) on GTA III.
+// Sends every reading kind on channels 1 to 4 to UDP 8089 once a quarter second for ten seconds. Run
+// `deno task run` in another terminal, or the mission editor, to see them; a missing "99_done" key in
+// CLEO\opcode-probe.ini means the game stopped at the opcode.
+
+const PORT = 8089
+const KIND_INT = 0
+const KIND_FLOAT = 1
+const KIND_COUNT = 2
+const KIND_TRACE = 3
+
+var
+  $player: Player
+  $step: int
+  $f: float
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+IniFile.WriteInt(1, "CLEO\opcode-probe.ini", "Opcode", "00_started")
+
+$f = 2.5
+$step = 0
+while $step < 40
+  wait 250
+  $step += 1
+
+  0B31: PORT 1 KIND_INT $step
+  0B31: PORT 2 KIND_FLOAT $f
+  0B31: PORT 3 KIND_COUNT 0
+  0B31: PORT 4 KIND_TRACE $step
+end
+
+IniFile.WriteInt($step, "CLEO\opcode-probe.ini", "Opcode", "01_sent_40_rounds_expect_40")
+IniFile.WriteInt(1, "CLEO\opcode-probe.ini", "Opcode", "99_done")
+
+while true
+  wait 1000
+end

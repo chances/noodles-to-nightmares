@@ -61,8 +61,8 @@ flowchart TD
 ### C. UDP CLEO Plugin: `sockets.cleo`
 - Built via CMake + MSVC in `plugins/sockets/`, installed to `CLEO/CLEO_PLUGINS/sockets.cleo`.
 - Uses Win32 non-blocking UDP (`ioctlsocket(FIONBIO)`):
-  - `0B30: udp_send ip "127.0.0.1" port 8089 data "POS:x,y,z,heading"`
-  - Instant event payload on F8 press: `"CAPTURE:x,y,z,heading"`.
+  - `0B30: port x y z heading event` sends `POS:x,y,z,heading`, or `CAPTURE:x,y,z,heading` when `event` is 1 (F8).
+  - `0B31: port channel kind value` sends script debug readings as `DBG:<channel>,<i|f|c|t>,<value>`.
 - Bidirectional control (`udp_bind` / `udp_recv`) deferred to post-POC.
 
 ### D. In-Game Telemetry Streamer (`capture.cs`)
@@ -90,9 +90,9 @@ flowchart TD
 2. **Phase 2: UDP Plugin (`sockets.cleo`) & In-Game 15Hz Streamer**
    - Implement `plugins/sockets/` C++ DLL and Sanny opcode definition.
    - Deploy `capture.cs` streaming at 15Hz and on F8.
-3. **Phase 3: Editor UDP Server, Connection Status Pill & "Run in Game"**
-   - Implement Deno UDP listener (port 8089) and SSE bridge.
-   - Add status pill, "Run in Game" button, and Debugging mode lock in editor UI.
+3. **Phase 3: Editor UDP Server, Connection Status Pill & "Run in Game"** (done)
+   - UDP listener on port 8089 (`scripts/telemetry.ts`, `node:dgram`) and SSE bridge in `tools/mission-editor/server.ts`.
+   - Status pill and Run button (starts `deno task run --events`); Debug mode swaps the Script pane for the debugger pane (Game Run, Script Watches, F8 captures).
 4. **Phase 4: Radar Map & Live Capture Controls**
    - Render 2D Portland radar map with real-time player position indicator.
    - Wire "Use Current Position" buttons and F8 toasts in Inspector.

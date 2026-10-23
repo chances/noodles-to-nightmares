@@ -24,6 +24,7 @@
 
 import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
+import { includeTree } from "./includes.ts";
 import { lintOrExit } from "./lint-scripts.ts";
 import { syncMissions } from "@noodles/fsm";
 import { capitalCase } from "change-case";
@@ -127,24 +128,15 @@ async function sha256(data: string | Uint8Array<ArrayBuffer>): Promise<string> {
     .join("");
 }
 
-/** Hashes a script together with every file it `{$INCLUDE}`s, recursively. */
-async function hashScript(
-  path: string,
-  seen = new Set<string>(),
-): Promise<string> {
-  if (seen.has(path)) return "";
-  seen.add(path);
-  const text = await Deno.readTextFile(path);
-  const parts = [text];
-  for (const m of text.matchAll(/\{\$INCLUDE\s+([^}]+)\}/gi)) {
-    const includePath = join(dirname(path), m[1].trim());
-    try {
-      parts.push(await hashScript(includePath, seen));
-    } catch {
-      parts.push(`missing:${includePath}`);
-    }
-  }
-  return await sha256(parts.join("\n"));
+/** Hashes a script together with every file it `{$INCLUDE}`s, recursively (see includes.ts). */
+async function hashScript(path: string): Promise<string> {
+  const tree = await includeTree(path);
+  const parts = await Promise.all(
+    tree.files.map(async (file) => `${file}\n${await Deno.readTextFile(file)}`),
+  );
+  return await sha256(
+    [...parts, ...tree.missing.map((file) => `missing:${file}`)].join("\n"),
+  );
 }
 
 const cachePath = join(Deno.cwd(), "dist", ".build-cache.json");
@@ -173,19 +165,12 @@ async function saveHash(key: string, hash: string) {
 }
 
 /**
- * Like make: compiles only when the source hash changed or the output is missing.
- * `dependsOn` scripts count toward the hash without being compiled themselves,
- * e.g. a mission reads main's global variable slots, so its output goes stale when they move.
+ * Like make: compiles only when the hash of the script and the files it includes changed, or the output is
+ * missing. A file the script does not include never makes it stale: global slots are pinned in variables.txt,
+ * which main and every mission include, so a mission does not depend on main.txt.
  */
-async function compileIfChanged(
-  inputPath: string,
-  outputPath: string,
-  dependsOn: string[] = [],
-) {
-  const hash = await sha256(
-    (await Promise.all([inputPath, ...dependsOn].map((p) => hashScript(p))))
-      .join("\n"),
-  );
+async function compileIfChanged(inputPath: string, outputPath: string) {
+  const hash = await hashScript(inputPath);
   if (
     !forceArg && await allExist([outputPath]) && hashCache[inputPath] === hash
   ) {
@@ -376,7 +361,7 @@ if (shouldRun(2, "missions")) {
     const outputPath = join(missionsDir, `${missionName}.cm`);
 
     say.info(`  ${entryName}`);
-    await compileIfChanged(inputPath, outputPath, [join(cwd, "main.txt")]);
+    await compileIfChanged(inputPath, outputPath);
     await Deno.copyFile(outputPath, join(cleoStagingDir, `${missionName}.cm`));
   }
   say.done("  Packaged modloader/Noodles/cleo/*.cm");

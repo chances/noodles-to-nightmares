@@ -4,7 +4,6 @@ import { join } from "@std/path";
 import { listMissions, loadMission } from "./fsm-file.ts";
 import { generate } from "./generate.ts";
 import { generateGeographyTxt } from "./geography.ts";
-import type { Mission } from "./types.ts";
 
 export interface SyncResult {
   /** Generated files whose committed text differs from a fresh generation. */

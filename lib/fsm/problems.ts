@@ -239,7 +239,7 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     }
     localNames.add(local.name);
   }
-  // CLEO gives a script 16 locals: `state`, `beat`, a latch per monitor, the declared locals, and scratch locals
+  // CLEO gives a script 16 locals: `state`, a latch per monitor, the declared locals, and scratch locals
   const scratch = new Set<string>();
   for (
     const list of [
@@ -264,7 +264,7 @@ export function problems(mission: Mission, known?: Known): Problem[] {
       }
     }
   }
-  const localCount = 2 + latches.size + (mission.locals?.length ?? 0) +
+  const localCount = 1 + latches.size + (mission.locals?.length ?? 0) +
     scratch.size;
   if (localCount > 16) {
     error(`The mission needs ${localCount} locals, but a CLEO script has 16`);

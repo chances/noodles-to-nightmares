@@ -1,13 +1,25 @@
 // Turns a mission state table into the Sanny source of a CLEO mission script (`{$CLEO .cm}`).
 //
-// Shape of the output: the mission keeps `state` and `beat` as locals, one latch local per monitor, and
-// scratch locals that conditions ask for. TIMERA measures time in the current beat. A beat runs its `do`
-// steps once, then waits; the beat counter counts a run phase and a wait phase per beat. A state that no fail
-// check or monitor needs to watch (`fail: false` or no fail list, and no monitors) runs its beats as plain
-// `wait`s instead, with `beat` only marking that they have run.
+// Shape of the output: the mission keeps `state`, one latch local per monitor, and scratch locals that
+// conditions ask for. A dispatcher loop calls the routine of the current state. A routine runs the state's
+// enter steps and beats, then ticks in its own loop until a transition holds; it sets `state` and returns to
+// the dispatcher, so the dispatch compares run once per transition, not once per tick. A state that a monitor
+// or the mission fail check watches waits out each beat in a `TIMERA` loop that runs the watchers; any other
+// state uses plain `wait`s. Routines are label subroutines because a `function` cannot see the script's locals.
+// The game keeps six `gosub` return addresses per script; a routine nests at most one level deeper
+// (`failCheck`, `runMonitors`, or a `leave` routine), plus whatever its steps call.
 
-import { cmp, ifBlock, indent, latchLocal, stateConst } from "./emit.ts";
-import type { Cond, Const, Mission, State } from "./types.ts";
+import {
+  cmp,
+  ifBlock,
+  indent,
+  latchLocal,
+  leaveLabel,
+  stateConst,
+  stateLabel,
+  whileBlock,
+} from "./emit.ts";
+import type { Beat, Cond, Const, Mission, State } from "./types.ts";
 
 const comments = (notes: string[] = []) => notes.map((note) => `// ${note}`);
 
@@ -35,11 +47,25 @@ export function generate(mission: Mission, source: string): string {
     if (state.until && !state.next) {
       throw new Error(`${source}: ${id} has until but no next`);
     }
+    if (state.finish && (state.next || state.until || state.on?.length)) {
+      throw new Error(`${source}: ${id} has finish with next, until, or on`);
+    }
+  }
+  const failable = (state: State) =>
+    mission.fail.length > 0 && state.fail !== false;
+  const failTarget = stateConst(mission.onFail);
+  if (failable(mission.states[mission.onFail])) {
+    throw new Error(
+      `${source}: onFail state ${mission.onFail} must set fail: false`,
+    );
   }
 
   const monitors = mission.monitors ?? [];
   const latches = monitors.map((m) => latchLocal(m.id));
-  const hasExit = entries.some(([, state]) => state.onExit?.length);
+  const hasFail = entries.some(([, state]) => failable(state));
+  const leaves = new Set(
+    entries.filter(([, state]) => state.onExit?.length).map(([id]) => id),
+  );
 
   const scratch = new Set<string>();
   const track = (conds: Cond[] = []) => {
@@ -55,118 +81,84 @@ export function generate(mission: Mission, source: string): string {
     for (const beat of state.beats ?? []) track(beat.when);
   }
 
-  /** Leaves the current state and enters `target`. */
-  const go = (target: string): string[] => [
-    ...(hasExit ? ["exitState()"] : []),
+  /** Calls the routine that runs the state's `onExit` steps, when it has one. */
+  const leave = (id: string) => leaves.has(id) ? [`${leaveLabel(id)}()`] : [];
+
+  /** Leaves `id` for `target` and returns to the dispatcher. */
+  const go = (id: string, target: string): string[] => [
+    ...leave(id),
     `state = ${stateConst(target)}`,
-    "enterState()",
+    "return",
   ];
 
-  function stateBlock(id: string, state: State): string[] {
-    const body = comments(state.notes);
-    const beats = state.beats ?? [];
-    // Nothing needs a tick while this state's beats wait, so they run as straight-line `wait`s
-    const straight = !monitors.length &&
-      (state.fail === false || mission.fail.length === 0);
-    let n = 0;
-    for (const beat of straight ? [] : beats) {
-      const run = n++;
-      const wait = beat.wait ? n++ : undefined;
-      const after = n;
-      const start = [
-        ...comments(beat.notes),
-        ...(beat.do ?? []).flat(),
-        ...(wait === undefined
-          ? [`beat = ${after}`]
-          : ["TIMERA = 0", `beat = ${wait}`]),
-      ];
-      body.push(
-        ...ifBlock(
-          [cmp("beat", "==", run)],
-          beat.when ? ifBlock(beat.when, start, [`beat = ${after}`]) : start,
-        ),
-      );
-      if (wait !== undefined) {
-        body.push(
-          ...ifBlock(
-            [cmp("beat", "==", wait)],
-            ifBlock([cmp("TIMERA", ">=", beat.wait!)], [`beat = ${after}`]),
-          ),
-        );
-      }
-    }
+  const watched = (state: State) => monitors.length > 0 || failable(state);
 
-    if (straight && beats.length) {
-      const run = beats.flatMap((beat) => {
-        const start = [
-          ...comments(beat.notes),
-          ...(beat.do ?? []).flat(),
-          ...(beat.wait ? [`wait ${beat.wait}`] : []),
-        ];
-        return beat.when ? ifBlock(beat.when, start) : start;
-      });
-      // The state block runs every tick, so `beat` keeps the beats from running again while `until` waits
-      body.push(...ifBlock([cmp("beat", "==", 0)], [...run, "beat = 1"]));
+  /** What a tick checks besides the state's own transitions: the monitors, then the fail check. */
+  const watch = (id: string, state: State): string[] => [
+    ...(monitors.length ? ["runMonitors()"] : []),
+    ...(failable(state)
+      ? [
+        "failCheck()",
+        ...ifBlock([cmp("state", "==", failTarget)], [...leave(id), "return"]),
+      ]
+      : []),
+  ];
+
+  function beatLines(id: string, state: State, beat: Beat): string[] {
+    const lines = [...comments(beat.notes), ...(beat.do ?? []).flat()];
+    if (beat.wait) {
+      lines.push(
+        ...(watched(state)
+          ? [
+            "TIMERA = 0",
+            ...whileBlock(`TIMERA < ${beat.wait}`, [
+              "wait 0",
+              ...watch(id, state),
+            ]),
+          ]
+          : [`wait ${beat.wait}`]),
+      );
     }
+    return beat.when ? ifBlock(beat.when, lines) : lines;
+  }
+
+  function routine(id: string, state: State): string[] {
+    const body = [
+      ...comments(state.notes),
+      "TIMERA = 0",
+      ...(state.resetLatches ? latches.map((l) => `${l} = false`) : []),
+      ...(state.onEnter ?? []).flat(),
+      ...(state.beats ?? []).flatMap((beat) => beatLines(id, state, beat)),
+    ];
 
     // The rules form an if/else chain, so the first one that holds wins and `until` and `next` are the last else
     let route: string[] = state.until
-      ? ifBlock(state.until, go(state.next!))
+      ? ifBlock(state.until, go(id, state.next!))
       : state.next
-      ? go(state.next)
+      ? go(id, state.next)
       : [];
     for (const rule of [...(state.on ?? [])].reverse()) {
-      route = ifBlock(rule.when, go(rule.goto), route);
+      route = ifBlock(rule.when, go(id, rule.goto), route);
     }
-    const exit = [...route];
-    if (state.finish) exit.push("finishMission()");
-    body.push(
-      ...(n > 0 ? ifBlock([cmp("beat", ">=", n)], exit) : exit),
-    );
 
-    return ifBlock([cmp("state", "==", stateConst(id))], body);
-  }
-
-  // Main loop: monitors, then the fail check, then every state's block
-  const loop = ["wait 0"];
-  if (monitors.length) loop.push("", "runMonitors()");
-  const failStates = entries.filter(([, state]) => state.fail !== false).map((
-    [id],
-  ) => id);
-  if (mission.fail.length && failStates.length) {
-    loop.push(
-      "",
-      ...ifBlock(
-        mission.fail,
-        ifBlock(
-          failStates.map((id) => cmp("state", "==", stateConst(id))),
-          go(mission.onFail),
-          [],
-          "or",
-        ),
-        [],
-        "or",
-      ),
-    );
-  }
-  for (const [id, state] of entries) {
-    const block = stateBlock(id, state);
-    if (block.length) loop.push("", ...block);
+    if (state.finish) {
+      body.push("finishMission()");
+    } else if (state.next && !state.until) {
+      // The route always fires, so the state needs no tick loop
+      body.push(...route);
+    } else {
+      body.push(
+        ...whileBlock("true", ["wait 0", ...watch(id, state), ...route]),
+      );
+    }
+    if (body.at(-1) !== "return") body.push("return");
+    return [`:${stateLabel(id)}`, ...indent(body)];
   }
 
-  // Label subroutines: a `function` cannot see this script's locals
-  const enter = ["beat = 0", "TIMERA = 0"];
-  const leave: string[] = [];
-  for (const [id, state] of entries) {
-    const onState = [cmp("state", "==", stateConst(id))];
-    enter.push(
-      ...ifBlock(onState, [
-        ...(state.resetLatches ? latches.map((l) => `${l} = false`) : []),
-        ...(state.onEnter ?? []).flat(),
-      ]),
-    );
-    leave.push(...ifBlock(onState, (state.onExit ?? []).flat()));
-  }
+  const dispatch = entries.flatMap(([id]) => [
+    "",
+    ...ifBlock([cmp("state", "==", stateConst(id))], [`${stateLabel(id)}()`]),
+  ]);
 
   const width = Math.max(45, ...mission.header.map((line) => line.length + 3));
   const bar = `//${"=".repeat(width)}`;
@@ -189,7 +181,6 @@ export function generate(mission: Mission, source: string): string {
     "",
     "// Mission-private state is CLEO locals, which need no global slot (16 per script)",
     `int state = ${stateConst(mission.start)}`,
-    "int beat = 0",
     ...(mission.locals ?? []).map((l) =>
       l.value === undefined
         ? `${l.type} ${l.name}`
@@ -200,19 +191,31 @@ export function generate(mission: Mission, source: string): string {
     "",
     "$onMission = true",
     "",
-    "enterState()",
-    "",
     "while true",
-    ...indent(loop),
+    ...indent(["wait 0", ...dispatch]),
     "end",
     "",
-    "// Never reached: finishMission() terminates the thread",
+    "// Never reached: the loop above runs until finishMission() terminates the thread",
     "05DC: terminate_custom_thread",
-    "",
-    ":enterState",
-    ...indent([...enter, "return"]),
   ];
-  if (hasExit) out.push("", ":exitState", ...indent([...leave, "return"]));
+  for (const [id, state] of entries) out.push("", ...routine(id, state));
+  for (const id of leaves) {
+    out.push(
+      "",
+      `:${leaveLabel(id)}`,
+      ...indent([...(mission.states[id].onExit ?? []).flat(), "return"]),
+    );
+  }
+  if (hasFail) {
+    out.push(
+      "",
+      ":failCheck",
+      ...indent([
+        ...ifBlock(mission.fail, [`state = ${failTarget}`], [], "or"),
+        "return",
+      ]),
+    );
+  }
   if (monitors.length) {
     const body = monitors.flatMap((m, i) =>
       ifBlock([...m.when, cmp(latches[i], "==", "false")], [

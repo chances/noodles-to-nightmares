@@ -20,7 +20,7 @@ Deno.test("a sound table has no problems", () => {
 });
 
 Deno.test("locals are checked for names and the CLEO limit of 16", () => {
-  const locals = Array.from({ length: 15 }, (_, i) => ({
+  const locals = Array.from({ length: 16 }, (_, i) => ({
     name: `l${i}`,
     type: "int",
   }));

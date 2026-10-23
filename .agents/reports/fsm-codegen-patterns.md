@@ -66,7 +66,7 @@ A CLEO plugin with an indexed jump opcode would make dispatch O(1). This design 
 ## Open Questions
 
 - A state's `onExit` steps live in a `leave<State>` routine that the state calls just before it sets `state` and returns.
-- Implementation: [`fsm-codegen-subroutine-per-state-impl.md`](../plans/fsm-codegen-subroutine-per-state-impl.md).
+- Implementation: [`fsm-codegen-subroutine-per-state.md`](../plans/fsm-codegen-subroutine-per-state.md).
 - `monitors` (a rule that fires once, any state) need a `gosub @runMonitors` inside every tick loop.
 - States entered from several places (LOSE back to INTRO) need nothing extra, since the dispatcher owns entry.
 - Call depth is the state routine, then `checkFail`, `runMonitors`, or a `leave` routine: two `gosub` levels, since the dispatcher is the script body. [`tests/stack-probe.txt`](../../tests/stack-probe.txt) on `main.scm` entered seven nested `gosub`s and crashed the game on the eighth ([result](../../tests/results/stack-2026-10-23T01-04-54-520Z.md)). `CScript` in [`III.CLEO.h`](../../plugins/sockets/III.CLEO.h) holds six return addresses (`m_aGosubAddr[6]`), so the seventh overran into the next field and six is the safe depth. A `.cm` thread is untested; the generator stays at two levels plus what a step calls.

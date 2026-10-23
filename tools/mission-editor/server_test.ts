@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { fromFileUrl, join } from "@std/path";
-import { createHandler, handler } from "./server.ts";
+import { createApp, createHandler, handler } from "./server.ts";
 
 const get = (path: string) => handler(new Request(`http://editor.test${path}`));
 const repo = encodeURIComponent(
@@ -218,6 +218,172 @@ Deno.test("creates a project over the API, lists it, and refuses a non-JSON body
   } finally {
     await Deno.remove(root, { recursive: true });
   }
+});
+
+Deno.test("a run relays the game's telemetry, output, and exit verdict as events", async () => {
+  const encoder = new TextEncoder();
+  const stream = (text: string) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(text));
+        controller.close();
+      },
+    });
+  const lines = [
+    '@telemetry {"kind":"names","names":{"9":"MY_CAR"}}',
+    '@telemetry {"kind":"launch","exe":"gta3-game.exe"}',
+    '@telemetry {"kind":"packet","event":{"type":"debug","channel":9,"kind":"i","value":13570,"t":1200}}',
+    "Compiled main.txt",
+    '@telemetry {"kind":"exit","code":30193,"known":true,"crashed":false,"signs":[]}',
+  ];
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      spawnRun: () => ({
+        pid: 1,
+        stdout: stream(lines.join("\n") + "\n"),
+        stderr: stream(""),
+        status: Promise.resolve({ code: 0 }),
+      }),
+    },
+  );
+
+  const events = await api.request("/api/telemetry");
+  // A browser's EventSource refuses anything else
+  assertEquals(events.headers.get("content-type"), "text/event-stream");
+  const reader = events.body!.getReader();
+  // A browser sends the page's own origin with a same-site POST, which the CSRF check wants
+  const started = await api.request(`/api/run?project=${repo}`, {
+    method: "POST",
+    headers: { origin: "http://localhost" },
+  });
+  assertEquals(started.status, 202);
+  await started.body?.cancel();
+
+  // Read until the run is done: the stream also carries 1 Hz pings
+  const decoder = new TextDecoder();
+  let text = "";
+  while (!text.includes('"state":"done"')) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value);
+  }
+  await reader.cancel();
+
+  assertStringIncludes(text, 'event: names\ndata: {"9":"MY_CAR"}');
+  assertStringIncludes(text, 'event: run\ndata: {"state":"building"}');
+  assertStringIncludes(text, 'event: run\ndata: {"state":"running"}');
+  assertStringIncludes(text, 'event: debug\ndata: {"type":"debug","channel":9');
+  assertStringIncludes(text, 'event: log\ndata: {"line":"Compiled main.txt"}');
+  assertStringIncludes(text, 'event: exit\ndata: {"kind":"exit","code":30193');
+  assertStringIncludes(text, 'event: run\ndata: {"state":"done","code":0,"stopped":false}');
+});
+
+Deno.test("a run that cannot start answers 500 with the reason and can be tried again", async () => {
+  let attempts = 0;
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      spawnRun: () => {
+        attempts++;
+        throw new Error("Requires run access to deno");
+      },
+    },
+  );
+  const run = () =>
+    api.request(`/api/run?project=${repo}`, {
+      method: "POST",
+      headers: { origin: "http://localhost" },
+    });
+
+  const first = await run();
+  assertEquals(first.status, 500);
+  assertStringIncludes(
+    (await first.json()).error,
+    "Could not start the run: Requires run access to deno",
+  );
+  // The failed start must not leave the editor thinking a run is under way (that would answer 409)
+  const second = await run();
+  assertEquals(second.status, 500);
+  await second.body?.cancel();
+  assertEquals(attempts, 2);
+});
+
+Deno.test("stopping a run ends it, reports it stopped, and answers 409 when none is running", async () => {
+  // A run whose output stays open until it is stopped, as a running game's does
+  let end = () => {};
+  const open = () =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        end = () => controller.close();
+      },
+    });
+  const stopped: number[] = [];
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      spawnRun: () => {
+        const stdout = open();
+        const closeStdout = end;
+        const stderr = open();
+        const closeStderr = end;
+        end = () => {
+          closeStdout();
+          closeStderr();
+        };
+        return {
+          pid: 4242,
+          stdout,
+          stderr,
+          status: new Promise((resolve) => {
+            const close = end;
+            end = () => {
+              close();
+              resolve({ code: 1 });
+            };
+          }),
+        };
+      },
+      stopRun: (run) => {
+        stopped.push(run.pid);
+        end();
+      },
+    },
+  );
+  const post = (path: string) =>
+    api.request(path, {
+      method: "POST",
+      headers: { origin: "http://localhost" },
+    });
+
+  const none = await post("/api/stop");
+  assertEquals(none.status, 409);
+  await none.body?.cancel();
+
+  const events = await api.request("/api/telemetry");
+  const reader = events.body!.getReader();
+  const started = await post(`/api/run?project=${repo}`);
+  assertEquals(started.status, 202);
+  await started.body?.cancel();
+  const stopping = await post("/api/stop");
+  assertEquals(stopping.status, 202);
+  await stopping.body?.cancel();
+
+  const decoder = new TextDecoder();
+  let text = "";
+  while (!text.includes('"state":"done"')) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value);
+  }
+  await reader.cancel();
+
+  assertEquals(stopped, [4242]);
+  assertStringIncludes(text, '"state":"done","code":1,"stopped":true');
+  // The run is over, so there is nothing left to stop
+  const again = await post("/api/stop");
+  assertEquals(again.status, 409);
+  await again.body?.cancel();
 });
 
 Deno.test("serves geography catalog", async () => {
