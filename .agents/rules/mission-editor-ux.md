@@ -1,0 +1,9 @@
+# Mission Editor UX Guidelines & Consistencies
+
+- **Chip Appearance for Toggle Filters**: Simple on/off filter items (districts, categories, boolean options) must use a pill-shaped chip appearance (`.chip.toggle-chip`, `border-radius: 999px`) instead of standard browser checkboxes, mirroring the chip appearance used for metadata tags across the assets catalog and editor panes.
+- **Visual Feedback on Selection**: Active/selected toggle chips must indicate state via `aria-pressed="true"`, an accent outline (`--accent`), and an accent tint (`color-mix(in srgb, var(--accent) 15%, transparent)`).
+- **Active Filter Chips**: Active filters rendered outside the popover (such as in `pane-bar`) must match the pill chip format with an inline dismiss (`×`) button, organized in flex-wrapping rows by filter group/dimension.
+- **Title Case & Acronyms**: Category labels in filter chips and UI cards must use Title Case, with common domain acronyms (`NPC`, `POI`, `HUD`, `ID`, `LOD`, `GTA`, `FSM`) preserved in full uppercase.
+- **Pane Header Demarcation**: All panel headings (`.pane > hgroup`) have a bottom dividing line (`border-block-end: 1px solid var(--line); padding-block-end: 8px;`) to enhance visual separation between pane titles and pane bodies/bars, matching the popover header treatment.
+- **Sticky Section Headings**: Internal section headers within scrolling pane bodies (e.g. `.spots-heading`, `.catalog-heading`, `.detail-head`) must be `position: sticky; inset-block-start: calc(var(--gap) * -1); background: var(--panel);` so they remain anchored to the top of their pane while content scrolls beneath them.
+- **Component Continuity**: Maintain visual consistency across chips, pills, and status tags throughout all mission editor panels.

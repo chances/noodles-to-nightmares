@@ -135,11 +135,22 @@ aside,
 }
 
 /* The heading sits outside the scrolling body, so it never leaves the pane. */
-.pane > hgroup,
+.pane > hgroup {
+  flex: none;
+  padding-block: 8px;
+  padding-inline: var(--pane-pad);
+  border-block-end: 1px solid var(--line);
+}
+
+.pane-bar:empty {
+  display: none;
+}
+
 .pane > .pane-bar {
   flex: none;
-  padding-block: var(--pane-pad) 0;
+  padding-block: 6px;
   padding-inline: var(--pane-pad);
+  border-block-end: 1px solid var(--line);
 }
 
 /* A second fixed row under the heading, such as the selected state's name. */
@@ -1656,11 +1667,9 @@ button.stop-game {
 
 /* Assets Pane & Spots */
 .assets-pane {
-  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto;
 }
 .live-player-card {
   padding: 8px 12px;
@@ -1684,7 +1693,13 @@ button.stop-game {
   color: var(--text);
   gap: 4px 8px;
 }
-.spots-heading {
+.spots-heading,
+.catalog-heading {
+  position: sticky;
+  inset-block-start: calc(var(--gap) * -1);
+  z-index: 1;
+  padding-block: 4px;
+  background: var(--panel);
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
@@ -1719,12 +1734,184 @@ button.stop-game {
 .spot-cat {
   font-size: 10px;
   color: var(--muted);
-  text-transform: uppercase;
 }
 .spot-coords {
   font-family: monospace;
   font-size: 10px;
   color: var(--muted);
+}
+
+/* Asset Catalog Filters & Popover */
+.filter-popover {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+  min-inline-size: 240px;
+  max-inline-size: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.filter-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: 8px;
+}
+
+.filter-popover-header h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-clear-btn {
+  font-size: 11px;
+}
+
+.filter-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chip.toggle-chip {
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  padding-block: 2px;
+  padding-inline: 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.chip.toggle-chip:hover {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+.chip.toggle-chip.selected,
+.chip.toggle-chip[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.filter-chips-row.scrollable {
+  max-block-size: 140px;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+
+.proximity-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proximity-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.proximity-readout {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text);
+  min-inline-size: 38px;
+  text-align: end;
+}
+
+.proximity-hint {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Active Chips in Pane Bar */
+.filter-chips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  inline-size: 100%;
+}
+
+.filter-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+}
+
+.filter-chip:hover {
+  border-color: var(--accent);
+}
+
+.filter-chip-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.filter-chip-remove:hover {
+  color: var(--red);
+}
+
+.empty-spots-hint {
+  padding: 16px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.empty-spots-hint p {
+  margin: 0;
 }
 
 /* Mode Switch (Edit / Debug) */

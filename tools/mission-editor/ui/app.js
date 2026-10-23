@@ -3,7 +3,7 @@
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
 import { AddStateDialog, Plus } from "./add-state.js";
-import { AssetsPane } from "./assets-pane.js";
+import { AssetsFilterBar, AssetsFilterButton, AssetsPane, useAssetFilters } from "./assets-pane.js";
 import { DebugControls, DebuggerPane } from "./debugger-pane.js";
 import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
@@ -229,6 +229,8 @@ function App() {
   useEffect(() => setBeatPick(0), [selected]);
   const beat = current && selected ? activeBeat(current, selected, beatPick) : -1;
   const [vocabulary, setVocabulary] = useState(null);
+  const assetFilters = useAssetFilters(project);
+  const hasAssetFilters = assetFilters.filters.districts.length > 0 || assetFilters.filters.categories.length > 0 || assetFilters.filters.proximity.enabled;
   useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [], spots: [], enums: {} })); }, []);
   const [mode, setMode] = useState("edit");
   const { connected, telemetry, capture, captures, setCapture, runInGame, stopGame, running, runState, runLog, exit, debugValues, debugLog, names } = useTelemetry(projectQuery);
@@ -367,7 +369,11 @@ function App() {
           <${Loaded} mission=${mission} empty="Add a .states.ts or .fsm.json beside a mission to list its states."
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
         <//>
-        <${Pane} title="Asset Catalog"><${AssetsPane} telemetry=${telemetry} /><//>
+        <${Pane} title="Asset Catalog"
+          trail=${html`<${AssetsFilterButton} filterState=${assetFilters} telemetry=${telemetry} />`}
+          bar=${hasAssetFilters ? html`<${AssetsFilterBar} filterState=${assetFilters} telemetry=${telemetry} />` : null}>
+          <${AssetsPane} telemetry=${telemetry} filterState=${assetFilters} />
+        <//>
       </aside>
       <div class="center">
         <${Pane} title="Graph" hideTitle class="graph">
