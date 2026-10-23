@@ -1,0 +1,163 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini}
+nop
+
+// DEBUG: Bare-bones probe for the GTA III gosub stack depth.
+// Writes each result to CLEO\stack-probe.ini in the GTA3 folder. The key names carry the expected value.
+// Each label d<N> is called N gosubs deep from MAIN. An eNN key marks entering d<N>; a bNN key marks control
+// returning to d<N> from d<N+1>. The highest eNN key present, with every bNN key correct, is the safe depth.
+// A missing key after "00_started" means the game stopped or jumped wrongly at that gosub.
+
+var
+  $player: Player
+  $depth: int
+  $loops: int
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(0)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+IniFile.WriteInt(1, "CLEO\stack-probe.ini", "Stack", "00_started")
+
+// 1: The shape the FSM generator emits. A gosub whose loop leaves through a return inside the while.
+$loops = 0
+gosub @loopReturn
+IniFile.WriteInt($loops, "CLEO\stack-probe.ini", "Stack", "01_return_from_while_expect_3")
+
+// 2: Nested gosubs ten deep, then the same ten unwinding
+$depth = 0
+gosub @d1
+IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "02_unwound_to_main_expect_0")
+
+IniFile.WriteInt(1, "CLEO\stack-probe.ini", "Stack", "99_done")
+
+while true
+  wait 1000
+end
+
+:loopReturn
+  while true
+    wait 0
+    $loops += 1
+    if
+      $loops >= 3
+    then
+      return
+    end
+  end
+
+:d1
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e01_expect_1")
+  gosub @d2
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b01_expect_1")
+  $depth -= 1
+  return
+
+:d2
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e02_expect_2")
+  gosub @d3
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b02_expect_2")
+  $depth -= 1
+  return
+
+:d3
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e03_expect_3")
+  gosub @d4
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b03_expect_3")
+  $depth -= 1
+  return
+
+:d4
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e04_expect_4")
+  gosub @d5
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b04_expect_4")
+  $depth -= 1
+  return
+
+:d5
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e05_expect_5")
+  gosub @d6
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b05_expect_5")
+  $depth -= 1
+  return
+
+:d6
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e06_expect_6")
+  gosub @d7
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b06_expect_6")
+  $depth -= 1
+  return
+
+:d7
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e07_expect_7")
+  gosub @d8
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b07_expect_7")
+  $depth -= 1
+  return
+
+:d8
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e08_expect_8")
+  gosub @d9
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b08_expect_8")
+  $depth -= 1
+  return
+
+:d9
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e09_expect_9")
+  gosub @d10
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "b09_expect_9")
+  $depth -= 1
+  return
+
+:d10
+  $depth += 1
+  IniFile.WriteInt($depth, "CLEO\stack-probe.ini", "Stack", "e10_expect_10")
+  $depth -= 1
+  return
