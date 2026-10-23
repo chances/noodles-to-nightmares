@@ -21,7 +21,7 @@ depends on becoming someone harder, faster, and more ruthless.
 2. **Temptation and complicity** (M1) → "This is just one job, right?"
 3. **Crossing the line** (M2) → "I'm in too deep now. Might as well own it"
 
-### Portland Setting
+### Setting
 
 Portland is Rosa's turf, the neighborhoods she knows and the streets she's
 walked a hundred times on shift breaks. The island should feel _familiar_ but

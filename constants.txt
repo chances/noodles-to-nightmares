@@ -1,4 +1,4 @@
-const START_MISSION_INDEX = 0
+const START_MISSION_INDEX = 1
 const MAX_MISSION_INDEX = 2
 
 // Characters

@@ -25,7 +25,6 @@ win: Deliver the package without triggering failure conditions
 fail:
   - Busted (mission restart)
   - Wasted (mission restart)
-  - "Time limit exceeded: 2 hours, i.e. two minutes in real life"
   - Wanted level exceeds 1 star
   - "Package damaged beyond threshold, i.e. car damage threshold not exceeded"
 teaching_points:
@@ -50,21 +49,19 @@ Story script for [`1_shady_job.txt`](1_shady_job.txt). Part of [Act One: The Set
 - [x] Ring the pay-phone (1168.33, -414.141, 22.8)
       `Sound.AddOneOffSound(1168.33, -414.141, 22.8, ScriptSound.SoundPayphoneRinging)`
 - [x] Package object creation (e.g. briefcase, duffel bag, etc.)
-- [ ] Police wanted level tracking (avoid 2-star wanted)
+- [x] Police wanted level tracking (avoid 2-star wanted)
 - [x] Destination zone detection
-- [ ] Dialogue triggers for "danger near delivery point"
 - [ ] Failure states:
-  - Busted or wasted,
-  - Package damaged (i.e. car takes too much damage), or
-  - Wanted level too high
+  - [x] Busted or wasted,
+  - [ ] Package damaged (i.e. car takes too much damage), or
+  - [x] Wanted level too high
 
 ## Completion Checklist
 
 - [x] Script created (`1_shady_job.txt`)
 - [x] Pickup and delivery locations scouted
 - [x] Contraband object or model selected
-- [ ] Wanted level thresholds defined
-- [ ] Police response timing configured
+- [x] Wanted level thresholds defined
 - [x] Dialogue written and integrated
 - [ ] Testing: delivery possible without excessive wanted level
 
