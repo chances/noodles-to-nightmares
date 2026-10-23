@@ -301,9 +301,19 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     for (const rule of state.on ?? []) {
       conds(rule.when, `A branch in ${id} has an empty condition`, id);
     }
-    for (const beat of state.beats ?? []) {
+    for (const [index, beat] of (state.beats ?? []).entries()) {
       conds(beat.when, `A beat in ${id} has an empty condition`, id);
-      steps(beat.do, `A beat in ${id} has an empty step`, id);
+      if (beat.await) {
+        conds(beat.await, `A beat in ${id} waits on an empty condition`, id);
+        if (beat.await.length === 0) {
+          warn(`${id} story beat ${index + 1} is asynchronous, but has no conditions`, id);
+        }
+        if (beat.do?.length || beat.wait) {
+          error(`A beat in ${id} waits and also runs steps or a duration`, id);
+        }
+      } else {
+        steps(beat.do, `A beat in ${id} has an empty step`, id);
+      }
     }
     steps(state.onEnter, `${id} has an empty enter step`, id);
     steps(state.onExit, `${id} has an empty exit step`, id);

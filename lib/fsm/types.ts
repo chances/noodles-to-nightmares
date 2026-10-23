@@ -10,12 +10,17 @@ export interface Cond {
 /** Sanny lines for one action; build them with `step` from `vocabulary.ts`. */
 export type Step = string[];
 
-/** One cutscene beat: run `do` once, then wait `wait` ms. A beat whose `when` is false is skipped, wait included. */
+/**
+ * A scripted beat runs `do` once, then waits `wait` ms. An await beat sets `await` instead and spin-waits, running the
+ * watchers each tick, until every condition in `await` holds, then the next beat starts. A beat whose `when` is false is
+ * skipped, wait included.
+ */
 export interface Beat {
   notes?: string[];
   when?: Cond[];
   do?: Step[];
   wait?: number;
+  await?: Cond[];
 }
 
 /** A rule that runs every tick in every state and fires its `once` steps the first time `when` holds. */

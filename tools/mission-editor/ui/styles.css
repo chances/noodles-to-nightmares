@@ -1492,6 +1492,12 @@ button.icon:hover {
   color: var(--text);
 }
 
+button.icon .spinner {
+  inline-size: 14px;
+  block-size: 14px;
+  border-width: 2px;
+}
+
 button.danger,
 button.tool.danger:hover,
 button.icon.danger:hover {

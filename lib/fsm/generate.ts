@@ -147,7 +147,21 @@ export function generate(mission: Mission, source: string): string {
   ];
 
   function beatLines(id: string, state: State, beat: Beat): string[] {
-    const lines = [...comments(beat.notes), ...(beat.do ?? []).flat()];
+    // An await beat with no conditions has nothing to wait for, so the generator skips it (the checker warns)
+    if (beat.await?.length === 0) return [];
+    const lines = [...comments(beat.notes)];
+    if (beat.await) {
+      // Spin-waits in a tick loop, so the watchers still run; the condition is tested after them each tick
+      lines.push(
+        ...whileBlock("true", [
+          "wait 0",
+          ...watch(id, state),
+          ...ifBlock(beat.await, ["break"]),
+        ]),
+      );
+      return beat.when ? ifBlock(beat.when, lines) : lines;
+    }
+    lines.push(...(beat.do ?? []).flat());
     if (beat.wait) {
       lines.push(
         ...(watched(state)

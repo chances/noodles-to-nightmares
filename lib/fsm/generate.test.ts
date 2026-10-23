@@ -56,6 +56,74 @@ Deno.test("a dispatcher calls the routine of the current state", () => {
   assertStringIncludes(text, ":stateLose\n");
 });
 
+const awaiting = defineMission({
+  header: ["Awaiting"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [cond.playerDead()],
+  monitors: [{
+    id: "hint",
+    when: [cond.playerInCar()],
+    once: [step.help("Hi")],
+  }],
+  states: {
+    A: {
+      beats: [
+        { await: [cond.playerBusted(), cond.playerInCar()] },
+        { do: [step.say("Next", 1000)] },
+      ],
+      next: "B",
+    },
+    B: { fail: false, finish: true },
+    LOSE: { fail: false, resetLatches: true, next: "A" },
+  },
+});
+
+Deno.test("an await beat spin-waits with the watchers, then breaks out once every condition holds", () => {
+  const text = generate(awaiting, "x");
+  assertStringIncludes(
+    text,
+    [
+      "  while true",
+      "    wait 0",
+      "    runMonitors()",
+      "    failCheck()",
+      "    if",
+      "      state == STATE_LOSE",
+      "    then",
+      "      return",
+      "    end",
+      "    if and",
+      "      Player.HasBeenArrested($player)",
+      "      Player.IsInAnyCar($player)",
+      "    then",
+      "      break",
+      "    end",
+      "  end",
+      '  Text.PrintString("Next", 1000)',
+    ].join("\n"),
+  );
+});
+
+Deno.test("an await beat with no conditions is skipped, steps and all", () => {
+  const empty = defineMission({
+    header: ["Empty"],
+    start: "A",
+    onFail: "B",
+    fail: [],
+    states: {
+      A: {
+        beats: [{ await: [], do: [step.say("Never", 1000)] }],
+        next: "B",
+      },
+      B: { fail: false, finish: true },
+    },
+  });
+  const text = generate(empty, "x");
+  assert(!text.includes('"Never"'));
+  assert(!text.includes("if and"));
+});
+
 Deno.test("a watched state waits out a beat in a TIMERA loop that runs the watchers", () => {
   const text = generate(fixture, "x");
   assertStringIncludes(

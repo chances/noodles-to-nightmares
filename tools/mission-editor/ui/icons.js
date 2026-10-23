@@ -26,6 +26,9 @@ export const UndoIcon = () => icon(html`<path d="M9 14L4 9l5-5" /><path d="M4 9h
 /** The same arrow mirrored. */
 export const RedoIcon = () => icon(html`<path d="M15 14l5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />`);
 
+/** Three stacked layers: build. */
+export const BuildIcon = () => icon(html`<path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />`);
+
 /** A classic funnel icon for filtering. */
 export const FilterIcon = () => icon(html`<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />`);
 

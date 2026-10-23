@@ -30,12 +30,14 @@ function tooltip(beat, index, at) {
     `Beat ${index + 1} at ${seconds(at)}${beat.wait ? ` for ${seconds(beat.wait)}` : ""}`,
     ...(beat.notes ?? []).map((note) => `// ${note}`),
     ...(beat.when?.length ? [`When ${beat.when.map((c) => c.test).join(" and ")}`] : []),
+    ...(beat.await ? [`Wait until ${beat.await.map((c) => c.test).join(" and ")}`] : []),
     ...(beat.do ?? []).flat(),
   ].join("\n");
 }
 
-/** The card's second line: how long the beat waits, then what else it carries. */
+/** The card's second line: how long the beat waits, then what else it carries. An await beat shows its conditions instead. */
 function details(beat) {
+  if (beat.await) return `until ${beat.await.length} ${beat.await.length === 1 ? "condition" : "conditions"}`;
   const steps = beat.do ?? [];
   return [
     beat.wait ? seconds(beat.wait) : "instant",
@@ -106,7 +108,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
               <span key=${index} title=${tooltip(beat, index, at)}>
                 <span class="kf-card" data-conditional=${beat.when?.length ? "" : undefined} data-instant=${wait === 0 ? "" : undefined} ...${press}
                   style=${`inset-inline-start: ${left}px; inline-size: ${width}px`}>
-                  <strong>${steps.length ? describe(steps[0]) : "Wait"}</strong>
+                  <strong>${beat.await ? "Await" : steps.length ? describe(steps[0]) : "Wait"}</strong>
                   <span>${details(beat)}</span>
                 </span>
                 ${wait > 0 && html`<span class="kf-end" style=${`inset-inline-start: ${left + width}px`}></span>`}

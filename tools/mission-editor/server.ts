@@ -110,10 +110,38 @@ function startGameRun(project: string): GameRun {
   }).spawn();
 }
 
+/** The result of the mission build step: `ok`, and the output lines that are not the task's own banner. */
+export interface BuildResult {
+  ok: boolean;
+  lines: string[];
+}
+
+/**
+ * Runs the mission build step (`deno task build:missions`), which regenerates each mission's Sanny text from its table.
+ *
+ * @remarks Runs `deno` from the PATH for the same reason as `startGameRun`.
+ */
+async function buildMissions(project: string): Promise<BuildResult> {
+  const { success, stdout, stderr } = await new Deno.Command("deno", {
+    args: ["task", "build:missions"],
+    cwd: project,
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+  const decoder = new TextDecoder();
+  const text = stripAnsiCode(decoder.decode(stderr) + decoder.decode(stdout));
+  return {
+    ok: success,
+    lines: text.split("\n").map((line) => line.trim()).filter((line) =>
+      line && !line.startsWith("Task ")
+    ),
+  };
+}
+
 /**
  * `log` prints one line per request; the desktop app turns it on and the tests leave it off. `spawnRun` starts a
  * run of the game and `stopRun` ends it with everything it started, the game included; the tests replace both so
- * no game launches.
+ * no game launches. `runBuild` runs the mission build step; the tests replace it so no build writes files.
  */
 export function createApp(
   dirs: ProjectDirs,
@@ -121,6 +149,7 @@ export function createApp(
     log = false,
     spawnRun = startGameRun,
     stopRun = (run: GameRun) => killTree(run.pid),
+    runBuild = buildMissions,
     telemetryPort = TELEMETRY_PORT,
   } = {},
 ) {
@@ -326,6 +355,12 @@ export function createApp(
     current = { child, stopped: false };
     void relayRun(current);
     return c.json({ started: true }, 202);
+  });
+
+  // Build step alone, so its errors show in the Problems pill without launching the game.
+  app.post("/api/build", vValidator("query", projectQuery), async (c) => {
+    const { project } = c.req.valid("query");
+    return c.json(await runBuild(resolve(project)));
   });
 
   // Stop: ends the run and the game it started. The game then leaves no shutdown marker, so there is no exit

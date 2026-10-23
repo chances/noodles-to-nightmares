@@ -3,6 +3,7 @@
 
 import { html } from "/vendor/preact.js";
 import { Plus } from "./add-state.js";
+import { SplitButton } from "./split-button.js";
 import { Status } from "./status.js";
 import { CondList, NumberField, StepList } from "./step-controls.js";
 
@@ -14,19 +15,28 @@ export function activeBeat(doc, id, picked) {
   return count ? Math.min(picked, count - 1) : -1;
 }
 
-/** `+` on the Beat heading: adds a beat after the shown one (or first) and shows it. */
+/** The Add Beat split button on the Beat heading: adds a beat after the shown one (or first) and shows it. */
 export function BeatAdd({ selected, index, edit, onPick }) {
   if (!selected) return null;
   const at = index + 1;
-  const add = () => {
-    edit("Add Beat", (d) => {
+  const add = (label, beat) => {
+    edit(label, (d) => {
       const state = d.mission.states[selected];
       state.beats = [...(state.beats ?? [])];
-      state.beats.splice(at, 0, { wait: 1000 });
+      state.beats.splice(at, 0, beat);
     });
     onPick(at);
   };
-  return html`<button class="icon" aria-label="Add a beat to this state" title="Add Beat" onClick=${add}><${Plus} /></button>`;
+  return html`<${SplitButton}
+    label=${html`<${Plus} /> Add Beat`}
+    title="Add Beat"
+    ariaLabel="Add Beat"
+    onMain=${() => add("Add Beat", { wait: 1000 })}
+    menuTitle="More Beat Types"
+    menuAriaLabel="Beat Types"
+    groups=${[{ heading: "Asynchrony", items: [{ value: "await", label: "Await Condition" }] }]}
+    onPick=${() => add("Add Await Beat", { await: [] })}
+  />`;
 }
 
 /** The shown beat's number among the state's beats, with buttons to reorder or remove it. */
@@ -72,15 +82,20 @@ export function BeatPane({ doc, selected, index, edit }) {
 
   return html`
     <div class="inspector" key=${`${selected}:${index}`}>
-      <${NumberField} label="Duration (ms)" value=${beat.wait ?? 0} onCommit=${(wait) => change("Beat Duration", (b) => { b.wait = wait; }, "wait")} />
+      ${!beat.await && html`<${NumberField} label="Duration (ms)" value=${beat.wait ?? 0} onCommit=${(wait) => change("Beat Duration", (b) => { b.wait = wait; }, "wait")} />`}
       <section class="detail">
         <div class="detail-head"><h3>Only If</h3></div>
         <${CondList} conds=${beat.when ?? []} emptyText="Always runs." onChange=${(when) => change("Beat Conditions", (b) => { b.when = when; })} />
       </section>
+      ${beat.await ? html`
+      <section class="detail">
+        <div class="detail-head"><h3>Wait Until</h3></div>
+        <${CondList} conds=${beat.await} emptyText="No conditions yet, so the beat passes at once." onChange=${(awaited) => change("Beat Wait Conditions", (b) => { b.await = awaited; })} />
+      </section>` : html`
       <section class="detail">
         <div class="detail-head"><h3>Steps</h3></div>
         <${StepList} steps=${beat.do ?? []} emptyText="No steps." onChange=${(list) => change("Beat Steps", (b) => { b.do = list; })} />
-      </section>
+      </section>`}
       <section class="detail">
         <div class="detail-head"><h3>Notes</h3></div>
         <textarea rows=${Math.max(2, (beat.notes ?? []).length)} aria-label="Beat Notes" value=${(beat.notes ?? []).join("\n")}

@@ -23,6 +23,7 @@ const beat = v.object({
   when: v.optional(conds),
   do: v.optional(steps),
   wait: v.optional(v.number()),
+  await: v.optional(conds),
 });
 const state = v.object({
   kind: v.optional(v.picklist(STATE_KINDS)),

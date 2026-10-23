@@ -9,7 +9,7 @@ import { activeBeat, BeatAdd, BeatBar, BeatPane } from "./beat-pane.js";
 import { transitions, useDocument } from "./document.js";
 import { addState, layout } from "./mission-ops.js";
 import { GraphControls, GraphPane } from "./graph-pane.js";
-import { RedoIcon, StopIcon, UndoIcon } from "./icons.js";
+import { BuildIcon, RedoIcon, StopIcon, UndoIcon } from "./icons.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
 import { loadNodeSelection, saveNodeSelection } from "./node-selection.js";
@@ -199,8 +199,27 @@ function App() {
   const [savedSelection] = useState(() => loadNodeSelection(localStorage, project));
   const { list, stem, setStem, mission: loadedMission } = useMissions(savedSelection?.stem ?? null);
   const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
-  // A failed save is listed first, with its reason, beside the mission's own problems.
-  const problems = save.state === "error" ? [{ severity: "error", message: `Save failed: ${save.error}` }, ...found] : found;
+  // A failed save is listed first, with its reason, beside the build's errors and the mission's own problems.
+  const [buildErrors, setBuildErrors] = useState([]);
+  const [building, setBuilding] = useState(false);
+  const buildMission = async () => {
+    setBuilding(true);
+    try {
+      const res = await fetch(`/api/build?${projectQuery}`, { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? res.statusText);
+      setBuildErrors(body.ok ? [] : body.lines.map((message) => ({ severity: "error", message })));
+    } catch (error) {
+      setBuildErrors([{ severity: "error", message: `Build failed: ${error.message}` }]);
+    } finally {
+      setBuilding(false);
+    }
+  };
+  const problems = [
+    ...(save.state === "error" ? [{ severity: "error", message: `Save failed: ${save.error}` }] : []),
+    ...buildErrors,
+    ...found,
+  ];
   const hasErrors = problems.some((p) => p.severity === "error" || p.level === "error");
   // The document follows the loaded mission one render late; until it catches up the mission is still loading.
   const current = loadedMission.data && doc?.stem === loadedMission.data.stem ? doc : null;
@@ -331,6 +350,7 @@ function App() {
           <${ProblemsPill} problems=${problems} open=${showProblems} onToggle=${() => setShowProblems(!showProblems)} />
           ${showProblems && html`<${ProblemsPanel} problems=${problems} states=${Object.keys(mission.data?.mission.states ?? {})} onSelect=${setSelected} onClose=${() => setShowProblems(false)} />`}
         </div>
+        <button class="icon" aria-label="Build this project" title="Build this project" aria-busy=${building} disabled=${building} onClick=${buildMission}>${building ? html`<span class="spinner" aria-hidden="true"></span>` : html`<${BuildIcon} />`}</button>
         ${runState?.state === "running"
           ? html`<button class="danger-fill stop-game" onClick=${stopGame} title="Stop the game"><${StopIcon} />Stop</button>`
           : html`<button class="primary run-in-game ${runState?.state === "building" ? "building" : ""}" disabled=${running || hasErrors} onClick=${runInGame} title=${hasErrors ? "Cannot run: fix blocking problems first" : "Run in Game"}>${runState?.state === "building" ? "Building..." : "▶ Run"}</button>`}

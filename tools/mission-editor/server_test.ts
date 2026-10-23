@@ -347,6 +347,21 @@ Deno.test("a run's output reaches the stream without ANSI console codes", async 
   ]);
 });
 
+Deno.test("build answers with the build step's result", async () => {
+  const api = createApp(
+    { appData: "unused", documents: "unused" },
+    {
+      runBuild: () => Promise.resolve({ ok: false, lines: ["Unknown state GHOST"] }),
+    },
+  );
+  const res = await api.request(`/api/build?project=${repo}`, {
+    method: "POST",
+    headers: { origin: "http://localhost" },
+  });
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { ok: false, lines: ["Unknown state GHOST"] });
+});
+
 Deno.test("the game stays connected while a launched run is quiet between readings", async () => {
   const encoder = new TextEncoder();
   let out!: ReadableStreamDefaultController<Uint8Array>;

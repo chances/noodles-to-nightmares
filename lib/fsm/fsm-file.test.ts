@@ -95,6 +95,18 @@ Deno.test("parseFsmDoc fills in layout for states the file leaves out", () => {
   assertEquals(doc.layout.B, layout(table).B);
 });
 
+Deno.test("parseFsmDoc keeps an await beat's conditions", () => {
+  const mission = JSON.parse(JSON.stringify(table));
+  mission.states.A.beats = [{
+    notes: ["Wait for the pickup"],
+    await: [{ test: "Player.HasBeenArrested($player)" }],
+  }];
+  const doc = parseFsmDoc({ version: 1, mission });
+  assertEquals(doc.mission.states.A.beats?.[0].await, [{
+    test: "Player.HasBeenArrested($player)",
+  }]);
+});
+
 Deno.test("parseFsmDoc names the path of a bad field", () => {
   const mission = JSON.parse(JSON.stringify(table));
   mission.states.A.beats = [{ wait: "soon" }];
