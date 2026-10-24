@@ -246,7 +246,7 @@ end
       return
     end
     if
-      Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 1.5, 1.5, 1.5, true)
+      Player.LocateStoppedOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 1.5, 1.5, 1.5, true)
     then
       $onCutscene = true
       Hud.SwitchWidescreen(true)
