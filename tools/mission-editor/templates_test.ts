@@ -24,6 +24,7 @@ import {
   formatField,
   formatName,
   formatNumber,
+  functionOptions,
   globalOptions,
   isValid,
   numberProblem,
@@ -37,6 +38,26 @@ const missions = fromFileUrl(new URL("../../missions", import.meta.url));
 
 const byName = <T extends { name: string }>(list: T[], name: string): T =>
   list.find((d) => d.name === name)!;
+
+Deno.test("a call function card names a function in scope, and reads back from its line", () => {
+  const d = byName(stepDescriptors, "callFunction");
+  const functions = [{
+    name: "ensureVanBlip",
+    source: "../utils/missions.txt",
+  }];
+  assertEquals(defaults(d, [], [], [], functions).name, "ensureVanBlip");
+  assertEquals(defaults(d).name, "");
+  assertEquals(
+    functionOptions(functions).map((o: { value: string }) => o.value),
+    [
+      "ensureVanBlip",
+    ],
+  );
+  assertEquals(
+    parseLines(stepDescriptors, ["ensureVanBlip()"])?.descriptor.name,
+    "callFunction",
+  );
+});
 
 Deno.test("every step descriptor builds the lines its builder builds", () => {
   const cases: [string, Record<string, string>, Step][] = [
@@ -157,7 +178,11 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
       step.charGoto("sal", "ROSA_SPAWN"),
     ],
     ["charRemove", { char: "sal" }, step.charRemove("sal")],
-    ["ensureVanBlip", {}, step.ensureVanBlip()],
+    [
+      "callFunction",
+      { name: "ensureVanBlip" },
+      step.callFunction("ensureVanBlip"),
+    ],
     [
       "carCreate",
       { car: "$myCar", model: "#RUMPO", spot: "SUPPLY_VAN" },
@@ -204,6 +229,377 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
       "debugLog",
       { key: "DEBUG_PLAYER", value: "$player" },
       step.debugLog("DEBUG_PLAYER", "$player"),
+    ],
+    [
+      "setTimeOfDay",
+      { hours: "12", minutes: "0" },
+      step.setTimeOfDay(12, 0),
+    ],
+    ["setTimeScale", { scale: "1.0" }, step.setTimeScale("1.0")],
+    ["storeClock", {}, step.storeClock()],
+    ["restoreClock", {}, step.restoreClock()],
+    ["showTimer", { timer: "TIMERB" }, step.showTimer("TIMERB")],
+    ["clearTimer", { timer: "TIMERB" }, step.clearTimer("TIMERB")],
+    ["freezeTimer", { on: "true" }, step.freezeTimer(true)],
+    ["forceWeather", { type: "Rainy" }, step.forceWeather("Rainy")],
+    ["forceWeatherNow", { type: "Foggy" }, step.forceWeatherNow("Foggy")],
+    ["releaseWeather", {}, step.releaseWeather()],
+    ["forceRain", { on: "true" }, step.forceRain(true)],
+    ["setNeverGetsTired", { on: "true" }, step.setNeverGetsTired(true)],
+    ["setPlayerVisible", { on: "false" }, step.setPlayerVisible(false)],
+    ["setHealth", { health: "100" }, step.setHealth(100)],
+    ["addArmour", { amount: "100" }, step.addArmour(100)],
+    ["setMaxWantedLevel", { max: "6" }, step.setMaxWantedLevel(6)],
+    [
+      "swapBuildingModel",
+      { spot: "SAFEHOUSE", radius: "10.0", from: "100", to: "200" },
+      step.swapBuildingModel("SAFEHOUSE", "10.0", 100, 200),
+    ],
+    [
+      "setObjectVisible",
+      { spot: "SAFEHOUSE", radius: "3.0", model: "100", on: "false" },
+      step.setObjectVisible("SAFEHOUSE", "3.0", 100, false),
+    ],
+    [
+      "clearArea",
+      { spot: "SAFEHOUSE", radius: "10.0", particles: "false" },
+      step.clearArea("SAFEHOUSE", "10.0", false),
+    ],
+    ["setMusicFades", { on: "true" }, step.setMusicFades(true)],
+    ["openGarage", { garage: "$Garage" }, step.openGarage("$Garage")],
+    ["closeGarage", { garage: "$Garage" }, step.closeGarage("$Garage")],
+    ["activateGarage", { garage: "$Garage" }, step.activateGarage("$Garage")],
+    [
+      "deactivateGarage",
+      { garage: "$Garage" },
+      step.deactivateGarage("$Garage"),
+    ],
+    ["playEndTune", {}, step.playEndTune()],
+    [
+      "setRadioChannel",
+      { channel: "HeadRadio", startMs: "0" },
+      step.setRadioChannel("HeadRadio", 0),
+    ],
+    [
+      "blipForChar",
+      { var: "charBlip", char: "sal" },
+      step.blipForChar("charBlip", "sal"),
+    ],
+    [
+      "blipChangeColor",
+      { handle: "$B", color: "Red" },
+      step.blipChangeColor("$B", "Red"),
+    ],
+    ["blipDim", { handle: "$B", on: "true" }, step.blipDim("$B", true)],
+    ["cameraShake", { intensity: "2" }, step.cameraShake(2)],
+    ["cameraInFrontOfPlayer", {}, step.cameraInFrontOfPlayer()],
+    [
+      "cameraPointAtCar",
+      { car: "$myCar", cut: "Interpolation" },
+      step.cameraPointAtCar("$myCar", "Interpolation"),
+    ],
+    [
+      "cameraFadeColor",
+      { r: "0", g: "0", b: "0" },
+      step.cameraFadeColor(0, 0, 0),
+    ],
+    ["cameraNearClip", { distance: "0.1" }, step.cameraNearClip("0.1")],
+    [
+      "cameraMotionBlur",
+      { type: "Cutscene" },
+      step.cameraMotionBlur("Cutscene"),
+    ],
+    ["carDelete", { car: "$myCar" }, step.carDelete("$myCar")],
+    [
+      "carGoto",
+      { car: "$myCar", spot: "SAFEHOUSE" },
+      step.carGoto("$myCar", "SAFEHOUSE"),
+    ],
+    ["carSetIdle", { car: "$myCar" }, step.carSetIdle("$myCar")],
+    ["carExplode", { car: "$myCar" }, step.carExplode("$myCar")],
+    [
+      "carSetHealth",
+      { car: "$myCar", health: "1000" },
+      step.carSetHealth("$myCar", 1000),
+    ],
+    [
+      "carLock",
+      { car: "$myCar", lock: "Locked" },
+      step.carLock("$myCar", "Locked"),
+    ],
+    [
+      "carSetHeading",
+      { car: "$myCar", angle: "0.0" },
+      step.carSetHeading("$myCar", "0.0"),
+    ],
+    ["charDelete", { char: "sal" }, step.charDelete("sal")],
+    [
+      "charSetHealth",
+      { char: "sal", health: "100" },
+      step.charSetHealth("sal", 100),
+    ],
+    [
+      "charGiveWeapon",
+      { char: "sal", weapon: "Pistol", ammo: "50" },
+      step.charGiveWeapon("sal", "Pistol", 50),
+    ],
+    ["charSetIdle", { char: "sal" }, step.charSetIdle("sal")],
+    [
+      "charSetHeading",
+      { char: "sal", angle: "0.0" },
+      step.charSetHeading("sal", "0.0"),
+    ],
+    [
+      "setWantedMultiplier",
+      { multiplier: "1.0" },
+      step.setWantedMultiplier("1.0"),
+    ],
+    ["setPoliceIgnorePlayer", { on: "true" }, step.setPoliceIgnorePlayer(true)],
+    [
+      "setEveryoneIgnorePlayer",
+      { on: "true" },
+      step.setEveryoneIgnorePlayer(true),
+    ],
+    ["activateSaveMenu", {}, step.activateSaveMenu()],
+    ["setAllCarsDamage", { on: "true" }, step.setAllCarsDamage(true)],
+    [
+      "changeGarageType",
+      { garage: "$Garage", type: "Mission" },
+      step.changeGarageType("$Garage", "Mission"),
+    ],
+    [
+      "showCounter",
+      { counter: "$counter", display: "Number" },
+      step.showCounter("$counter", "Number"),
+    ],
+    ["clearCounter", { counter: "$counter" }, step.clearCounter("$counter")],
+    ["widescreen", { on: "true" }, step.widescreen(true)],
+    [
+      "objectCreate",
+      { var: "$object", model: "0", spot: "SAFEHOUSE" },
+      step.objectCreate("$object", 0, "SAFEHOUSE"),
+    ],
+    ["objectDelete", { object: "$object" }, step.objectDelete("$object")],
+    [
+      "padShake",
+      { pad: "Pad1", ms: "1000", intensity: "100" },
+      step.padShake("Pad1", 1000, 100),
+    ],
+    [
+      "pickupCreateMoney",
+      { pickup: "moneyPickup", spot: "SAFEHOUSE", amount: "100" },
+      step.pickupCreateMoney("moneyPickup", "SAFEHOUSE", 100),
+    ],
+    [
+      "pickupCreateFloatingPackage",
+      { pickup: "packagePickup", spot: "SAFEHOUSE" },
+      step.pickupCreateFloatingPackage("packagePickup", "SAFEHOUSE"),
+    ],
+    ["pickupDropMine", { spot: "SAFEHOUSE" }, step.pickupDropMine("SAFEHOUSE")],
+    ["playerWarp", { spot: "SAFEHOUSE" }, step.playerWarp("SAFEHOUSE")],
+    ["playerWarpIntoCar", { car: "$myCar" }, step.playerWarpIntoCar("$myCar")],
+    ["playerClearWantedLevel", {}, step.playerClearWantedLevel()],
+    ["playerAlterWantedLevel", { stars: "2" }, step.playerAlterWantedLevel(2)],
+    [
+      "playerGiveWeapon",
+      { weapon: "Pistol", ammo: "50" },
+      step.playerGiveWeapon("Pistol", 50),
+    ],
+    [
+      "playerSetAmmo",
+      { weapon: "Pistol", ammo: "50" },
+      step.playerSetAmmo("Pistol", 50),
+    ],
+    ["playerRemoveWeapons", {}, step.playerRemoveWeapons()],
+    [
+      "playerSetAnimGroup",
+      { animGroup: "Player" },
+      step.playerSetAnimGroup("Player"),
+    ],
+    [
+      "streamLoadSpecialCharacter",
+      { slot: "1", name: "sal" },
+      step.streamLoadSpecialCharacter(1, "sal"),
+    ],
+    [
+      "streamUnloadSpecialCharacter",
+      { slot: "1" },
+      step.streamUnloadSpecialCharacter(1),
+    ],
+    ["streamUnloadModel", { model: "0" }, step.streamUnloadModel(0)],
+    [
+      "streamLoadCollision",
+      { level: "Industrial" },
+      step.streamLoadCollision("Industrial"),
+    ],
+    [
+      "streamLoadScene",
+      { spot: "SAFEHOUSE" },
+      step.streamLoadScene("SAFEHOUSE"),
+    ],
+    ["clearPrints", {}, step.clearPrints()],
+    ["clearHelp", {}, step.clearHelp()],
+    ["useCommands", { on: "true" }, step.useCommands(true)],
+    ["textBackground", { on: "true" }, step.textBackground(true)],
+    ["cutsceneLoad", { name: "INTRO" }, step.cutsceneLoad("INTRO")],
+    [
+      "cutsceneSetOffset",
+      { spot: "SAFEHOUSE" },
+      step.cutsceneSetOffset("SAFEHOUSE"),
+    ],
+    ["cutsceneStart", {}, step.cutsceneStart()],
+    ["cutsceneClear", {}, step.cutsceneClear()],
+    [
+      "cutsceneObjectCreate",
+      { var: "$cutObject", model: "0" },
+      step.cutsceneObjectCreate("$cutObject", 0),
+    ],
+    [
+      "cutsceneObjectAnim",
+      { object: "$cutObject", anim: "IDLE" },
+      step.cutsceneObjectAnim("$cutObject", "IDLE"),
+    ],
+    [
+      "cutsceneHeadCreate",
+      { var: "$cutHead", object: "$cutObject", model: "0" },
+      step.cutsceneHeadCreate("$cutHead", "$cutObject", 0),
+    ],
+    [
+      "boatGoto",
+      { boat: "$boat", spot: "SAFEHOUSE" },
+      step.boatGoto("$boat", "SAFEHOUSE"),
+    ],
+    ["boatStop", { boat: "$boat" }, step.boatStop("$boat")],
+    [
+      "boatCruiseSpeed",
+      { boat: "$boat", speed: "20.0" },
+      step.boatCruiseSpeed("$boat", "20.0"),
+    ],
+    [
+      "boatAnchor",
+      { boat: "$boat", on: "true" },
+      step.boatAnchor("$boat", true),
+    ],
+    [
+      "carGeneratorSwitch",
+      { generator: "$carGenerator", count: "1" },
+      step.carGeneratorSwitch("$carGenerator", 1),
+    ],
+    [
+      "craneDeactivate",
+      { spot: "SAFEHOUSE" },
+      step.craneDeactivate("SAFEHOUSE"),
+    ],
+    [
+      "gangCarModel",
+      { gang: "Yakuza", model: "0" },
+      step.gangCarModel("Yakuza", 0),
+    ],
+    [
+      "gangWeapons",
+      { gang: "Yakuza", first: "Pistol", second: "Uzi" },
+      step.gangWeapons("Yakuza", "Pistol", "Uzi"),
+    ],
+    [
+      "gangModelPreference",
+      { gang: "Yakuza", override: "Any" },
+      step.gangModelPreference("Yakuza", "Any"),
+    ],
+    [
+      "fxExplosion",
+      { spot: "SAFEHOUSE", type: "Car" },
+      step.fxExplosion("SAFEHOUSE", "Car"),
+    ],
+    [
+      "pathAddRoutePoint",
+      { route: "1", spot: "SAFEHOUSE" },
+      step.pathAddRoutePoint(1, "SAFEHOUSE"),
+    ],
+    ["pathRemoveRoute", { route: "1" }, step.pathRemoveRoute(1)],
+    [
+      "restartAddHospital",
+      { spot: "SAFEHOUSE", angle: "0.0" },
+      step.restartAddHospital("SAFEHOUSE", "0.0"),
+    ],
+    [
+      "restartOverrideNext",
+      { spot: "SAFEHOUSE", angle: "0.0" },
+      step.restartOverrideNext("SAFEHOUSE", "0.0"),
+    ],
+    ["restartCancelOverride", {}, step.restartCancelOverride()],
+    [
+      "restartFadeAfterDeath",
+      { on: "true" },
+      step.restartFadeAfterDeath(true),
+    ],
+    ["rcBlowUp", {}, step.rcBlowUp()],
+    [
+      "fireCreate",
+      { var: "$fire", spot: "SAFEHOUSE" },
+      step.fireCreate("$fire", "SAFEHOUSE"),
+    ],
+    ["fireRemove", { fire: "$fire" }, step.fireRemove("$fire")],
+    ["fireAudio", { fire: "$fire", on: "true" }, step.fireAudio("$fire", true)],
+    [
+      "sphereCreate",
+      { var: "$sphere", spot: "SAFEHOUSE", radius: "3.0" },
+      step.sphereCreate("$sphere", "SAFEHOUSE", "3.0"),
+    ],
+    ["sphereRemove", { sphere: "$sphere" }, step.sphereRemove("$sphere")],
+    ["statProgress", { amount: "1" }, step.statProgress(1)],
+    ["statSetProgressTotal", { total: "10" }, step.statSetProgressTotal(10)],
+    ["statMissionGiven", {}, step.statMissionGiven()],
+    [
+      "stuckCarAdd",
+      { car: "$myCar", distance: "5.0", time: "5000" },
+      step.stuckCarAdd("$myCar", "5.0", 5000),
+    ],
+    ["stuckCarRemove", { car: "$myCar" }, step.stuckCarRemove("$myCar")],
+    [
+      "txdLoadDictionary",
+      { name: "MAIN" },
+      step.txdLoadDictionary("MAIN"),
+    ],
+    [
+      "txdLoadSprite",
+      { slot: "0", name: "SPRITE" },
+      step.txdLoadSprite(0, "SPRITE"),
+    ],
+    ["txdRemove", {}, step.txdRemove()],
+    [
+      "chaseSceneStart",
+      { startTime: "0.0" },
+      step.chaseSceneStart("0.0"),
+    ],
+    ["chaseSceneStop", {}, step.chaseSceneStop()],
+    [
+      "chaseSceneRemoveCar",
+      { index: "0" },
+      step.chaseSceneRemoveCar(0),
+    ],
+    ["catalinaHeliStart", {}, step.catalinaHeliStart()],
+    ["catalinaHeliTakeOff", {}, step.catalinaHeliTakeOff()],
+    ["catalinaHeliRemove", {}, step.catalinaHeliRemove()],
+    ["drugRunStart", {}, step.drugRunStart()],
+    ["drugDropOffStart", {}, step.drugDropOffStart()],
+    ["pacmanStartRace", {}, step.pacmanStartRace()],
+    [
+      "pacmanStartScramble",
+      { spot: "SAFEHOUSE", distance: "10.0", count: "10" },
+      step.pacmanStartScramble("SAFEHOUSE", "10.0", 10),
+    ],
+    ["pacmanClear", {}, step.pacmanClear()],
+    ["creditsStart", {}, step.creditsStart()],
+    ["creditsStop", {}, step.creditsStop()],
+    [
+      "zoneSetCarDensity",
+      { zone: "CBD", time: "Day", density: "1" },
+      step.zoneSetCarDensity("CBD", "Day", 1),
+    ],
+    [
+      "zoneSetPedDensity",
+      { zone: "CBD", time: "Day", density: "1" },
+      step.zoneSetPedDensity("CBD", "Day", 1),
     ],
   ];
   assertEquals(cases.map(([name]) => name), stepDescriptors.map((d) => d.name));
@@ -289,6 +685,53 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
       { seconds: "60" },
       cond.timeLimitNotExceeded(60),
     ],
+    ["clockAtOrAfter", { hour: "20" }, cond.clockAtOrAfter(20)],
+    ["clockBefore", { hour: "6" }, cond.clockBefore(6)],
+    ["playerHealthAbove", { amount: "50" }, cond.playerHealthAbove(50)],
+    ["garageOpen", { garage: "$Garage" }, cond.garageOpen("$Garage")],
+    ["garageClosed", { garage: "$Garage" }, cond.garageClosed("$Garage")],
+    [
+      "garageContainsCar",
+      { garage: "$Garage", car: "$myCar" },
+      cond.garageContainsCar("$Garage", "$myCar"),
+    ],
+    ["charDead", { char: "sal" }, cond.charDead("sal")],
+    ["carDead", { car: "$myCar" }, cond.carDead("$myCar")],
+    ["carStopped", { car: "$myCar" }, cond.carStopped("$myCar")],
+    ["carStuckOnRoof", { car: "$myCar" }, cond.carStuckOnRoof("$myCar")],
+    [
+      "carIsModel",
+      { car: "$myCar", model: "0" },
+      cond.carIsModel("$myCar", 0),
+    ],
+    ["playerShooting", {}, cond.playerShooting()],
+    ["playerStopped", {}, cond.playerStopped()],
+    ["playerOnFoot", {}, cond.playerOnFoot()],
+    [
+      "padButtonPressed",
+      { pad: "Pad1", button: "Cross" },
+      cond.padButtonPressed("Pad1", "Cross"),
+    ],
+    [
+      "collisionLoaded",
+      { level: "Industrial" },
+      cond.collisionLoaded("Industrial"),
+    ],
+    ["specialCharLoaded", { slot: "1" }, cond.specialCharLoaded(1)],
+    ["missionAudioFinished", {}, cond.missionAudioFinished()],
+    ["cutsceneFinished", {}, cond.cutsceneFinished()],
+    [
+      "craneLiftingCar",
+      { spot: "SAFEHOUSE", car: "$myCar" },
+      cond.craneLiftingCar("SAFEHOUSE", "$myCar"),
+    ],
+    ["fireExtinguished", { fire: "$fire" }, cond.fireExtinguished("$fire")],
+    ["stuckCarStuck", { car: "$myCar" }, cond.stuckCarStuck("$myCar")],
+    ["catalinaHeliShotDown", {}, cond.catalinaHeliShotDown()],
+    ["drugRunCompleted", {}, cond.drugRunCompleted()],
+    ["drugRunShotDown", {}, cond.drugRunShotDown()],
+    ["drugDropOffShotDown", {}, cond.drugDropOffShotDown()],
+    ["creditsFinished", {}, cond.creditsFinished()],
   ];
   // `playerNear3D` is listed twice: once with a typed radius, once with the default radius and no sphere.
   assertEquals(
@@ -353,12 +796,16 @@ Deno.test("typing is rewritten into the field's format", () => {
 });
 
 Deno.test("a fresh step of every kind reads back as itself", () => {
+  const scope = [{ name: "ensureVanBlip", source: "../utils/missions.txt" }];
   for (const d of [...stepDescriptors, ...condDescriptors]) {
-    const lines = buildLines(d, defaults(d, ["driveHint"]));
+    const lines = buildLines(d, defaults(d, ["driveHint"], [], [], scope));
     const parsed =
       "group" in d && d.group === "Monitors" || "pre" in d || "locals" in d ||
         condDescriptors.includes(d as never)
-        ? parseCond(condDescriptors, buildCond(d, defaults(d, ["driveHint"])))
+        ? parseCond(
+          condDescriptors,
+          buildCond(d, defaults(d, ["driveHint"], [], [], scope)),
+        )
         : parseLines(stepDescriptors, lines);
     assertEquals(parsed?.descriptor.name, d.name);
   }

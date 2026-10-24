@@ -13,6 +13,7 @@ const PATTERNS = {
   latch: "[A-Z]\\w*",
   // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
   spot: "[A-Z][A-Z0-9_]*",
+  function: "\\w+",
   toggle: "true|false",
 };
 
@@ -47,6 +48,7 @@ const FORMATS = {
   expr: (text) => text.replace(/[^A-Za-z0-9_$.#-]/g, "").replace(/(?!^)#/g, ""),
   handle: (text) => "$" + text.replace(/[^\w]/g, ""),
   name: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
+  function: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
   spot: (text) => text.toUpperCase().replace(/[^A-Z0-9_]/g, ""),
 };
 
@@ -144,6 +146,15 @@ export function constantOptions(constants, numeric) {
     }));
 }
 
+/** The functions a Call Function card can name: those the mission's includes define. */
+export function functionOptions(functions) {
+  return functions.map((f) => ({
+    value: f.name,
+    meta: f.source,
+    search: [f.name, f.source].join(" "),
+  }));
+}
+
 /** The global variables a field can take, only those declared as `varType` when the field names one. */
 export function globalOptions(globals, varType) {
   return globals
@@ -200,9 +211,12 @@ export function defaults(
   monitorIds = [],
   spotIds = [],
   globals = [],
+  functions = [],
 ) {
   const initial = (f) => {
     if (f.type === "latch") return monitorIds[0] ?? "monitor";
+    // A function field starts on the first function in scope, so a new card calls something real.
+    if (f.type === "function") return functions[0]?.name ?? "";
     // A variable field starts on a variable the project declares, since a made-up name has no slot.
     if (f.varType) {
       const declared = globals.find((g) => g.type === f.varType);

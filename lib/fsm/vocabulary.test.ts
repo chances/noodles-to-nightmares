@@ -118,6 +118,89 @@ Deno.test("carHealthBelow reads the car's health into a scratch local", () => {
   });
 });
 
+Deno.test("clock steps set time, speed, and the HUD timer", () => {
+  assertEquals(step.setTimeOfDay(20, 30), ["Clock.SetTimeOfDay(20, 30)"]);
+  assertEquals(step.setTimeScale("1.0"), ["Clock.SetTimeScale(1.0)"]);
+  assertEquals(step.storeClock(), ["Clock.Store()"]);
+  assertEquals(step.restoreClock(), ["Clock.Restore()"]);
+  assertEquals(step.showTimer("TIMERB"), ["Hud.DisplayTimer(TIMERB)"]);
+  assertEquals(step.clearTimer("TIMERB"), ["Hud.ClearTimer(TIMERB)"]);
+  assertEquals(step.freezeTimer(true), ["Hud.FreezeTimer(true)"]);
+});
+
+Deno.test("weather steps name a WeatherType member", () => {
+  assertEquals(step.forceWeather("Rainy"), [
+    "Weather.Force(WeatherType.Rainy)",
+  ]);
+  assertEquals(step.forceWeatherNow("Foggy"), [
+    "Weather.ForceNow(WeatherType.Foggy)",
+  ]);
+  assertEquals(step.releaseWeather(), ["Weather.Release()"]);
+  assertEquals(step.forceRain(false), ["Weather.ForceRain(false)"]);
+});
+
+Deno.test("world steps read a spot's coordinates", () => {
+  assertEquals(step.swapBuildingModel("SAFEHOUSE", "10.0", 100, 200), [
+    "World.SwapNearestBuildingModel(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, 10.0, 100, 200)",
+  ]);
+  assertEquals(step.setObjectVisible("SAFEHOUSE", "3.0", 100, false), [
+    "World.SetVisibilityOfClosestObjectOfType(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, 3.0, 100, false)",
+  ]);
+  assertEquals(step.clearArea("SAFEHOUSE", "10.0", false), [
+    "World.ClearArea(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, 10.0, false)",
+  ]);
+});
+
+Deno.test("player, music, and garage steps", () => {
+  assertEquals(step.setNeverGetsTired(true), [
+    "Player.SetNeverGetsTired($player, true)",
+  ]);
+  assertEquals(step.setPlayerVisible(false), [
+    "Player.SetVisible($player, false)",
+  ]);
+  assertEquals(step.setHealth(100), ["Player.SetHealth($player, 100)"]);
+  assertEquals(step.addArmour(100), ["Player.AddArmour($player, 100)"]);
+  assertEquals(step.setMaxWantedLevel(6), ["Game.SetMaxWantedLevel(6)"]);
+  assertEquals(step.setMusicFades(true), ["Audio.SetMusicDoesFade(true)"]);
+  assertEquals(step.openGarage("$Garage"), ["Garage.Open($Garage)"]);
+  assertEquals(step.closeGarage("$Garage"), ["Garage.Close($Garage)"]);
+  assertEquals(step.activateGarage("$Garage"), ["Garage.Activate($Garage)"]);
+  assertEquals(step.deactivateGarage("$Garage"), [
+    "Garage.Deactivate($Garage)",
+  ]);
+});
+
+Deno.test("clockAtOrAfter and clockBefore read the hour into scratch locals", () => {
+  const pre = [
+    "hours = 0",
+    "minutes = 0",
+    "Clock.GetTimeOfDay(hours, minutes)",
+  ];
+  assertEquals(cond.clockAtOrAfter(20), {
+    pre,
+    test: "hours >= 20",
+    locals: ["hours", "minutes"],
+  });
+  assertEquals(cond.clockBefore(6), {
+    pre,
+    test: "hours < 6",
+    locals: ["hours", "minutes"],
+  });
+});
+
+Deno.test("garage and health conditions", () => {
+  assertEquals(
+    cond.playerHealthAbove(50).test,
+    "Player.IsHealthGreater($player, 50)",
+  );
+  assertEquals(cond.garageOpen("$Garage").test, "Garage.IsOpen($Garage)");
+  assertEquals(cond.garageClosed("$Garage").test, "Garage.IsClosed($Garage)");
+  assertEquals(
+    cond.garageContainsCar("$Garage", "$myCar").test,
+    "Garage.DoesContainCar($Garage, $myCar)",
+  );
+});
+
 Deno.test("latch conditions name the monitor's local", () => {
   assertEquals(cond.latchSet("driveHint").test, "latchDriveHint == true");
   assertEquals(cond.latchClear("driveHint").test, "latchDriveHint == false");

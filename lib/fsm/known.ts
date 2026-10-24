@@ -57,7 +57,19 @@ export function parseGlobals(source: string): Map<string, GlobalInfo> {
   return found;
 }
 
-/** The names a typeahead offers: constants and globals as lists. Spot constants and the game's timers are left out. */
+/** Every `function NAME(` definition in `source`. */
+export function parseFunctions(
+  source: string,
+  from: string,
+): Map<string, { source: string }> {
+  const found = new Map<string, { source: string }>();
+  for (const m of source.matchAll(/^\s*function\s+([A-Za-z_]\w*)\s*\(/gm)) {
+    found.set(m[1], { source: from });
+  }
+  return found;
+}
+
+/** The names a typeahead offers: constants, globals, and functions as lists. Spot constants and the game's timers are left out. */
 export function listNames(known: Known | undefined) {
   const OMIT = new Set(["geography", "built in"]);
   return {
@@ -67,6 +79,8 @@ export function listNames(known: Known | undefined) {
     // A global with no Alloc pin has no slot, so a mission cannot use it.
     globals: [...(known?.globals ?? [])]
       .filter(([, info]) => info.slot !== undefined)
+      .map(([name, info]) => ({ name, ...info })),
+    functions: [...(known?.functions ?? [])]
       .map(([name, info]) => ({ name, ...info })),
   };
 }
@@ -104,6 +118,7 @@ export async function loadKnown(
     ),
     globals: new Map(),
   };
+  const functions = new Map<string, { source: string }>();
   for (const [label, text] of sources) {
     for (const [name, info] of parseConsts(text, label)) {
       known.constants.set(name, info);
@@ -112,5 +127,14 @@ export async function loadKnown(
       known.globals.set(name, { ...known.globals.get(name), ...info });
     }
   }
+  // Only the mission's includes are in scope, so a function in a file the mission does not include is not offered.
+  for (const path of mission.includes ?? ["../utils/missions.txt"]) {
+    const text = await readOrEmpty(resolve(join(missionsDir, path)));
+    if (text === undefined) continue;
+    for (const [name, info] of parseFunctions(text, path)) {
+      functions.set(name, info);
+    }
+  }
+  known.functions = functions;
   return known;
 }

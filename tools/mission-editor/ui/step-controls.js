@@ -3,10 +3,10 @@
 
 import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
 import { Overlay } from "./overlay.js";
-import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
+import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
 
 /** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
-export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], monitorIds: [], sannyFiles: [] });
+export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], functions: [], monitorIds: [], sannyFiles: [] });
 
 let comboCount = 0;
 
@@ -111,11 +111,12 @@ const EMPTY = {
   expr: "Enter a number or a name.",
   handle: "Enter a variable name.",
   name: "Enter a name.",
+  function: "Choose a function from the mission's includes.",
 };
 
 /** One typed field. Typing is rewritten into the field's format; an empty or unfinished value is not saved. */
 export function FieldInput({ field, value, onCommit }) {
-  const { monitorIds, spots, constants, globals, enums } = useContext(EditorContext);
+  const { monitorIds, spots, constants, globals, functions, enums } = useContext(EditorContext);
   const [draft, setDraft] = useState(value);
   const last = useRef(value);
   useEffect(() => {
@@ -141,6 +142,8 @@ export function FieldInput({ field, value, onCommit }) {
     return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${o}</option>`)}</select>`;
   }
   if (field.type === "spot") return html`<${Combo} field=${field} value=${value} options=${spotOptions(spots)} label="Spot" onCommit=${onCommit} />`;
+  // A Call Function card names a function from the mission's includes, so only those are offered.
+  if (field.type === "function") return html`<${Combo} field=${field} value=${value} options=${functionOptions(functions)} label=${field.label} missing="is not defined in this mission's includes" onCommit=${onCommit} />`;
   // A number or variable is typed freely; the list offers the project's constants (of the field's number type) or variables (of its type).
   if (field.type === "expr" || field.type === "handle") {
     const options = field.type === "handle" || !field.numeric ? globalOptions(globals, field.varType) : constantOptions(constants, field.numeric);
@@ -253,20 +256,20 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
 }
 
 function TypedList({ items, kind, onChange, addLabel, emptyText }) {
-  const { steps, conds, monitorIds, spots, globals } = useContext(EditorContext);
+  const { steps, conds, monitorIds, spots, globals, functions } = useContext(EditorContext);
   const spotIds = spots.map((s) => s.id);
   const descriptors = kind === "cond" ? conds : steps;
   // Rows keep a "Sanny" toggle of their own; a new generation remounts them after a removal or move.
   const [generation, setGeneration] = useState(0);
-  const groups = [...new Set(descriptors.map((d) => d.group))];
+  const groups = [...new Set(descriptors.map((d) => d.group))].sort((a, b) => a.localeCompare(b));
 
   const add = (name) => {
     if (!name) return;
     const descriptor = descriptors.find((d) => d.name === name);
     const blank = kind === "cond" ? { test: "" } : [""];
     const first = conds[0];
-    const when = buildWhen({ conds: first ? [buildCond(first, defaults(first, monitorIds, spotIds, globals))] : [], then: [], otherwise: [] });
-    const fresh = name === "__when" ? when : !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds, spotIds, globals)) : buildLines(descriptor, defaults(descriptor, monitorIds, spotIds, globals));
+    const when = buildWhen({ conds: first ? [buildCond(first, defaults(first, monitorIds, spotIds, globals, functions))] : [], then: [], otherwise: [] });
+    const fresh = name === "__when" ? when : !descriptor ? blank : kind === "cond" ? buildCond(descriptor, defaults(descriptor, monitorIds, spotIds, globals, functions)) : buildLines(descriptor, defaults(descriptor, monitorIds, spotIds, globals, functions));
     onChange([...items, fresh]);
   };
   const replace = (i) => (next) => onChange(items.map((item, j) => (j === i ? next : item)));

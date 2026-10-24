@@ -133,7 +133,8 @@ export const step = {
     `Char.Delete(${char})`,
     `${char} = 0`,
   ],
-  ensureVanBlip: (): Step => ["ensureVanBlip()"],
+  /** Calls a function the mission's includes define, e.g. `ensureVanBlip`. */
+  callFunction: (name: string): Step => [`${name}()`],
   carCreate: (car: Expr, model: Expr, spot: Spot): Step => [
     `${car} = Car.Create(${model}, ${coords(spot, 3)})`,
   ],
@@ -162,6 +163,304 @@ export const step = {
   /** Runs `then` when every condition holds, `otherwise` when not. */
   when: (conds: Cond[], then: Step[], otherwise: Step[] = []): Step =>
     ifBlock(conds, then.flat(), otherwise.flat()),
+  setTimeOfDay: (hours: Expr, minutes: Expr): Step => [
+    `Clock.SetTimeOfDay(${hours}, ${minutes})`,
+  ],
+  setTimeScale: (scale: Expr): Step => [`Clock.SetTimeScale(${scale})`],
+  storeClock: (): Step => ["Clock.Store()"],
+  restoreClock: (): Step => ["Clock.Restore()"],
+  /** Shows a countdown on the HUD that counts the value in `timer`, e.g. `TIMERB`. */
+  showTimer: (timer: Expr): Step => [`Hud.DisplayTimer(${timer})`],
+  clearTimer: (timer: Expr): Step => [`Hud.ClearTimer(${timer})`],
+  freezeTimer: (on: boolean): Step => [`Hud.FreezeTimer(${on})`],
+  forceWeather: (type: string): Step => [`Weather.Force(WeatherType.${type})`],
+  forceWeatherNow: (type: string): Step => [
+    `Weather.ForceNow(WeatherType.${type})`,
+  ],
+  releaseWeather: (): Step => ["Weather.Release()"],
+  forceRain: (on: boolean): Step => [`Weather.ForceRain(${on})`],
+  setNeverGetsTired: (on: boolean): Step => [
+    `Player.SetNeverGetsTired($player, ${on})`,
+  ],
+  setPlayerVisible: (
+    on: boolean,
+  ): Step => [`Player.SetVisible($player, ${on})`],
+  setHealth: (health: Expr): Step => [`Player.SetHealth($player, ${health})`],
+  addArmour: (amount: Expr): Step => [`Player.AddArmour($player, ${amount})`],
+  setMaxWantedLevel: (max: Expr): Step => [`Game.SetMaxWantedLevel(${max})`],
+  swapBuildingModel: (
+    spot: Spot,
+    radius: Expr,
+    from: Expr,
+    to: Expr,
+  ): Step => [
+    `World.SwapNearestBuildingModel(${
+      coords(spot, 3)
+    }, ${radius}, ${from}, ${to})`,
+  ],
+  setObjectVisible: (
+    spot: Spot,
+    radius: Expr,
+    model: Expr,
+    on: boolean,
+  ): Step => [
+    `World.SetVisibilityOfClosestObjectOfType(${
+      coords(spot, 3)
+    }, ${radius}, ${model}, ${on})`,
+  ],
+  clearArea: (spot: Spot, radius: Expr, clearParticles: boolean): Step => [
+    `World.ClearArea(${coords(spot, 3)}, ${radius}, ${clearParticles})`,
+  ],
+  setMusicFades: (on: boolean): Step => [`Audio.SetMusicDoesFade(${on})`],
+  openGarage: (garage: Expr): Step => [`Garage.Open(${garage})`],
+  closeGarage: (garage: Expr): Step => [`Garage.Close(${garage})`],
+  activateGarage: (garage: Expr): Step => [`Garage.Activate(${garage})`],
+  deactivateGarage: (garage: Expr): Step => [`Garage.Deactivate(${garage})`],
+  playEndTune: (): Step => ["Audio.PlayEndOfGameTune()"],
+  setRadioChannel: (channel: string, startMs: Expr): Step => [
+    `Audio.SetRadioChannel(RadioChannel.${channel}, ${startMs})`,
+  ],
+  blipForChar: (variable: Expr, char: Expr): Step => [
+    `${variable} = Blip.AddForChar(${char})`,
+  ],
+  blipChangeColor: (handle: string, color: string): Step => [
+    `Blip.ChangeColor(${handle}, BlipColor.${color})`,
+  ],
+  blipDim: (
+    handle: string,
+    on: boolean,
+  ): Step => [`Blip.Dim(${handle}, ${on})`],
+  cameraShake: (intensity: Expr): Step => [`Camera.Shake(${intensity})`],
+  cameraInFrontOfPlayer: (): Step => ["Camera.SetInFrontOfPlayer()"],
+  cameraPointAtCar: (car: Expr, cut: "JumpCut" | "Interpolation"): Step => [
+    `Camera.PointAtCar(${car}, CameraMode.Fixed, SwitchType.${cut})`,
+  ],
+  cameraFadeColor: (r: Expr, g: Expr, b: Expr): Step => [
+    `Camera.SetFadingColor(${r}, ${g}, ${b})`,
+  ],
+  cameraNearClip: (distance: Expr): Step => [`Camera.SetNearClip(${distance})`],
+  cameraMotionBlur: (type: string): Step => [
+    `Camera.SetMotionBlur(MotionBlurType.${type})`,
+  ],
+  carDelete: (car: Expr): Step => [`Car.Delete(${car})`],
+  carGoto: (car: Expr, spot: Spot): Step => [
+    `Car.GotoCoordinates(${car}, ${coords(spot, 3)})`,
+  ],
+  carSetIdle: (car: Expr): Step => [`Car.SetIdle(${car})`],
+  carExplode: (car: Expr): Step => [`Car.Explode(${car})`],
+  carSetHealth: (car: Expr, health: Expr): Step => [
+    `Car.SetHealth(${car}, ${health})`,
+  ],
+  carLock: (car: Expr, lock: string): Step => [
+    `Car.LockDoors(${car}, CarLock.${lock})`,
+  ],
+  carSetHeading: (car: Expr, heading: Expr): Step => [
+    `Car.SetHeading(${car}, ${heading})`,
+  ],
+  charDelete: (char: Expr): Step => [`Char.Delete(${char})`],
+  charSetHealth: (char: Expr, health: Expr): Step => [
+    `Char.SetHealth(${char}, ${health})`,
+  ],
+  charGiveWeapon: (char: Expr, weapon: string, ammo: Expr): Step => [
+    `Char.GiveWeapon(${char}, WeaponType.${weapon}, ${ammo})`,
+  ],
+  charSetIdle: (char: Expr): Step => [`Char.SetIdle(${char})`],
+  charSetHeading: (char: Expr, heading: Expr): Step => [
+    `Char.SetHeading(${char}, ${heading})`,
+  ],
+  setWantedMultiplier: (multiplier: Expr): Step => [
+    `Game.SetWantedMultiplier(${multiplier})`,
+  ],
+  setPoliceIgnorePlayer: (on: boolean): Step => [
+    `Game.SetPoliceIgnorePlayer($player, ${on})`,
+  ],
+  setEveryoneIgnorePlayer: (on: boolean): Step => [
+    `Game.SetEveryoneIgnorePlayer($player, ${on})`,
+  ],
+  activateSaveMenu: (): Step => ["Game.ActivateSaveMenu()"],
+  setAllCarsDamage: (on: boolean): Step => [
+    `Game.SetAllCarsCanBeDamaged(${on})`,
+  ],
+  changeGarageType: (garage: string, type: string): Step => [
+    `Garage.ChangeType(${garage}, GarageType.${type})`,
+  ],
+  showCounter: (counter: Expr, display: "Number" | "Bar"): Step => [
+    `Hud.DisplayCounter(${counter}, CounterDisplay.${display})`,
+  ],
+  clearCounter: (counter: Expr): Step => [`Hud.ClearCounter(${counter})`],
+  widescreen: (on: boolean): Step => [`Hud.SwitchWidescreen(${on})`],
+  objectCreate: (variable: Expr, model: Expr, spot: Spot): Step => [
+    `${variable} = Object.Create(${model}, ${coords(spot, 3)})`,
+  ],
+  objectDelete: (object: Expr): Step => [`Object.Delete(${object})`],
+  padShake: (pad: string, ms: Expr, intensity: Expr): Step => [
+    `Pad.Shake(PadId.${pad}, ${ms}, ${intensity})`,
+  ],
+  pickupCreateMoney: (pickup: Expr, spot: Spot, amount: Expr): Step => [
+    `${pickup} = Pickup.CreateMoney(${coords(spot, 3)}, ${amount})`,
+  ],
+  pickupCreateFloatingPackage: (pickup: Expr, spot: Spot): Step => [
+    `${pickup} = Pickup.CreateFloatingPackage(${coords(spot, 3)})`,
+  ],
+  pickupDropMine: (spot: Spot): Step => [
+    `Pickup.DropMine(${coords(spot, 3)})`,
+  ],
+  playerWarp: (spot: Spot): Step => [
+    `Player.SetCoordinates($player, ${coords(spot, 3)})`,
+  ],
+  playerWarpIntoCar: (
+    car: Expr,
+  ): Step => [`Player.WarpIntoCar($player, ${car})`],
+  playerClearWantedLevel: (): Step => ["Player.ClearWantedLevel($player)"],
+  playerAlterWantedLevel: (stars: Expr): Step => [
+    `Player.AlterWantedLevel($player, ${stars})`,
+  ],
+  playerGiveWeapon: (weapon: string, ammo: Expr): Step => [
+    `Player.GiveWeapon($player, WeaponType.${weapon}, ${ammo})`,
+  ],
+  playerSetAmmo: (weapon: string, ammo: Expr): Step => [
+    `Player.SetAmmo($player, WeaponType.${weapon}, ${ammo})`,
+  ],
+  playerRemoveWeapons: (): Step => ["Player.RemoveAllWeapons($player)"],
+  playerSetAnimGroup: (animGroup: string): Step => [
+    `Player.SetAnimGroup($player, AnimGroup.${animGroup})`,
+  ],
+  streamLoadSpecialCharacter: (slot: Expr, name: string): Step => [
+    `Streaming.LoadSpecialCharacter(${slot}, '${name}')`,
+  ],
+  streamUnloadSpecialCharacter: (slot: Expr): Step => [
+    `Streaming.UnloadSpecialCharacter(${slot})`,
+  ],
+  streamUnloadModel: (model: Expr): Step => [
+    `Streaming.MarkModelAsNoLongerNeeded(${model})`,
+  ],
+  streamLoadCollision: (level: string): Step => [
+    `Streaming.LoadCollision(LevelName.${level})`,
+  ],
+  streamLoadScene: (spot: Spot): Step => [
+    `Streaming.LoadScene(${coords(spot, 3)})`,
+  ],
+  clearPrints: (): Step => ["Text.ClearPrints()"],
+  clearHelp: (): Step => ["Text.ClearHelp()"],
+  useCommands: (on: boolean): Step => [`Text.UseCommands(${on})`],
+  textBackground: (on: boolean): Step => [`Text.SetBackground(${on})`],
+  cutsceneLoad: (name: string): Step => [`Cutscene.Load('${name}')`],
+  cutsceneSetOffset: (spot: Spot): Step => [
+    `Cutscene.SetOffset(${coords(spot, 3)})`,
+  ],
+  cutsceneStart: (): Step => ["Cutscene.Start()"],
+  cutsceneClear: (): Step => ["Cutscene.Clear()"],
+  cutsceneObjectCreate: (variable: Expr, model: Expr): Step => [
+    `${variable} = CutsceneObject.Create(${model})`,
+  ],
+  cutsceneObjectAnim: (object: Expr, anim: string): Step => [
+    `CutsceneObject.SetAnim(${object}, '${anim}')`,
+  ],
+  cutsceneHeadCreate: (variable: Expr, object: Expr, model: Expr): Step => [
+    `${variable} = CutsceneHead.Create(${object}, ${model})`,
+  ],
+  boatGoto: (boat: Expr, spot: Spot): Step => [
+    `Boat.Goto(${boat}, ${coords(spot, 3)})`,
+  ],
+  boatStop: (boat: Expr): Step => [`Boat.Stop(${boat})`],
+  boatCruiseSpeed: (boat: Expr, speed: Expr): Step => [
+    `Boat.SetCruiseSpeed(${boat}, ${speed})`,
+  ],
+  boatAnchor: (
+    boat: Expr,
+    on: boolean,
+  ): Step => [`Boat.Anchor(${boat}, ${on})`],
+  carGeneratorSwitch: (generator: Expr, count: Expr): Step => [
+    `CarGenerator.Switch(${generator}, ${count})`,
+  ],
+  craneDeactivate: (spot: Spot2D): Step => [
+    `Crane.Deactivate(${coords(spot, 2)})`,
+  ],
+  gangCarModel: (gang: string, model: Expr): Step => [
+    `Gang.SetCarModel(GangType.${gang}, ${model})`,
+  ],
+  gangWeapons: (gang: string, first: string, second: string): Step => [
+    `Gang.SetWeapons(GangType.${gang}, WeaponType.${first}, WeaponType.${second})`,
+  ],
+  gangModelPreference: (gang: string, override: string): Step => [
+    `Gang.SetPedModelPreference(GangType.${gang}, GangModelOverride.${override})`,
+  ],
+  fxExplosion: (spot: Spot, type: string): Step => [
+    `Fx.AddExplosion(${coords(spot, 3)}, ExplosionType.${type})`,
+  ],
+  pathAddRoutePoint: (route: Expr, spot: Spot): Step => [
+    `Path.AddRoutePoint(${route}, ${coords(spot, 3)})`,
+  ],
+  pathRemoveRoute: (route: Expr): Step => [`Path.RemoveRoute(${route})`],
+  restartAddHospital: (spot: Spot, angle: Expr): Step => [
+    `Restart.AddHospital(${coords(spot, 3)}, ${angle})`,
+  ],
+  restartOverrideNext: (spot: Spot, angle: Expr): Step => [
+    `Restart.OverrideNext(${coords(spot, 3)}, ${angle})`,
+  ],
+  restartCancelOverride: (): Step => ["Restart.CancelOverride()"],
+  restartFadeAfterDeath: (on: boolean): Step => [
+    `Restart.SetFadeInAfterNextDeath(${on})`,
+  ],
+  rcBlowUp: (): Step => ["Rc.BlowUpBuggy()"],
+  fireCreate: (variable: Expr, spot: Spot): Step => [
+    `${variable} = ScriptFire.Create(${coords(spot, 3)})`,
+  ],
+  fireRemove: (fire: Expr): Step => [`ScriptFire.Remove(${fire})`],
+  fireAudio: (fire: Expr, on: boolean): Step => [
+    `ScriptFire.SetAudio(${fire}, ${on})`,
+  ],
+  sphereCreate: (variable: Expr, spot: Spot, radius: Expr): Step => [
+    `${variable} = Sphere.Create(${coords(spot, 3)}, ${radius})`,
+  ],
+  sphereRemove: (sphere: Expr): Step => [`Sphere.Remove(${sphere})`],
+  statProgress: (amount: Expr): Step => [`Stat.PlayerMadeProgress(${amount})`],
+  statSetProgressTotal: (total: Expr): Step => [
+    `Stat.SetProgressTotal(${total})`,
+  ],
+  statMissionGiven: (): Step => ["Stat.RegisterMissionGiven()"],
+  stuckCarAdd: (car: Expr, distance: Expr, time: Expr): Step => [
+    `StuckCarCheck.Add(${car}, ${distance}, ${time})`,
+  ],
+  stuckCarRemove: (car: Expr): Step => [`StuckCarCheck.Remove(${car})`],
+  txdLoadDictionary: (name: string): Step => [`Txd.LoadDictionary('${name}')`],
+  txdLoadSprite: (slot: Expr, name: string): Step => [
+    `Txd.LoadSprite(${slot}, '${name}')`,
+  ],
+  txdRemove: (): Step => ["Txd.Remove()"],
+  chaseSceneStart: (startTime: Expr): Step => [
+    `ChaseScene.Start(${startTime})`,
+  ],
+  chaseSceneStop: (): Step => ["ChaseScene.Stop()"],
+  chaseSceneRemoveCar: (index: Expr): Step => [
+    `ChaseScene.RemoveCarFromChase(${index})`,
+  ],
+  catalinaHeliStart: (): Step => ["CatalinaHeli.Start()"],
+  catalinaHeliTakeOff: (): Step => ["CatalinaHeli.TakeOff()"],
+  catalinaHeliRemove: (): Step => ["CatalinaHeli.Remove()"],
+  drugRunStart: (): Step => ["DrugRun.Start()"],
+  drugDropOffStart: (): Step => ["DrugDropOff.Start()"],
+  pacmanStartRace: (): Step => ["Pacman.StartRace(0)"],
+  pacmanStartScramble: (spot: Spot, distance: Expr, count: Expr): Step => [
+    `Pacman.StartScramble(${coords(spot, 3)}, ${distance}, ${count})`,
+  ],
+  pacmanClear: (): Step => ["Pacman.Clear()"],
+  creditsStart: (): Step => ["Credits.Start()"],
+  creditsStop: (): Step => ["Credits.Stop()"],
+  zoneSetCarDensity: (
+    zone: string,
+    time: "Day" | "Night",
+    density: Expr,
+  ): Step => [
+    `Zone.SetCarDensity('${zone}', DayOrNight.${time}, ${density})`,
+  ],
+  zoneSetPedDensity: (
+    zone: string,
+    time: "Day" | "Night",
+    density: Expr,
+  ): Step => [
+    `Zone.SetPedDensity('${zone}', DayOrNight.${time}, ${density})`,
+  ],
   /** Escape hatch: Sanny lines copied as written. */
   raw: (...lines: string[]): Step => lines,
 };
@@ -266,11 +565,73 @@ export const cond = {
   }),
   /** True once `seconds` have passed on TIMERB, the clock a state's Time Limit restarts on entry. */
   timeLimitExceeded: (seconds: number): Cond => ({
-    test: `TIMERB > ${seconds}000`,
+    test: `TIMERB >${seconds}000`,
   }),
   timeLimitNotExceeded: (seconds: number): Cond => ({
-    test: `TIMERB <= ${seconds}000`,
+    test: `TIMERB <=${seconds}000`,
   }),
+  /** Reads the in-game hour into the scratch local `hours`, which holds 0 to 23. */
+  clockAtOrAfter: (hour: number): Cond => ({
+    pre: ["hours = 0", "minutes = 0", "Clock.GetTimeOfDay(hours, minutes)"],
+    test: `hours >= ${hour}`,
+    locals: ["hours", "minutes"],
+  }),
+  clockBefore: (hour: number): Cond => ({
+    pre: ["hours = 0", "minutes = 0", "Clock.GetTimeOfDay(hours, minutes)"],
+    test: `hours < ${hour}`,
+    locals: ["hours", "minutes"],
+  }),
+  playerHealthAbove: (amount: number): Cond => ({
+    test: `Player.IsHealthGreater($player, ${amount})`,
+  }),
+  garageOpen: (garage: Expr): Cond => ({ test: `Garage.IsOpen(${garage})` }),
+  garageClosed: (garage: Expr): Cond => ({
+    test: `Garage.IsClosed(${garage})`,
+  }),
+  garageContainsCar: (garage: Expr, car: Expr): Cond => ({
+    test: `Garage.DoesContainCar(${garage}, ${car})`,
+  }),
+  charDead: (char: Expr): Cond => ({ test: `Char.IsDead(${char})` }),
+  carDead: (car: Expr): Cond => ({ test: `Car.IsDead(${car})` }),
+  carStopped: (car: Expr): Cond => ({ test: `Car.IsStopped(${car})` }),
+  carStuckOnRoof: (car: Expr): Cond => ({ test: `Car.IsStuckOnRoof(${car})` }),
+  carIsModel: (car: Expr, model: Expr): Cond => ({
+    test: `Car.IsModel(${car}, ${model})`,
+  }),
+  playerShooting: (): Cond => ({ test: "Player.IsShooting($player)" }),
+  playerStopped: (): Cond => ({ test: "Player.IsStopped($player)" }),
+  playerOnFoot: (): Cond => ({ test: "Player.IsOnFoot($player)" }),
+  padButtonPressed: (pad: string, button: string): Cond => ({
+    test: `Pad.IsButtonPressed(PadId.${pad}, Button.${button})`,
+  }),
+  collisionLoaded: (level: string): Cond => ({
+    test: `Streaming.IsCollisionInMemory(LevelName.${level})`,
+  }),
+  specialCharLoaded: (slot: Expr): Cond => ({
+    test: `Streaming.HasSpecialCharacterLoaded(${slot})`,
+  }),
+  missionAudioFinished: (): Cond => ({
+    test: "Audio.HasMissionAudioFinished()",
+  }),
+  cutsceneFinished: (): Cond => ({ test: "Cutscene.HasFinished()" }),
+  craneLiftingCar: (spot: Spot2D, car: Expr): Cond => ({
+    test: `Crane.IsLiftingCar(${coords(spot, 2)}, ${car})`,
+  }),
+  fireExtinguished: (fire: Expr): Cond => ({
+    test: `ScriptFire.IsExtinguished(${fire})`,
+  }),
+  stuckCarStuck: (car: Expr): Cond => ({
+    test: `StuckCarCheck.IsCarStuck(${car})`,
+  }),
+  catalinaHeliShotDown: (): Cond => ({
+    test: "CatalinaHeli.HasBeenShotDown()",
+  }),
+  drugRunCompleted: (): Cond => ({ test: "DrugRun.HasBeenCompleted()" }),
+  drugRunShotDown: (): Cond => ({ test: "DrugRun.HasPlaneBeenShotDown()" }),
+  drugDropOffShotDown: (): Cond => ({
+    test: "DrugDropOff.HasPlaneBeenShotDown()",
+  }),
+  creditsFinished: (): Cond => ({ test: "Credits.AreFinished()" }),
   latchSet: (id: string): Cond => cmp(latchLocal(id), "==", "true"),
   latchClear: (id: string): Cond => cmp(latchLocal(id), "==", "false"),
 };

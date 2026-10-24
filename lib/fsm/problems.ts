@@ -40,6 +40,8 @@ export interface Known {
   constants: Map<string, ConstInfo>;
   /** Global names, with the `$`, from variables.txt. */
   globals: Map<string, GlobalInfo>;
+  /** Functions the mission's includes define, with the file each comes from. Omitted when a caller has no includes. */
+  functions?: Map<string, { source: string }>;
 }
 
 const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -306,7 +308,12 @@ export function problems(mission: Mission, known?: Known): Problem[] {
       if (beat.await) {
         conds(beat.await, `A beat in ${id} waits on an empty condition`, id);
         if (beat.await.length === 0) {
-          warn(`${id} story beat ${index + 1} is asynchronous, but has no conditions`, id);
+          warn(
+            `${id} story beat ${
+              index + 1
+            } is asynchronous, but has no conditions`,
+            id,
+          );
         }
         if (beat.do?.length || beat.wait) {
           error(`A beat in ${id} waits and also runs steps or a duration`, id);
