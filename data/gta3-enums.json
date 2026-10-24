@@ -1,0 +1,1616 @@
+{
+  "PedType": [
+    {
+      "name": "Player1",
+      "id": 0
+    },
+    {
+      "name": "Player2",
+      "id": 1
+    },
+    {
+      "name": "Player3",
+      "id": 2
+    },
+    {
+      "name": "Player4",
+      "id": 3
+    },
+    {
+      "name": "CivMale",
+      "id": 4
+    },
+    {
+      "name": "CivFemale",
+      "id": 5
+    },
+    {
+      "name": "Cop",
+      "id": 6
+    },
+    {
+      "name": "Gang1",
+      "id": 7
+    },
+    {
+      "name": "Gang2",
+      "id": 8
+    },
+    {
+      "name": "Gang3",
+      "id": 9
+    },
+    {
+      "name": "Gang4",
+      "id": 10
+    },
+    {
+      "name": "Gang5",
+      "id": 11
+    },
+    {
+      "name": "Gang6",
+      "id": 12
+    },
+    {
+      "name": "Gang7",
+      "id": 13
+    },
+    {
+      "name": "Gang8",
+      "id": 14
+    },
+    {
+      "name": "Gang9",
+      "id": 15
+    },
+    {
+      "name": "Emergency",
+      "id": 16
+    },
+    {
+      "name": "Fireman",
+      "id": 17
+    },
+    {
+      "name": "Criminal",
+      "id": 18
+    },
+    {
+      "name": "Bum",
+      "id": 19
+    },
+    {
+      "name": "Prostitute",
+      "id": 20
+    },
+    {
+      "name": "Special",
+      "id": 21
+    }
+  ],
+  "PedStat": [
+    {
+      "name": "Player",
+      "id": 0
+    },
+    {
+      "name": "Cop",
+      "id": 1
+    },
+    {
+      "name": "Medic",
+      "id": 2
+    },
+    {
+      "name": "Fire",
+      "id": 3
+    },
+    {
+      "name": "Gang1",
+      "id": 4
+    },
+    {
+      "name": "Gang2",
+      "id": 5
+    },
+    {
+      "name": "Gang3",
+      "id": 6
+    },
+    {
+      "name": "Gang4",
+      "id": 7
+    },
+    {
+      "name": "Gang5",
+      "id": 8
+    },
+    {
+      "name": "Gang6",
+      "id": 9
+    },
+    {
+      "name": "Gang7",
+      "id": 10
+    },
+    {
+      "name": "StreetGuy",
+      "id": 11
+    },
+    {
+      "name": "SuitGuy",
+      "id": 12
+    },
+    {
+      "name": "SensibleGuy",
+      "id": 13
+    },
+    {
+      "name": "GeekGuy",
+      "id": 14
+    },
+    {
+      "name": "OldGuy",
+      "id": 15
+    },
+    {
+      "name": "ToughGuy",
+      "id": 16
+    },
+    {
+      "name": "StreetGirl",
+      "id": 17
+    },
+    {
+      "name": "SuitGirl",
+      "id": 18
+    },
+    {
+      "name": "SensibleGirl",
+      "id": 19
+    },
+    {
+      "name": "GeekGirl",
+      "id": 20
+    },
+    {
+      "name": "OldGirl",
+      "id": 21
+    },
+    {
+      "name": "ToughGirl",
+      "id": 22
+    },
+    {
+      "name": "TrampMale",
+      "id": 23
+    },
+    {
+      "name": "TrampFemale",
+      "id": 24
+    },
+    {
+      "name": "Tourist",
+      "id": 25
+    },
+    {
+      "name": "Prostitute",
+      "id": 26
+    },
+    {
+      "name": "Criminal",
+      "id": 27
+    },
+    {
+      "name": "Busker",
+      "id": 28
+    },
+    {
+      "name": "TaxiDriver",
+      "id": 29
+    },
+    {
+      "name": "Psycho",
+      "id": 30
+    },
+    {
+      "name": "Steward",
+      "id": 31
+    },
+    {
+      "name": "Sportsfan",
+      "id": 32
+    },
+    {
+      "name": "Shopper",
+      "id": 33
+    },
+    {
+      "name": "OldShopper",
+      "id": 34
+    }
+  ],
+  "AnimGroup": [
+    {
+      "name": "Man",
+      "id": 0
+    },
+    {
+      "name": "Player",
+      "id": 1
+    },
+    {
+      "name": "PlayerRocket",
+      "id": 2
+    },
+    {
+      "name": "Player1Armed",
+      "id": 3
+    },
+    {
+      "name": "Player2Armed",
+      "id": 4
+    },
+    {
+      "name": "PlayerBbbat",
+      "id": 5
+    },
+    {
+      "name": "Shuffle",
+      "id": 6
+    },
+    {
+      "name": "Oldman",
+      "id": 7
+    },
+    {
+      "name": "Gang1",
+      "id": 8
+    },
+    {
+      "name": "Gang2",
+      "id": 9
+    },
+    {
+      "name": "Fatman",
+      "id": 10
+    },
+    {
+      "name": "OldFatman",
+      "id": 11
+    },
+    {
+      "name": "Woman",
+      "id": 12
+    },
+    {
+      "name": "Shopping",
+      "id": 13
+    },
+    {
+      "name": "BusyWoman",
+      "id": 14
+    },
+    {
+      "name": "SexyWoman",
+      "id": 15
+    },
+    {
+      "name": "OldWoman",
+      "id": 16
+    },
+    {
+      "name": "FatWoman",
+      "id": 17
+    },
+    {
+      "name": "PanicChunky",
+      "id": 18
+    },
+    {
+      "name": "PlayerBack",
+      "id": 19
+    },
+    {
+      "name": "PlayerLeft",
+      "id": 20
+    },
+    {
+      "name": "PlayerRight",
+      "id": 21
+    },
+    {
+      "name": "RocketBack",
+      "id": 22
+    },
+    {
+      "name": "RocketLeft",
+      "id": 23
+    },
+    {
+      "name": "RocketRight",
+      "id": 24
+    }
+  ],
+  "KeyCode": [
+    {
+      "name": "LeftButton",
+      "id": 1
+    },
+    {
+      "name": "RightButton",
+      "id": null
+    },
+    {
+      "name": "Cancel",
+      "id": null
+    },
+    {
+      "name": "MiddleButton",
+      "id": null
+    },
+    {
+      "name": "CustomButton1",
+      "id": null
+    },
+    {
+      "name": "CustomButton2",
+      "id": null
+    },
+    {
+      "name": "Back",
+      "id": 8
+    },
+    {
+      "name": "Tab",
+      "id": null
+    },
+    {
+      "name": "Clear",
+      "id": 12
+    },
+    {
+      "name": "Return",
+      "id": null
+    },
+    {
+      "name": "Shift",
+      "id": 16
+    },
+    {
+      "name": "Ctrl",
+      "id": null
+    },
+    {
+      "name": "Pause",
+      "id": 19
+    },
+    {
+      "name": "Capital",
+      "id": null
+    },
+    {
+      "name": "Kana",
+      "id": null
+    },
+    {
+      "name": "Junja",
+      "id": 23
+    },
+    {
+      "name": "Final",
+      "id": null
+    },
+    {
+      "name": "Kanji",
+      "id": null
+    },
+    {
+      "name": "Escape",
+      "id": 27
+    },
+    {
+      "name": "Convert",
+      "id": null
+    },
+    {
+      "name": "NonConvert",
+      "id": null
+    },
+    {
+      "name": "Accept",
+      "id": null
+    },
+    {
+      "name": "ModeChange",
+      "id": null
+    },
+    {
+      "name": "Space",
+      "id": null
+    },
+    {
+      "name": "Prior",
+      "id": null
+    },
+    {
+      "name": "Next",
+      "id": null
+    },
+    {
+      "name": "End",
+      "id": null
+    },
+    {
+      "name": "Home",
+      "id": null
+    },
+    {
+      "name": "Left",
+      "id": null
+    },
+    {
+      "name": "Up",
+      "id": null
+    },
+    {
+      "name": "Right",
+      "id": null
+    },
+    {
+      "name": "Down",
+      "id": null
+    },
+    {
+      "name": "Select",
+      "id": null
+    },
+    {
+      "name": "Print",
+      "id": null
+    },
+    {
+      "name": "Execute",
+      "id": null
+    },
+    {
+      "name": "Snapshot",
+      "id": null
+    },
+    {
+      "name": "Insert",
+      "id": null
+    },
+    {
+      "name": "Delete",
+      "id": null
+    },
+    {
+      "name": "Help",
+      "id": null
+    },
+    {
+      "name": "Num0",
+      "id": null
+    },
+    {
+      "name": "Num1",
+      "id": null
+    },
+    {
+      "name": "Num2",
+      "id": null
+    },
+    {
+      "name": "Num3",
+      "id": null
+    },
+    {
+      "name": "Num4",
+      "id": null
+    },
+    {
+      "name": "Num5",
+      "id": null
+    },
+    {
+      "name": "Num6",
+      "id": null
+    },
+    {
+      "name": "Num7",
+      "id": null
+    },
+    {
+      "name": "Num8",
+      "id": null
+    },
+    {
+      "name": "Num9",
+      "id": null
+    },
+    {
+      "name": "A",
+      "id": 65
+    },
+    {
+      "name": "B",
+      "id": null
+    },
+    {
+      "name": "C",
+      "id": null
+    },
+    {
+      "name": "D",
+      "id": null
+    },
+    {
+      "name": "E",
+      "id": null
+    },
+    {
+      "name": "F",
+      "id": null
+    },
+    {
+      "name": "G",
+      "id": null
+    },
+    {
+      "name": "H",
+      "id": null
+    },
+    {
+      "name": "I",
+      "id": null
+    },
+    {
+      "name": "J",
+      "id": null
+    },
+    {
+      "name": "K",
+      "id": null
+    },
+    {
+      "name": "L",
+      "id": null
+    },
+    {
+      "name": "M",
+      "id": null
+    },
+    {
+      "name": "N",
+      "id": null
+    },
+    {
+      "name": "O",
+      "id": null
+    },
+    {
+      "name": "P",
+      "id": null
+    },
+    {
+      "name": "Q",
+      "id": null
+    },
+    {
+      "name": "R",
+      "id": null
+    },
+    {
+      "name": "S",
+      "id": null
+    },
+    {
+      "name": "T",
+      "id": null
+    },
+    {
+      "name": "U",
+      "id": null
+    },
+    {
+      "name": "V",
+      "id": null
+    },
+    {
+      "name": "W",
+      "id": null
+    },
+    {
+      "name": "X",
+      "id": null
+    },
+    {
+      "name": "Y",
+      "id": null
+    },
+    {
+      "name": "Z",
+      "id": null
+    },
+    {
+      "name": "LeftWin",
+      "id": null
+    },
+    {
+      "name": "RightWin",
+      "id": null
+    },
+    {
+      "name": "Apps",
+      "id": null
+    },
+    {
+      "name": "Sleep",
+      "id": 95
+    },
+    {
+      "name": "NumPad0",
+      "id": null
+    },
+    {
+      "name": "NumPad1",
+      "id": null
+    },
+    {
+      "name": "NumPad2",
+      "id": null
+    },
+    {
+      "name": "NumPad3",
+      "id": null
+    },
+    {
+      "name": "NumPad4",
+      "id": null
+    },
+    {
+      "name": "NumPad5",
+      "id": null
+    },
+    {
+      "name": "NumPad6",
+      "id": null
+    },
+    {
+      "name": "NumPad7",
+      "id": null
+    },
+    {
+      "name": "NumPad8",
+      "id": null
+    },
+    {
+      "name": "NumPad9",
+      "id": null
+    },
+    {
+      "name": "Multiply",
+      "id": null
+    },
+    {
+      "name": "Add",
+      "id": null
+    },
+    {
+      "name": "Separator",
+      "id": null
+    },
+    {
+      "name": "Subtract",
+      "id": null
+    },
+    {
+      "name": "Decimal",
+      "id": null
+    },
+    {
+      "name": "Divide",
+      "id": null
+    },
+    {
+      "name": "F1",
+      "id": null
+    },
+    {
+      "name": "F2",
+      "id": null
+    },
+    {
+      "name": "F3",
+      "id": null
+    },
+    {
+      "name": "F4",
+      "id": null
+    },
+    {
+      "name": "F5",
+      "id": null
+    },
+    {
+      "name": "F6",
+      "id": null
+    },
+    {
+      "name": "F7",
+      "id": null
+    },
+    {
+      "name": "F8",
+      "id": null
+    },
+    {
+      "name": "F9",
+      "id": null
+    },
+    {
+      "name": "F10",
+      "id": null
+    },
+    {
+      "name": "F11",
+      "id": null
+    },
+    {
+      "name": "F12",
+      "id": null
+    },
+    {
+      "name": "F13",
+      "id": null
+    },
+    {
+      "name": "F14",
+      "id": null
+    },
+    {
+      "name": "F15",
+      "id": null
+    },
+    {
+      "name": "F16",
+      "id": null
+    },
+    {
+      "name": "F17",
+      "id": null
+    },
+    {
+      "name": "F18",
+      "id": null
+    },
+    {
+      "name": "F19",
+      "id": null
+    },
+    {
+      "name": "F20",
+      "id": null
+    },
+    {
+      "name": "F21",
+      "id": null
+    },
+    {
+      "name": "F22",
+      "id": null
+    },
+    {
+      "name": "F23",
+      "id": null
+    },
+    {
+      "name": "F24",
+      "id": null
+    },
+    {
+      "name": "NumLock",
+      "id": 144
+    },
+    {
+      "name": "Scroll",
+      "id": null
+    },
+    {
+      "name": "OemFjjisho",
+      "id": null
+    },
+    {
+      "name": "OemFjmasshou",
+      "id": null
+    },
+    {
+      "name": "OemFjtouroku",
+      "id": null
+    },
+    {
+      "name": "OemFjloya",
+      "id": null
+    },
+    {
+      "name": "OemFjroya",
+      "id": null
+    },
+    {
+      "name": "LeftShift",
+      "id": 160
+    },
+    {
+      "name": "RightShift",
+      "id": null
+    },
+    {
+      "name": "LeftControl",
+      "id": null
+    },
+    {
+      "name": "RightControl",
+      "id": null
+    },
+    {
+      "name": "LeftMenu",
+      "id": null
+    },
+    {
+      "name": "RightMenu",
+      "id": null
+    },
+    {
+      "name": "BrowserBack",
+      "id": null
+    },
+    {
+      "name": "BrowserForward",
+      "id": null
+    },
+    {
+      "name": "BrowserRefresh",
+      "id": null
+    },
+    {
+      "name": "BrowserStop",
+      "id": null
+    },
+    {
+      "name": "BrowserSearch",
+      "id": null
+    },
+    {
+      "name": "BrowserFavorites",
+      "id": null
+    },
+    {
+      "name": "BrowserHome",
+      "id": null
+    },
+    {
+      "name": "VolumeMute",
+      "id": null
+    },
+    {
+      "name": "VolumeDown",
+      "id": null
+    },
+    {
+      "name": "VolumeUp",
+      "id": null
+    },
+    {
+      "name": "MediaNextTrack",
+      "id": null
+    },
+    {
+      "name": "MediaPrevTrack",
+      "id": null
+    },
+    {
+      "name": "MediaStop",
+      "id": null
+    },
+    {
+      "name": "MediaPlaypause",
+      "id": null
+    },
+    {
+      "name": "LaunchMail",
+      "id": null
+    },
+    {
+      "name": "LaunchMediaselect",
+      "id": null
+    },
+    {
+      "name": "LaunchApp1",
+      "id": null
+    },
+    {
+      "name": "LaunchApp2",
+      "id": null
+    },
+    {
+      "name": "Oem1",
+      "id": 186
+    },
+    {
+      "name": "OemPlus",
+      "id": null
+    },
+    {
+      "name": "OemComma",
+      "id": null
+    },
+    {
+      "name": "OemMinus",
+      "id": null
+    },
+    {
+      "name": "OemPeriod",
+      "id": null
+    },
+    {
+      "name": "Oem2",
+      "id": null
+    },
+    {
+      "name": "Oem3",
+      "id": null
+    },
+    {
+      "name": "Abntc1",
+      "id": null
+    },
+    {
+      "name": "Abntc2",
+      "id": null
+    },
+    {
+      "name": "Oem4",
+      "id": 219
+    },
+    {
+      "name": "Oem5",
+      "id": null
+    },
+    {
+      "name": "Oem6",
+      "id": null
+    },
+    {
+      "name": "Oem7",
+      "id": null
+    },
+    {
+      "name": "Oem8",
+      "id": null
+    },
+    {
+      "name": "OemAx",
+      "id": 225
+    },
+    {
+      "name": "Oem102",
+      "id": null
+    },
+    {
+      "name": "IcoHelp",
+      "id": null
+    },
+    {
+      "name": "Ico00",
+      "id": null
+    },
+    {
+      "name": "Processkey",
+      "id": null
+    },
+    {
+      "name": "Icoclear",
+      "id": null
+    },
+    {
+      "name": "Packet",
+      "id": null
+    },
+    {
+      "name": "OemReset",
+      "id": 233
+    },
+    {
+      "name": "OemJump",
+      "id": null
+    },
+    {
+      "name": "OemPa1",
+      "id": null
+    },
+    {
+      "name": "OemPa2",
+      "id": null
+    },
+    {
+      "name": "OemPa3",
+      "id": null
+    },
+    {
+      "name": "OemWsctrl",
+      "id": null
+    },
+    {
+      "name": "OemCusel",
+      "id": null
+    },
+    {
+      "name": "OemAttn",
+      "id": null
+    },
+    {
+      "name": "OemFinish",
+      "id": null
+    },
+    {
+      "name": "OemCopy",
+      "id": null
+    },
+    {
+      "name": "OemAuto",
+      "id": null
+    },
+    {
+      "name": "OemEnlw",
+      "id": null
+    },
+    {
+      "name": "OemBackTab",
+      "id": null
+    },
+    {
+      "name": "Attn",
+      "id": null
+    },
+    {
+      "name": "Crsel",
+      "id": null
+    },
+    {
+      "name": "Exsel",
+      "id": null
+    },
+    {
+      "name": "Ereof",
+      "id": null
+    },
+    {
+      "name": "Play",
+      "id": null
+    },
+    {
+      "name": "Zoom",
+      "id": null
+    },
+    {
+      "name": "Noname",
+      "id": null
+    },
+    {
+      "name": "Pa1",
+      "id": null
+    },
+    {
+      "name": "OemClear",
+      "id": null
+    }
+  ],
+  "ScriptSound": [
+    {
+      "name": "Sound0",
+      "id": 0
+    },
+    {
+      "name": "Sound1",
+      "id": null
+    },
+    {
+      "name": "Sound2",
+      "id": null
+    },
+    {
+      "name": "Sound3",
+      "id": null
+    },
+    {
+      "name": "SoundParty1LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty1LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty2LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty2LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty3LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty3LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty4LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty4LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty5LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty5LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty6LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty6LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty7LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty7LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty8LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty8LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty9LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty9LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty10LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty10LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty11LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty11LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty12LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty12LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundParty13LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundParty13LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundStripClubLoop1S",
+      "id": null
+    },
+    {
+      "name": "SoundStripClubLoop1L",
+      "id": null
+    },
+    {
+      "name": "SoundStripClubLoop2S",
+      "id": null
+    },
+    {
+      "name": "SoundStripClubLoop2L",
+      "id": null
+    },
+    {
+      "name": "SoundWorkShopLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundWorkShopLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundSawmillLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundSawmillLoopL",
+      "id": null
+    },
+    {
+      "name": "Sound38",
+      "id": null
+    },
+    {
+      "name": "Sound39",
+      "id": null
+    },
+    {
+      "name": "SoundLaunderetteLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundLaunderetteLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundChinatownRestaurantS",
+      "id": null
+    },
+    {
+      "name": "SoundChinatownRestaurantL",
+      "id": null
+    },
+    {
+      "name": "SoundCiprianiResaurantS",
+      "id": null
+    },
+    {
+      "name": "SoundCiprianiResaurantL",
+      "id": null
+    },
+    {
+      "name": "Sound46S",
+      "id": null
+    },
+    {
+      "name": "Sound47L",
+      "id": null
+    },
+    {
+      "name": "SoundMarcoBistroS",
+      "id": null
+    },
+    {
+      "name": "SoundMarcoBistroL",
+      "id": null
+    },
+    {
+      "name": "SoundAirportLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundAirportLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundShopLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundShopLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundCinemaLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundCinemaLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundDocksLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundDocksLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundHomeLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundHomeLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundFrankiePiano",
+      "id": null
+    },
+    {
+      "name": "SoundParty1Loop",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema1S",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema1L",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema2S",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema2L",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema3S",
+      "id": null
+    },
+    {
+      "name": "SoundPornCinema3L",
+      "id": null
+    },
+    {
+      "name": "SoundBankAlarmLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundBankAlarmLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundPoliceBallLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundPoliceBallLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundRaveLoopIndustrialS",
+      "id": null
+    },
+    {
+      "name": "SoundRaveLoopIndustrialL",
+      "id": null
+    },
+    {
+      "name": "Sound74",
+      "id": null
+    },
+    {
+      "name": "Sound75",
+      "id": null
+    },
+    {
+      "name": "SoundPoliceCellBeatingLoopS",
+      "id": null
+    },
+    {
+      "name": "SoundPoliceCellBeatingLoopL",
+      "id": null
+    },
+    {
+      "name": "SoundInjuredPedMaleOuchS",
+      "id": null
+    },
+    {
+      "name": "SoundInjuredPedMaleOuchL",
+      "id": null
+    },
+    {
+      "name": "SoundInjuredPedFemaleOuchS",
+      "id": null
+    },
+    {
+      "name": "SoundInjuredPedFemaleOuchL",
+      "id": null
+    },
+    {
+      "name": "SoundEvidencePickup",
+      "id": 82
+    },
+    {
+      "name": "SoundUnloadGold",
+      "id": 83
+    },
+    {
+      "name": "SoundRave1LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundRave1LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundRave2LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundRave2LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundRave3LoopS",
+      "id": null
+    },
+    {
+      "name": "SoundRave3LoopL",
+      "id": null
+    },
+    {
+      "name": "SoundMistySexS",
+      "id": null
+    },
+    {
+      "name": "SoundMistySexL",
+      "id": null
+    },
+    {
+      "name": "SoundGateStartClunk",
+      "id": null
+    },
+    {
+      "name": "SoundGateStopClunk",
+      "id": null
+    },
+    {
+      "name": "SoundPartMissionComplete",
+      "id": 94
+    },
+    {
+      "name": "SoundChunkyRunShout",
+      "id": null
+    },
+    {
+      "name": "SoundSecurityGuardAwayShout",
+      "id": null
+    },
+    {
+      "name": "SoundRaceStart3",
+      "id": 97
+    },
+    {
+      "name": "SoundRaceStart2",
+      "id": 98
+    },
+    {
+      "name": "SoundRaceStart1",
+      "id": 99
+    },
+    {
+      "name": "SoundRaceStartGo",
+      "id": 100
+    },
+    {
+      "name": "SoundSwatPedShout",
+      "id": null
+    },
+    {
+      "name": "SoundPretendFireLoop",
+      "id": null
+    },
+    {
+      "name": "SoundAmmunationChat1",
+      "id": null
+    },
+    {
+      "name": "SoundAmmunationChat2",
+      "id": null
+    },
+    {
+      "name": "SoundAmmunationChat3",
+      "id": null
+    },
+    {
+      "name": "SoundBulletHitGround1",
+      "id": null
+    },
+    {
+      "name": "SoundBulletHitGround2",
+      "id": null
+    },
+    {
+      "name": "SoundBulletHitGround3",
+      "id": null
+    },
+    {
+      "name": "SoundBulletHitWater",
+      "id": null
+    },
+    {
+      "name": "SoundTrainAnnouncement1",
+      "id": null
+    },
+    {
+      "name": "SoundTrainAnnouncement2",
+      "id": null
+    },
+    {
+      "name": "SoundPayphoneRinging",
+      "id": null
+    },
+    {
+      "name": "Sound113",
+      "id": null
+    },
+    {
+      "name": "SoundGlassBreakL",
+      "id": null
+    },
+    {
+      "name": "SoundGlassBreakS",
+      "id": null
+    },
+    {
+      "name": "SoundGlassCrack",
+      "id": null
+    },
+    {
+      "name": "SoundGlassLightBreak",
+      "id": null
+    },
+    {
+      "name": "SoundBoxDestroyed1",
+      "id": null
+    },
+    {
+      "name": "SoundBoxDestroyed2",
+      "id": null
+    },
+    {
+      "name": "SoundMetalCollision",
+      "id": null
+    },
+    {
+      "name": "SoundTireCollision",
+      "id": null
+    },
+    {
+      "name": "SoundGunshellDrop",
+      "id": null
+    },
+    {
+      "name": "SoundGunshellDropSoft",
+      "id": null
+    },
+    {
+      "name": "SoundTotal",
+      "id": null
+    },
+    {
+      "name": "SoundInvalid",
+      "id": 125
+    }
+  ]
+}

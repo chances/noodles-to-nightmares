@@ -38,6 +38,8 @@ export interface Field {
   numeric?: "int" | "float";
   /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`; see `ENUMS` in `sprites.ts`. */
   enum?: string;
+  /** An `enum` field the editor fills by typing, rather than from a select, because its list is long. */
+  typeahead?: boolean;
   /** The declared type a `handle` field's variable has in variables.txt, e.g. `Blip`; the editor offers only those. */
   varType?: string;
 }
@@ -75,7 +77,21 @@ export interface Descriptor {
 }
 
 export interface StepDescriptor extends Descriptor {
-  group: "Text" | "Camera" | "Map" | "Result" | "Player" | "World";
+  group:
+    | "Text"
+    | "Camera"
+    | "Map"
+    | "Result"
+    | "Player"
+    | "Character"
+    | "Vehicle"
+    | "Pickup"
+    | "Phone"
+    | "Streaming"
+    | "Sound"
+    | "Math"
+    | "Clock"
+    | "Debugger";
   /**
    * Gives the card a "Shown" checkbox, checked when `on`. Flipping it turns the card into its `partner`, so the
    * card's title and Sanny follow the checkbox: "Add Blip" when shown, "Remove Blip" when not.
@@ -199,6 +215,7 @@ export const stepDescriptors: StepDescriptor[] = [
         type: "name",
         default: "Savehouse",
         enum: "RadarSprite",
+        typeahead: true,
       },
     ],
   },
@@ -325,7 +342,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "requestModel",
     label: "Request Model",
-    group: "World",
+    group: "Streaming",
     lines: ["Streaming.RequestModel({model})"],
     fields: [{
       name: "model",
@@ -338,14 +355,14 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "loadModels",
     label: "Load Models Now",
-    group: "World",
+    group: "Streaming",
     lines: ["Streaming.LoadAllModelsNow()"],
     fields: [],
   },
   {
     name: "soundAt",
     label: "Play Sound",
-    group: "World",
+    group: "Sound",
     lines: [
       "Sound.AddOneOffSound({spot}_X, {spot}_Y, {spot}_Z, ScriptSound.{sound})",
     ],
@@ -353,6 +370,7 @@ export const stepDescriptors: StepDescriptor[] = [
       name: "sound",
       label: "Sound",
       type: "name",
+      enum: "ScriptSound",
       default: "SoundPayphoneRinging",
     }],
   },
@@ -366,82 +384,86 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "wait",
     label: "Wait",
-    group: "World",
+    group: "Clock",
     lines: ["wait {ms}"],
     fields: [{ ...ms, label: "Wait (ms)", default: "0" }],
   },
   {
-    name: "loadSpecialCharacter",
-    label: "Load Special Character",
-    group: "World",
-    lines: ["load_special_character {slot} 1 {model} '{name}'"],
-    fields: [{
-      name: "slot",
-      label: "Slot",
-      type: "number",
-      min: 1,
-      default: "1",
-    }, {
-      name: "model",
-      label: "Model",
-      type: "expr",
-      default: "#SPECIAL01",
-    }, {
-      name: "name",
-      label: "Name",
-      type: "name",
-      default: "FRANKIE",
-    }],
-  },
-  {
     name: "charCreate",
     label: "Create Character",
-    group: "World",
+    group: "Character",
     lines: [
-      "Char.Create(PedType.Special, {model}, {spot}_X, {spot}_Y, {spot}_Z, {char})",
+      "load_special_character {slot} 1 {model} '{name}'",
+      "Char.Create(PedType.{pedType}, {model}, {spot}_X, {spot}_Y, {spot}_Z, {char})",
     ],
-    fields: [{
-      name: "model",
-      label: "Model",
-      type: "expr",
-      default: "#SPECIAL01",
-    }, { ...spot, default: "NOODLES_SAL" }, charField],
+    fields: [
+      {
+        name: "slot",
+        label: "Slot",
+        type: "number",
+        min: 1,
+        default: "1",
+      },
+      {
+        name: "name",
+        label: "Name",
+        type: "name",
+        default: "FRANKIE",
+      },
+      {
+        name: "model",
+        label: "Model",
+        type: "expr",
+        default: "#SPECIAL01",
+      },
+      {
+        name: "pedType",
+        label: "PedType",
+        type: "name",
+        enum: "PedType",
+        default: "Special",
+      },
+      { ...spot, default: "NOODLES_SAL" },
+      charField,
+    ],
   },
   {
     name: "charPersonality",
     label: "Set Personality",
-    group: "World",
+    group: "Character",
     lines: ["Char.SetPersonality({char}, PedStat.{stat})"],
     fields: [charField, {
       name: "stat",
       label: "Personality",
       type: "name",
+      enum: "PedStat",
       default: "ToughGuy",
     }],
   },
   {
     name: "charFacePlayer",
     label: "Character Faces Player",
-    group: "World",
+    group: "Character",
     lines: ["Char.TurnToFacePlayer({char}, $player)"],
     fields: [charField],
   },
   {
     name: "charLookPlayer",
     label: "Character Looks at Player",
-    group: "World",
+    group: "Character",
     lines: ["Char.LookAtPlayerAlways({char}, $player)"],
     fields: [charField],
   },
   {
     name: "charAnimGroup",
     label: "Animation Group",
-    group: "World",
+    group: "Character",
     lines: ["Char.SetAnimGroup({char}, AnimGroup.{animGroup})"],
     fields: [charField, {
       name: "animGroup",
       label: "Animation Group",
       type: "name",
+      enum: "AnimGroup",
       default: "Man",
     }],
   },
@@ -449,7 +471,9 @@ export const stepDescriptors: StepDescriptor[] = [
     name: "cameraAtChar",
     label: "Camera looks at character",
     group: "Camera",
-    lines: ["Camera.PointAtChar({char}, CameraMode.Fixed, SwitchType.{switch})"],
+    lines: [
+      "Camera.PointAtChar({char}, CameraMode.Fixed, SwitchType.{switch})",
+    ],
     fields: [charField, {
       name: "switch",
       label: "Cut",
@@ -500,7 +524,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "charHeading",
     label: "Read Character Heading",
-    group: "World",
+    group: "Character",
     lines: ["{var} = Char.GetHeading({char})"],
     fields: [{
       name: "var",
@@ -512,7 +536,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "invertHeading",
     label: "Invert Heading",
-    group: "World",
+    group: "Math",
     lines: ["{var} = invertHeading({source})"],
     fields: [{
       name: "var",
@@ -562,28 +586,28 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "charStopLooking",
     label: "Character Stops Looking",
-    group: "World",
+    group: "Character",
     lines: ["Char.StopLooking({char})"],
     fields: [charField],
   },
   {
     name: "charRunning",
     label: "Character Runs",
-    group: "World",
+    group: "Character",
     lines: ["Char.SetRunning({char}, {running})"],
     fields: [charField, toggle("running", "Runs", true)],
   },
   {
     name: "charGoto",
     label: "Character Walks to Spot",
-    group: "World",
+    group: "Character",
     lines: ["Char.SetObjGotoCoordOnFoot({char}, {spot}_X, {spot}_Y)"],
     fields: [charField, { ...spot, default: "ROSA_SPAWN" }],
   },
   {
     name: "charRemove",
     label: "Remove Character",
-    group: "World",
+    group: "Character",
     lines: [
       "Char.MarkAsNoLongerNeeded({char})",
       "Char.Delete({char})",
@@ -601,7 +625,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "carCreate",
     label: "Create Car at Spot",
-    group: "World",
+    group: "Vehicle",
     lines: ["{car} = Car.Create({model}, {spot}_X, {spot}_Y, {spot}_Z)"],
     fields: [{
       name: "car",
@@ -619,7 +643,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "carModel",
     label: "Set Car Model Variable",
-    group: "World",
+    group: "Vehicle",
     lines: ["{var} = {model}"],
     fields: [{
       name: "var",
@@ -678,7 +702,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "pickupCreate",
     label: "Create Pickup at Spot",
-    group: "World",
+    group: "Pickup",
     lines: [
       "{pickup} = Pickup.Create({model}, PickupType.OnStreet, {spot}_X, {spot}_Y, {spot}_Z)",
     ],
@@ -699,7 +723,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "pickupRemove",
     label: "Remove Pickup",
-    group: "World",
+    group: "Pickup",
     lines: ["Pickup.Remove({pickup})"],
     fields: [{
       name: "pickup",
@@ -712,7 +736,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "phoneGrab",
     label: "Pick Up Phone",
-    group: "World",
+    group: "Phone",
     lines: ["Phone.Grab({spot}_X, {spot}_Y, {var})"],
     fields: [{ ...spot, default: "PAYPHONE" }, {
       name: "var",
@@ -724,7 +748,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "phoneOn",
     label: "Turn Phone On",
-    group: "World",
+    group: "Phone",
     lines: ["Phone.TurnOn({var})"],
     fields: [{
       name: "var",
@@ -736,7 +760,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "phoneOff",
     label: "Turn Phone Off",
-    group: "World",
+    group: "Phone",
     lines: ["Phone.TurnOff({var})"],
     fields: [{
       name: "var",
@@ -748,7 +772,7 @@ export const stepDescriptors: StepDescriptor[] = [
   {
     name: "debugLog",
     label: "Debug Log",
-    group: "World",
+    group: "Debugger",
     lines: ["debugLogInt({key}, {value})"],
     fields: [{
       name: "key",
@@ -903,7 +927,13 @@ export const condDescriptors: CondDescriptor[] = [
     label: "Key is pressed",
     group: "Input",
     lines: ["Pad.IsKeyPressed(KeyCode.{key})"],
-    fields: [{ name: "key", label: "Key", type: "name", default: "Space" }],
+    fields: [{
+      name: "key",
+      label: "Key",
+      type: "name",
+      enum: "KeyCode",
+      default: "Space",
+    }],
   },
   {
     name: "carUpsideDown",

@@ -80,14 +80,23 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ["clearUi", {}, step.clearUi()],
     ["wait", { ms: "0" }, step.wait(0)],
     [
-      "loadSpecialCharacter",
-      { slot: "1", model: "#SPECIAL01", name: "FRANKIE" },
-      step.loadSpecialCharacter(1, "#SPECIAL01", "FRANKIE"),
-    ],
-    [
       "charCreate",
-      { model: "#SPECIAL01", spot: "NOODLES_SAL", char: "sal" },
-      step.charCreate("#SPECIAL01", "NOODLES_SAL", "sal"),
+      {
+        slot: "1",
+        name: "FRANKIE",
+        model: "#SPECIAL01",
+        pedType: "Special",
+        spot: "NOODLES_SAL",
+        char: "sal",
+      },
+      step.charCreate(
+        1,
+        "FRANKIE",
+        "#SPECIAL01",
+        "Special",
+        "NOODLES_SAL",
+        "sal",
+      ),
     ],
     [
       "charPersonality",
@@ -421,8 +430,6 @@ Deno.test("Shady Job's steps and conditions read as typed controls, except the l
     }
   }
   assertEquals(untyped, [
-    "load_special_character {slotId} 1 {modelName} 'FRANKIE'",
-    "Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal) | Char.SetPersonality(sal, PedStat.ToughGuy) | Char.TurnToFacePlayer(sal, $player) | Char.LookAtPlayerAlways(sal, $player) | Char.SetAnimGroup(sal, AnimGroup.Man) | wait 0",
     "request_model {modelId} #RUMPO",
     "load_all_models_now",
     "Car.TurnToFaceCoord($myCar, PAYPHONE_X, PAYPHONE_BLIP_Y)",

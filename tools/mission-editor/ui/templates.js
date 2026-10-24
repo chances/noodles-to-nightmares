@@ -126,8 +126,8 @@ export function flipShown(steps, descriptor, values, remembered, context) {
 export function enumOptions(members) {
   return members.map((m) => ({
     value: m.name,
-    meta: `id ${m.id}`,
-    search: `${m.name} ${m.id}`,
+    meta: m.id === null ? "" : `id ${m.id}`,
+    search: m.id === null ? m.name : `${m.name} ${m.id}`,
   }));
 }
 

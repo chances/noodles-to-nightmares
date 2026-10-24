@@ -64,11 +64,16 @@ export const step = {
   ],
   clearUi: (): Step => ["clearUI()"],
   wait: (ms: Expr): Step => [`wait ${ms}`],
-  loadSpecialCharacter: (slot: Expr, model: Expr, name: string): Step => [
+  charCreate: (
+    slot: Expr,
+    name: string,
+    model: Expr,
+    pedType: string,
+    spot: Spot,
+    char: Expr,
+  ): Step => [
     `load_special_character ${slot} 1 ${model} '${name}'`,
-  ],
-  charCreate: (model: Expr, spot: Spot, char: Expr): Step => [
-    `Char.Create(PedType.Special, ${model}, ${coords(spot, 3)}, ${char})`,
+    `Char.Create(PedType.${pedType}, ${model}, ${coords(spot, 3)}, ${char})`,
   ],
   charPersonality: (char: Expr, stat: string): Step => [
     `Char.SetPersonality(${char}, PedStat.${stat})`,
@@ -109,7 +114,9 @@ export const step = {
   playerFaceChar: (char: Expr): Step => [
     `Player.TurnToFaceChar($player, ${char})`,
   ],
-  playerHeading: (angle: Expr): Step => [`Player.SetHeading($player, ${angle})`],
+  playerHeading: (
+    angle: Expr,
+  ): Step => [`Player.SetHeading($player, ${angle})`],
   playerLookChar: (char: Expr): Step => [
     `Player.LookAtCharAlways($player, ${char})`,
   ],
@@ -141,7 +148,9 @@ export const step = {
   ],
   blipRemoveVar: (variable: Expr): Step => [`Blip.Remove(${variable})`],
   pickupCreate: (pickup: Expr, model: Expr, spot: Spot): Step => [
-    `${pickup} = Pickup.Create(${model}, PickupType.OnStreet, ${coords(spot, 3)})`,
+    `${pickup} = Pickup.Create(${model}, PickupType.OnStreet, ${
+      coords(spot, 3)
+    })`,
   ],
   pickupRemove: (pickup: Expr): Step => [`Pickup.Remove(${pickup})`],
   phoneGrab: (spot: Spot2D, variable: Expr): Step => [

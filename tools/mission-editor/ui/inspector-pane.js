@@ -316,7 +316,7 @@ function ConstRow({ name, value, onChange, onRemove }) {
 const NAME_FIELD = { type: "name" };
 
 /** The mission-level form, shown when no state is selected. */
-function MissionForm({ doc, edit }) {
+function MissionForm({ doc, edit, onSelect }) {
   const { mission } = doc;
   const states = Object.keys(mission.states);
   const consts = Object.entries(mission.consts ?? {});
@@ -381,7 +381,7 @@ function MissionForm({ doc, edit }) {
       <//>
 
       <${Section} heading="Failure Conditions">
-        <p class="hint">Any one of these sends the mission to ${mission.onFail}, in every state that checks.</p>
+        <p class="hint">Any one of these sends the mission to ${html`<${StateLink} id=${mission.onFail} onSelect=${onSelect} />`}, in every state that checks.</p>
         <${CondList} conds=${mission.fail} emptyText="No failure conditions exist, so this mission cannot fail." onChange=${(v) => change("Fail Conditions", (m) => { m.fail = v; })} />
       <//>
 
@@ -440,5 +440,5 @@ export function InspectorPane({ doc, edges, problems, selected, onSelect, edit }
   if (selected && doc.mission.states[selected]) {
     return html`<${StateForm} key=${selected} doc=${doc} edges=${edges} problems=${problems} id=${selected} onSelect=${onSelect} edit=${edit} />`;
   }
-  return html`<${MissionForm} doc=${doc} edit=${edit} />`;
+  return html`<${MissionForm} doc=${doc} edit=${edit} onSelect=${onSelect} />`;
 }

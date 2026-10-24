@@ -143,6 +143,19 @@ Deno.test("the radar sprite list matches the ids constants.txt relies on", () =>
   assertEquals(ENUMS.RadarSprite.some((m) => m.name === "None"), false);
 });
 
+Deno.test("a ScriptSound the library names without a number is still a member", () => {
+  const sound = (name: string) =>
+    withLines(
+      `Sound.AddOneOffSound(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, ScriptSound.${name})`,
+    );
+  for (const names of [undefined, known]) {
+    assertEquals(messages(sound("SoundPayphoneRinging"), names), []);
+    assertEquals(messages(sound("SoundNotASound"), names), [
+      "error: ScriptSound.SoundNotASound does not exist.",
+    ]);
+  }
+});
+
 Deno.test("a variable of the wrong declared type is an error", () => {
   const blip = (handle: string) =>
     withLines(

@@ -133,8 +133,13 @@ export function FieldInput({ field, value, onCommit }) {
     // The row's own label wraps this input, so the checkbox needs none of its own.
     return html`<input type="checkbox" class="toggle" checked=${value === "true"} onChange=${(e) => { last.current = String(e.currentTarget.checked); onCommit(last.current); }} />`;
   }
-  // A Sanny enum member (a map icon) is picked from the enum's list.
-  if (field.enum) return html`<${Combo} field=${field} value=${value} options=${enumOptions(enums[field.enum] ?? [])} label=${field.label} missing=${`is not a ${field.enum} member`} onCommit=${onCommit} />`;
+  // A Sanny enum member is picked from the enum's list: a select, or a typeahead for a long list such as the map icons.
+  if (field.enum && field.typeahead) return html`<${Combo} field=${field} value=${value} options=${enumOptions(enums[field.enum] ?? [])} label=${field.label} missing=${`is not a ${field.enum} member`} onCommit=${onCommit} />`;
+  if (field.enum) {
+    const members = enumOptions(enums[field.enum] ?? []).map((o) => o.value);
+    const options = members.includes(value) ? members : [value, ...members];
+    return html`<select value=${value} onChange=${choose}>${options.map((o) => html`<option key=${o} value=${o}>${o}</option>`)}</select>`;
+  }
   if (field.type === "spot") return html`<${Combo} field=${field} value=${value} options=${spotOptions(spots)} label="Spot" onCommit=${onCommit} />`;
   // A number or variable is typed freely; the list offers the project's constants (of the field's number type) or variables (of its type).
   if (field.type === "expr" || field.type === "handle") {
