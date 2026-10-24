@@ -163,7 +163,7 @@ Deno.test("a variable of the wrong declared type is an error", () => {
     );
   assertEquals(messages(blip("$SafeBlip"), known), []);
   assertEquals(messages(blip("$myCar"), known), [
-    "error: Blip Variable needs a Blip variable, but $myCar is a Car.",
+    "error: Variable needs a Blip variable, but $myCar is a Car.",
   ]);
   assertEquals(messages(blip("$Blip"), known), [
     "error: $Blip is used, but variables.txt does not declare it.",

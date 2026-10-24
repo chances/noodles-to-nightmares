@@ -101,14 +101,25 @@ export function spotOptions(spots) {
   }));
 }
 
+/** The key `remembered` keeps the Add form a Shown card was last flipped from, so Remove Blip can return to it. */
+const LAST_FORM = "@form";
+
 /**
  * The values a card with a "Shown" checkbox takes when the box is flipped: its partner descriptor, with the
- * fields both share carried over. `remembered` holds every value the card has had, so flipping back restores
- * what the other form could not hold (a removed blip has no spot). Returns `{ descriptor, values, remembered }`.
+ * fields both share carried over. A list of partners flips to the one the card last flipped from, or the first.
+ * `remembered` holds every value the card has had, so flipping back restores what the other form could not hold
+ * (a removed blip has no spot). Returns `{ descriptor, values, remembered }`.
  */
 export function flipShown(steps, descriptor, values, remembered, context) {
-  const partner = steps.find((d) => d.name === descriptor.shown.partner);
+  const partners = [descriptor.shown.partner].flat();
   const kept = { ...remembered, ...values };
+  if (descriptor.shown.on) {
+    kept[LAST_FORM] = descriptor.name;
+  }
+  const name = partners.includes(kept[LAST_FORM])
+    ? kept[LAST_FORM]
+    : partners[0];
+  const partner = steps.find((d) => d.name === name);
   const fresh = defaults(
     partner,
     context.monitorIds,

@@ -147,7 +147,6 @@ export const step = {
   blipForPickup: (variable: Expr, pickup: Expr): Step => [
     `${variable} = Blip.AddForPickup(${pickup})`,
   ],
-  blipRemoveVar: (variable: Expr): Step => [`Blip.Remove(${variable})`],
   pickupCreate: (pickup: Expr, model: Expr, spot: Spot): Step => [
     `${pickup} = Pickup.Create(${model}, PickupType.OnStreet, ${
       coords(spot, 3)
@@ -170,7 +169,9 @@ export const step = {
   storeClock: (): Step => ["Clock.Store()"],
   restoreClock: (): Step => ["Clock.Restore()"],
   /** Shows a countdown on the HUD that counts the value in `timer`, e.g. `TIMERB`. */
-  showTimer: (timer: Expr = "$hudTimer"): Step => [`Hud.DisplayTimer(${timer})`],
+  showTimer: (
+    timer: Expr = "$hudTimer",
+  ): Step => [`Hud.DisplayTimer(${timer})`],
   clearTimer: (timer: Expr = "$hudTimer"): Step => [`Hud.ClearTimer(${timer})`],
   freezeTimer: (on: boolean): Step => [`Hud.FreezeTimer(${on})`],
   forceWeather: (type: string): Step => [`Weather.Force(WeatherType.${type})`],

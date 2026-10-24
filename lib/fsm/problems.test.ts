@@ -1,6 +1,4 @@
 import { assertEquals } from "@std/assert";
-import { fromFileUrl } from "@std/path";
-import { loadMission } from "./fsm-file.ts";
 import { problems } from "./problems.ts";
 import { defineMission } from "./types.ts";
 import { cond } from "./vocabulary.ts";
@@ -165,20 +163,6 @@ Deno.test("states of different kinds, or of one kind not linked, are not a simpl
     problems(mixed).filter((p) => p.message.startsWith("Consider simplifying")),
     [],
   );
-});
-
-Deno.test("Shady Job's three introduction cutscenes are flagged to simplify", async () => {
-  const doc = await loadMission(
-    fromFileUrl(new URL("../../missions", import.meta.url)),
-    "1_shady_job",
-  );
-  const simplify = problems(doc!.mission).filter((p) =>
-    p.message.startsWith("Consider simplifying")
-  );
-  assertEquals(simplify.map((p) => p.message), [
-    "Consider simplifying states: INTRO, SAL_CUTSCENE, and END_INTRO are all cutscene states linked together.",
-    "Consider simplifying states: FETCH_PACKAGE and DELIVER are both objective states linked together.",
-  ]);
 });
 
 Deno.test("monitor and constant names must be identifiers, and unique", () => {

@@ -134,9 +134,11 @@ export interface StepDescriptor extends Descriptor {
   group: Group;
   /**
    * Gives the card a "Shown" checkbox, checked when `on`. Flipping it turns the card into its `partner`, so the
-   * card's title and Sanny follow the checkbox: "Add Blip" when shown, "Remove Blip" when not.
+   * card's title and Sanny follow the checkbox: "Add Blip" when shown, "Remove Blip" when not. A list `partner`
+   * is flipped to the form the card was last flipped from, or its first entry. `label` names the checkbox and
+   * defaults to "Shown".
    */
-  shown?: { on: boolean; partner: string };
+  shown?: { on: boolean; partner: string | string[]; label?: string };
 }
 
 export interface CondDescriptor extends Descriptor {
@@ -165,7 +167,7 @@ const spot: Field = {
 
 const blipHandle: Field = {
   name: "handle",
-  label: "Blip Variable",
+  label: "Variable",
   type: "handle",
   default: "$Blip",
   varType: "Blip",
@@ -254,6 +256,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "radarFlashOn",
+    shown: { on: true, partner: "radarFlashOff", label: "Flashing" },
     label: "Radar Flash On",
     group: "Hud",
     lines: ["Hud.FlashObject(HudObject.Radar)"],
@@ -261,6 +264,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "radarFlashOff",
+    shown: { on: false, partner: "radarFlashOn", label: "Flashing" },
     label: "Radar Flash Off",
     group: "Hud",
     lines: ["Hud.FlashObject(0)"],
@@ -270,9 +274,17 @@ export const stepDescriptors: StepDescriptor[] = [
     name: "blipRemove",
     label: "Remove Blip",
     group: "Blip",
-    shown: { on: false, partner: "blipAt" },
+    shown: {
+      on: false,
+      partner: ["blipAt", "blipForCoord", "blipForPickup", "blipForChar"],
+    },
     lines: ["Blip.Remove({handle})"],
-    fields: [blipHandle],
+    fields: [{
+      name: "handle",
+      label: "Variable",
+      type: "expr",
+      default: "$Blip",
+    }],
   },
   {
     name: "blipAt",
@@ -297,6 +309,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "cameraAtPlayer",
+    shown: { on: true, partner: "restoreJumpcut", label: "Looking" },
     label: "Camera looks at player",
     group: "Camera",
     lines: [
@@ -311,6 +324,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "restoreJumpcut",
+    shown: { on: false, partner: "cameraAtPlayer", label: "Fixed" },
     label: "Restore Camera",
     group: "Camera",
     lines: ["Camera.RestoreJumpcut()"],
@@ -417,6 +431,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "requestModel",
+    shown: { on: true, partner: "streamUnloadModel", label: "Needed" },
     label: "Request Model",
     group: "Streaming",
     lines: ["Streaming.RequestModel({model})"],
@@ -466,6 +481,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "charCreate",
+    shown: { on: true, partner: "charRemove", label: "Exists" },
     label: "Create Character",
     group: "Char",
     lines: [
@@ -525,6 +541,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "charLookPlayer",
+    shown: { on: true, partner: "charStopLooking", label: "Looking" },
     label: "Character Looks at Player",
     group: "Char",
     lines: ["Char.LookAtPlayerAlways({char}, $player)"],
@@ -647,6 +664,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "playerLookChar",
+    shown: { on: true, partner: "playerStopLooking", label: "Looking" },
     label: "Player Looks at Character",
     group: "Player",
     lines: ["Player.LookAtCharAlways($player, {char})"],
@@ -654,6 +672,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "playerStopLooking",
+    shown: { on: false, partner: "playerLookChar", label: "Looking" },
     label: "Player Stops Looking",
     group: "Player",
     lines: ["Player.StopLooking($player)"],
@@ -661,6 +680,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "charStopLooking",
+    shown: { on: false, partner: "charLookPlayer", label: "Looking" },
     label: "Character Stops Looking",
     group: "Char",
     lines: ["Char.StopLooking({char})"],
@@ -682,6 +702,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "charRemove",
+    shown: { on: false, partner: "charCreate", label: "Exists" },
     label: "Remove Character",
     group: "Char",
     lines: [
@@ -704,6 +725,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "carCreate",
+    shown: { on: true, partner: "carDelete" },
     label: "Create Car at Spot",
     group: "Car",
     lines: ["{car} = Car.Create({model}, {spot}_X, {spot}_Y, {spot}_Z)"],
@@ -741,10 +763,11 @@ export const stepDescriptors: StepDescriptor[] = [
     name: "blipForCoord",
     label: "Add Blip at Spot",
     group: "Blip",
-    lines: ["{var} = Blip.AddForCoord({spot}_X, {spot}_Y, {spot}_Z)"],
+    shown: { on: true, partner: "blipRemove" },
+    lines: ["{handle} = Blip.AddForCoord({spot}_X, {spot}_Y, {spot}_Z)"],
     fields: [{
-      name: "var",
-      label: "Blip Variable",
+      name: "handle",
+      label: "Variable",
       type: "expr",
       default: "deliveryBlip",
     }, { ...spot, default: "DELIVERY" }],
@@ -753,10 +776,11 @@ export const stepDescriptors: StepDescriptor[] = [
     name: "blipForPickup",
     label: "Add Blip for Pickup",
     group: "Blip",
-    lines: ["{var} = Blip.AddForPickup({pickup})"],
+    shown: { on: true, partner: "blipRemove" },
+    lines: ["{handle} = Blip.AddForPickup({pickup})"],
     fields: [{
-      name: "var",
-      label: "Blip Variable",
+      name: "handle",
+      label: "Variable",
       type: "expr",
       default: "pickupBlip",
     }, {
@@ -768,19 +792,8 @@ export const stepDescriptors: StepDescriptor[] = [
     }],
   },
   {
-    name: "blipRemoveVar",
-    label: "Remove Blip Variable",
-    group: "Blip",
-    lines: ["Blip.Remove({var})"],
-    fields: [{
-      name: "var",
-      label: "Blip Variable",
-      type: "expr",
-      default: "payphoneBlip",
-    }],
-  },
-  {
     name: "pickupCreate",
+    shown: { on: true, partner: "pickupRemove", label: "Exists" },
     label: "Create Pickup at Spot",
     group: "Pickup",
     lines: [
@@ -802,6 +815,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "pickupRemove",
+    shown: { on: false, partner: "pickupCreate", label: "Exists" },
     label: "Remove Pickup",
     group: "Pickup",
     lines: ["Pickup.Remove({pickup})"],
@@ -827,6 +841,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "phoneOn",
+    shown: { on: true, partner: "phoneOff", label: "On" },
     label: "Turn Phone On",
     group: "Phone",
     lines: ["Phone.TurnOn({var})"],
@@ -839,6 +854,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "phoneOff",
+    shown: { on: false, partner: "phoneOn", label: "On" },
     label: "Turn Phone Off",
     group: "Phone",
     lines: ["Phone.TurnOff({var})"],
@@ -903,6 +919,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "storeClock",
+    shown: { on: true, partner: "restoreClock", label: "Stored" },
     label: "Store Clock",
     group: "Clock",
     lines: ["Clock.Store()"],
@@ -910,6 +927,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "restoreClock",
+    shown: { on: false, partner: "storeClock", label: "Stored" },
     label: "Restore Clock",
     group: "Clock",
     lines: ["Clock.Restore()"],
@@ -917,6 +935,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "showTimer",
+    shown: { on: true, partner: "clearTimer" },
     label: "Show Timer",
     group: "Hud",
     lines: ["Hud.DisplayTimer({timer})"],
@@ -929,6 +948,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "clearTimer",
+    shown: { on: false, partner: "showTimer" },
     label: "Clear Timer",
     group: "Hud",
     lines: ["Hud.ClearTimer({timer})"],
@@ -948,6 +968,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "forceWeather",
+    shown: { on: true, partner: "releaseWeather", label: "Forced" },
     label: "Force Weather",
     group: "Weather",
     lines: ["Weather.Force(WeatherType.{type})"],
@@ -974,6 +995,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "releaseWeather",
+    shown: { on: false, partner: "forceWeather", label: "Forced" },
     label: "Release Weather",
     group: "Weather",
     lines: ["Weather.Release()"],
@@ -1131,6 +1153,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "openGarage",
+    shown: { on: true, partner: "closeGarage", label: "Open" },
     label: "Open Garage",
     group: "Garage",
     lines: ["Garage.Open({garage})"],
@@ -1138,6 +1161,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "closeGarage",
+    shown: { on: false, partner: "openGarage", label: "Open" },
     label: "Close Garage",
     group: "Garage",
     lines: ["Garage.Close({garage})"],
@@ -1145,6 +1169,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "activateGarage",
+    shown: { on: true, partner: "deactivateGarage", label: "Active" },
     label: "Activate Garage",
     group: "Garage",
     lines: ["Garage.Activate({garage})"],
@@ -1152,6 +1177,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "deactivateGarage",
+    shown: { on: false, partner: "activateGarage", label: "Active" },
     label: "Deactivate Garage",
     group: "Garage",
     lines: ["Garage.Deactivate({garage})"],
@@ -1187,10 +1213,11 @@ export const stepDescriptors: StepDescriptor[] = [
     name: "blipForChar",
     label: "Add Blip for Character",
     group: "Blip",
-    lines: ["{var} = Blip.AddForChar({char})"],
+    shown: { on: true, partner: "blipRemove" },
+    lines: ["{handle} = Blip.AddForChar({char})"],
     fields: [{
-      name: "var",
-      label: "Blip Variable",
+      name: "handle",
+      label: "Variable",
       type: "expr",
       default: "charBlip",
     }, charField],
@@ -1310,6 +1337,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "carDelete",
+    shown: { on: false, partner: "carCreate" },
     label: "Delete Car",
     group: "Car",
     lines: ["Car.Delete({car})"],
@@ -1495,6 +1523,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "showCounter",
+    shown: { on: true, partner: "clearCounter" },
     label: "Show Counter",
     group: "Hud",
     lines: ["Hud.DisplayCounter({counter}, CounterDisplay.{display})"],
@@ -1514,6 +1543,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "clearCounter",
+    shown: { on: false, partner: "showCounter" },
     label: "Clear Counter",
     group: "Hud",
     lines: ["Hud.ClearCounter({counter})"],
@@ -1533,6 +1563,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "objectCreate",
+    shown: { on: true, partner: "objectDelete", label: "Exists" },
     label: "Create Object at Spot",
     group: "Object",
     lines: ["{var} = Object.Create({model}, {spot}_X, {spot}_Y, {spot}_Z)"],
@@ -1552,6 +1583,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "objectDelete",
+    shown: { on: false, partner: "objectCreate", label: "Exists" },
     label: "Delete Object",
     group: "Object",
     lines: ["Object.Delete({object})"],
@@ -1729,6 +1761,11 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "streamLoadSpecialCharacter",
+    shown: {
+      on: true,
+      partner: "streamUnloadSpecialCharacter",
+      label: "Loaded",
+    },
     label: "Load Special Character",
     group: "Streaming",
     lines: ["Streaming.LoadSpecialCharacter({slot}, '{name}')"],
@@ -1747,6 +1784,11 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "streamUnloadSpecialCharacter",
+    shown: {
+      on: false,
+      partner: "streamLoadSpecialCharacter",
+      label: "Loaded",
+    },
     label: "Unload Special Character",
     group: "Streaming",
     lines: ["Streaming.UnloadSpecialCharacter({slot})"],
@@ -1760,6 +1802,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "streamUnloadModel",
+    shown: { on: false, partner: "requestModel", label: "Needed" },
     label: "Release Model",
     group: "Streaming",
     lines: ["Streaming.MarkModelAsNoLongerNeeded({model})"],

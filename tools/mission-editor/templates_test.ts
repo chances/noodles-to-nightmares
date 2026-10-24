@@ -195,18 +195,13 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ],
     [
       "blipForCoord",
-      { var: "deliveryBlip", spot: "DELIVERY" },
+      { handle: "deliveryBlip", spot: "DELIVERY" },
       step.blipForCoord("deliveryBlip", "DELIVERY"),
     ],
     [
       "blipForPickup",
-      { var: "pickupBlip", pickup: "packagePickup" },
+      { handle: "pickupBlip", pickup: "packagePickup" },
       step.blipForPickup("pickupBlip", "packagePickup"),
-    ],
-    [
-      "blipRemoveVar",
-      { var: "payphoneBlip" },
-      step.blipRemoveVar("payphoneBlip"),
     ],
     [
       "pickupCreate",
@@ -282,7 +277,7 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ],
     [
       "blipForChar",
-      { var: "charBlip", char: "sal" },
+      { handle: "charBlip", char: "sal" },
       step.blipForChar("charBlip", "sal"),
     ],
     [
@@ -1012,7 +1007,7 @@ Deno.test("unchecking Shown turns Add Blip into Remove Blip, and checking it aga
   }]);
   assertEquals([remove.label, remove.shown], ["Remove Blip", {
     on: false,
-    partner: "blipAt",
+    partner: ["blipAt", "blipForCoord", "blipForPickup", "blipForChar"],
   }]);
 
   const context = { monitorIds: [], spotIds: ["SAFEHOUSE"], globals: [] };
@@ -1064,13 +1059,55 @@ Deno.test("only the shown form of a card is offered when adding a step", () => {
     d,
   ) => d.name);
   assert(offered.includes("blipAt") && !offered.includes("blipRemove"));
-  // Every Shown card names a partner that names it back.
+  // Every Shown card names its partners, and each partner names it back.
   for (const d of stepDescriptors.filter((d) => d.shown)) {
-    assertEquals(
-      byName(stepDescriptors, d.shown!.partner).shown?.partner,
-      d.name,
-    );
+    for (const partner of [d.shown!.partner].flat()) {
+      assert(
+        [byName(stepDescriptors, partner).shown?.partner].flat().includes(
+          d.name,
+        ),
+      );
+    }
   }
+});
+
+Deno.test("unchecking Remove Blip returns to the Add Blip form it was last flipped from", () => {
+  const context = { monitorIds: [], spotIds: ["DELIVERY"], globals: [] };
+  const lines = step.blipForPickup("pickupBlip", "packagePickup");
+  const parsed = parseLines(stepDescriptors, lines)!;
+
+  const removed = flipShown(
+    stepDescriptors,
+    parsed.descriptor,
+    parsed.values,
+    {},
+    context,
+  );
+  assertEquals(removed.descriptor.name, "blipRemove");
+  assertEquals(
+    buildLines(removed.descriptor, removed.values),
+    step.blipRemove("pickupBlip"),
+  );
+
+  const restored = flipShown(
+    stepDescriptors,
+    removed.descriptor,
+    removed.values,
+    removed.remembered,
+    context,
+  );
+  assertEquals(restored.descriptor.name, "blipForPickup");
+  assertEquals(buildLines(restored.descriptor, restored.values), lines);
+
+  // With no form remembered, Remove Blip returns to Add Blip at a spot.
+  const fresh = flipShown(
+    stepDescriptors,
+    removed.descriptor,
+    removed.values,
+    {},
+    context,
+  );
+  assertEquals(fresh.descriptor.name, "blipAt");
 });
 
 Deno.test("the map icon field offers the RadarSprite members, filtered as you type", () => {

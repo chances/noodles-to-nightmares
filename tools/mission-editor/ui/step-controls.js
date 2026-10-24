@@ -246,7 +246,7 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
         : (parsed.descriptor.fields.length > 0 || parsed.descriptor.shown) && html`
           <div class="fields">
             ${parsed.descriptor.shown && html`
-              <label class="mini"><span>Shown</span><input type="checkbox" class="toggle" checked=${parsed.descriptor.shown.on} onChange=${flip} /></label>`}
+              <label class="mini"><span>${parsed.descriptor.shown.label ?? "Shown"}</span><input type="checkbox" class="toggle" checked=${parsed.descriptor.shown.on} onChange=${flip} /></label>`}
             ${parsed.descriptor.fields.map((f) => html`
               <label class="mini" key=${f.name}><span>${f.label}</span><${FieldInput} field=${f} value=${parsed.values[f.name]} onCommit=${setValue(f.name)} /></label>
             `)}
