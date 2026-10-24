@@ -647,6 +647,9 @@
       },
       "LOSE": {
         "kind": "ending",
+        "notes": [
+          "FIXME: Reset all blips back to whatever \"tryStartMission\" looks for"
+        ],
         "fail": false,
         "beats": [
           {
@@ -658,7 +661,7 @@
             "wait": 3000
           }
         ],
-        "next": "INTRO"
+        "finish": true
       }
     }
   },

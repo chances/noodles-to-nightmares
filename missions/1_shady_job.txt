@@ -410,9 +410,7 @@ end
   TIMERA = 0
   Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
   wait 3000
-  $onCutscene = true
-  Hud.SwitchWidescreen(true)
-  state = STATE_INTRO
+  finishMission()
   return
 
 :leaveDeliverDrugs
