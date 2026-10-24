@@ -123,6 +123,8 @@ Deno.test("clock steps set time, speed, and the HUD timer", () => {
   assertEquals(step.setTimeScale("1.0"), ["Clock.SetTimeScale(1.0)"]);
   assertEquals(step.storeClock(), ["Clock.Store()"]);
   assertEquals(step.restoreClock(), ["Clock.Restore()"]);
+  assertEquals(step.showTimer(), ["Hud.DisplayTimer($hudTimer)"]);
+  assertEquals(step.clearTimer(), ["Hud.ClearTimer($hudTimer)"]);
   assertEquals(step.showTimer("TIMERB"), ["Hud.DisplayTimer(TIMERB)"]);
   assertEquals(step.clearTimer("TIMERB"), ["Hud.ClearTimer(TIMERB)"]);
   assertEquals(step.freezeTimer(true), ["Hud.FreezeTimer(true)"]);

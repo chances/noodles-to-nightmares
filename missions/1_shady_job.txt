@@ -294,6 +294,8 @@ end
   // Spawn the drugs pickup
   TIMERA = 0
   TIMERB = 0
+  $hudTimer = 150000
+  Hud.DisplayTimer($hudTimer)
   packagePickup = Pickup.Create(1321, PickupType.OnStreet, PACKAGE_PICKUP_X, PACKAGE_PICKUP_Y, PACKAGE_PICKUP_Z)
   pickupBlip = Blip.AddForPickup(packagePickup)
   debugLogInt(DEBUG_PICKUP_BLIP, pickupBlip)
@@ -304,11 +306,13 @@ end
     if
       state == STATE_LOSE
     then
+      leaveDeliverDrugs()
       return
     end
     if
-      TIMERB > 120000
+      TIMERB > 150000
     then
+      leaveDeliverDrugs()
       state = STATE_LOSE
       return
     end
@@ -327,11 +331,13 @@ end
     if
       state == STATE_LOSE
     then
+      leaveDeliverDrugs()
       return
     end
     if
-      TIMERB > 120000
+      TIMERB > 150000
     then
+      leaveDeliverDrugs()
       state = STATE_LOSE
       return
     end
@@ -346,11 +352,13 @@ end
     if
       state == STATE_LOSE
     then
+      leaveDeliverDrugs()
       return
     end
     if
-      TIMERB > 120000
+      TIMERB > 150000
     then
+      leaveDeliverDrugs()
       state = STATE_LOSE
       return
     end
@@ -366,14 +374,17 @@ end
     if
       state == STATE_LOSE
     then
+      leaveDeliverDrugs()
       return
     end
     if
-      TIMERB > 120000
+      TIMERB > 150000
     then
+      leaveDeliverDrugs()
       state = STATE_LOSE
       return
     end
+    leaveDeliverDrugs()
     state = STATE_PAYOUT
     return
   end
@@ -402,6 +413,10 @@ end
   $onCutscene = true
   Hud.SwitchWidescreen(true)
   state = STATE_INTRO
+  return
+
+:leaveDeliverDrugs
+  Hud.ClearTimer($hudTimer)
   return
 
 :failCheck

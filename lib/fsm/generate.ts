@@ -75,7 +75,12 @@ export function generate(mission: Mission, source: string): string {
   const latches = monitors.map((m) => latchLocal(m.id));
   const hasFail = entries.some(([, state]) => failable(state));
   const leaves = new Set(
-    entries.filter(([, state]) => state.onExit?.length).map(([id]) => id),
+    entries
+      .filter(([, state]) =>
+        state.onExit?.length ||
+        (state.timeLimit !== undefined && state.showTimer === true)
+      )
+      .map(([id]) => id),
   );
   const regionOf = new Map<string, number>();
   cutsceneRegions(mission).forEach((region, index) => {
@@ -183,6 +188,12 @@ export function generate(mission: Mission, source: string): string {
       ...comments(state.notes),
       "TIMERA = 0",
       ...(state.timeLimit === undefined ? [] : ["TIMERB = 0"]),
+      ...(state.timeLimit !== undefined && state.showTimer === true
+        ? [
+          `$hudTimer = ${state.timeLimit * 1000}`,
+          "Hud.DisplayTimer($hudTimer)",
+        ]
+        : []),
       ...(state.resetLatches ? latches.map((l) => `${l} = false`) : []),
       ...(state.onEnter ?? []).flat(),
       ...(state.beats ?? []).flatMap((beat) => beatLines(id, state, beat)),
@@ -262,7 +273,14 @@ export function generate(mission: Mission, source: string): string {
     out.push(
       "",
       `:${leaveLabel(id)}`,
-      ...indent([...(mission.states[id].onExit ?? []).flat(), "return"]),
+      ...indent([
+        ...(mission.states[id].timeLimit !== undefined &&
+            mission.states[id].showTimer === true
+          ? ["Hud.ClearTimer($hudTimer)"]
+          : []),
+        ...(mission.states[id].onExit ?? []).flat(),
+        "return",
+      ]),
     );
   }
   if (hasFail) {

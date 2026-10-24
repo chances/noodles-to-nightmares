@@ -15,6 +15,7 @@ var
   $myCarModel: int
   $isCameraAvoidingObstacle: int
   $isCarInWater: int
+  $hudTimer: int
   //====================//
   $SafeBlip: Blip
   $PunkNoodles: Pickup
@@ -34,6 +35,7 @@ Alloc($isCarInWater, 4407)
 Alloc($myCarModel, 4408)
 Alloc($onMission, 4409)
 Alloc($skipCutscene, 4410)
+Alloc($hudTimer, 4410)
 
 // Main
 Alloc($SafeBlip, 4501)

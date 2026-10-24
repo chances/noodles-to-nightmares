@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HUD Timers in GTA III</title>
+<link rel="stylesheet" href="assets/lessons.css">
+<link rel="stylesheet" href="assets/callout.css">
+<link rel="stylesheet" href="assets/quiz.css">
+</head>
+<body>
+<button id="theme" type="button">Toggle Theme</button>
+<h1>HUD Timers in GTA III</h1>
+<p class="sub">Mission: make on-screen countdown timers work reliably in GTA III missions and automate wiring them through the FSM compiler and Mission Editor.</p>
+
+<h2>1. Why Hud.DisplayTimer(TIMERB) Fails</h2>
+<p>In <code>1_shady_job.fsm.json</code>, the <code>DELIVER_DRUGS</code> state had a <code>timeLimit</code> of 180 seconds and manually added <code>Hud.DisplayTimer(TIMERB)</code> to <code>onEnter</code> and <code>Hud.ClearTimer(TIMERB)</code> to <code>onExit</code>. In-game, no HUD timer appeared.</p>
+
+<p>Sanny Builder compiles <code>Hud.DisplayTimer(...)</code> to opcode <code>014E: set_timer_to %1d%</code>. In the GTA III game engine (class <code>COnscreenTimer</code> / <code>CUserDisplay::OnscnTimer</code> in the RenderWare engine source), opcode <code>014E</code> operates under two strict constraints:</p>
+
+<table>
+<tr><th>Engine Requirement</th><th>What TIMERB Does</th><th>Why It Fails</th></tr>
+<tr>
+  <td><strong>Global ScriptSpace Pointer</strong>: <code>014E</code> reads a byte offset into the global variable buffer (<code>CTheScripts::ScriptSpace</code>).</td>
+  <td><code>TIMERB</code> is an internal script thread hardware register, not a global variable.</td>
+  <td>Sanny encodes <code>TIMERB</code> as a local variable operand (<code>03 11 00</code> / local 17). The engine expects global token <code>02</code> and an offset, so it reads an invalid address and never registers a clock.</td>
+</tr>
+<tr>
+  <td><strong>Countdown Value</strong>: The variable passed to <code>014E</code> must hold milliseconds remaining (e.g. <code>180000</code>). Each frame, the engine automatically subtracts frame delta (<code>CTimer::ms_fTimeStep</code>) and renders <code>MM:SS</code>.</td>
+  <td><code>TIMERB</code> starts at <code>0</code> and counts up continuously.</td>
+  <td>Even if the engine accepted the register, <code>TIMERB</code> starts at zero, meaning a countdown timer would instantly read <code>00:00</code>.</td>
+</tr>
+</table>
+
+<blockquote class="callout" data-variant="warning">Opcode <code>014E</code> strictly requires a global variable (e.g. <code>$hudTimer</code>) initialized to the remaining milliseconds. It cannot take CLEO local variables or <code>TIMERB</code>.</blockquote>
+
+<h2>2. Pinned Global Variable: $hudTimer</h2>
+<p>Because opcode <code>014E</code> requires a global slot in <code>ScriptSpace</code>, every mission script that displays an on-screen timer must use a shared global variable pinned in <code>variables.txt</code>.</p>
+
+<pre>// In variables.txt:
+var
+  // ...
+  $hudTimer: int
+end
+
+// Pinned in the Shared section:
+Alloc($hudTimer, 4411)</pre>
+
+<p>At runtime, displaying the timer requires two operations:</p>
+<ol>
+  <li>Set the global to total milliseconds: <code>$hudTimer = 180000</code></li>
+  <li>Display the countdown: <code>Hud.DisplayTimer($hudTimer)</code> (opcode <code>014E</code>)</li>
+</ol>
+<p>When the timed section finishes or the state exits, opcode <code>014F: stop_timer $hudTimer</code> (<code>Hud.ClearTimer($hudTimer)</code>) removes the clock from the player's HUD.</p>
+
+<h2>3. ❓ Why Shouldn't Authors Write Enter/Exit Steps Manually?</h2>
+<p>Manually scripting <code>Hud.DisplayTimer</code> and <code>Hud.ClearTimer</code> inside state <code>onEnter</code> and <code>onExit</code> lists introduces three major issues:</p>
+<ul>
+  <li><strong>Leaked Timers on Fail or Abort</strong>: If a player fails the mission, gets arrested, or triggers a custom branch before the state's regular exit, missing a <code>ClearTimer</code> call leaves a ghost timer permanently counting down on the screen.</li>
+  <li><strong>Boilerplate &amp; Unit Confusion</strong>: Authors must remember to convert seconds to milliseconds, assign <code>$hudTimer</code>, and keep the millisecond limit matched with the state's time limit condition.</li>
+  <li><strong>Redundant Source of Truth</strong>: The state already defines <code>timeLimit: 180</code>. Specifying the timer again in step lists violates DRY principles and creates synchronization bugs.</li>
+</ul>
+
+<h2>4. The Solution: Compile-Time Inference</h2>
+<p>Instead of manual steps, the FSM state schema supports a <code>showTimer</code> boolean flag alongside <code>timeLimit</code>. In the Mission Editor Inspector pane, the <strong>Time Limit</strong> section includes a <strong>Show HUD Timer</strong> checkbox.</p>
+
+<div class="callout" data-variant="tip">
+  <strong>How @noodles/fsm Generates Timed States:</strong>
+  <ul>
+    <li><strong>On State Entry</strong>: The generator emits <code>TIMERB = 0</code>. If <code>showTimer</code> is true, it also emits <code>$hudTimer = {timeLimit * 1000}</code> and <code>Hud.DisplayTimer($hudTimer)</code>.</li>
+    <li><strong>In the Tick Loop</strong>: The generator watches <code>TIMERB &gt; {timeLimit * 1000}</code> (exceeding it routes to <code>onFail</code>).</li>
+    <li><strong>On State Exit (Leave Routine)</strong>: The generator calls <code>leaveStateName()</code> on <em>every</em> exit transition (normal completion, branches, and failure). If <code>showTimer</code> is true, <code>leaveStateName()</code> automatically calls <code>Hud.ClearTimer($hudTimer)</code>.</li>
+  </ul>
+</div>
+
+<h2>5. Try It: FSM Time Limit Codegen</h2>
+<p>Configure a state's time limit and toggle the HUD timer to see the exact Sanny CLEO code generated at compile-time.</p>
+
+<div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-block: 1rem;">
+  <div>
+    <label for="limit-sec">Time Limit (seconds)</label>
+    <input id="limit-sec" type="number" min="1" max="600" value="180">
+  </div>
+  <div style="display:flex; align-items:center; gap:.5rem; margin-top:1.2rem;">
+    <input id="show-hud" type="checkbox" checked style="inline-size:auto;">
+    <label for="show-hud" style="margin:0; cursor:pointer;">Show HUD Timer</label>
+  </div>
+</div>
+
+<pre id="codegen-preview"></pre>
+
+<h2>6. Check Yourself</h2>
+<p>Why does passing <code>TIMERB</code> to <code>Hud.DisplayTimer(TIMERB)</code> fail in GTA III?</p>
+<div class="quiz">
+<button type="button">TIMERB is reserved exclusively for cutscene timing</button>
+<button type="button" data-correct="1">Opcode 014E requires an offset into global ScriptSpace</button>
+<button type="button">GTA III only supports timers in the main mission loop</button>
+</div>
+<p class="result" aria-live="polite"></p>
+
+<p>When using the FSM's inferred HUD timer, where is <code>Hud.ClearTimer($hudTimer)</code> placed?</p>
+<div class="quiz">
+<button type="button">Directly inside the mission failCheck routine</button>
+<button type="button" data-correct="1">Inside the leave routine called on all transitions</button>
+<button type="button">At the very end of the main script loop thread</button>
+</div>
+<p class="result" aria-live="polite"></p>
+
+<h2>Next</h2>
+<p>Add <code>$hudTimer</code> to <code>variables.txt</code> with a pinned slot, wire the <code>showTimer</code> checkbox into <code>tools/mission-editor/ui/inspector-pane.js</code>, and extend <code>lib/fsm/generate.ts</code> to emit timer setup in <code>routine()</code> and cleanup in <code>leave()</code>.</p>
+
+<script>
+document.querySelectorAll(".quiz").forEach(function (q) {
+  var out = q.nextElementSibling;
+  q.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var ok = !!b.dataset.correct;
+      b.classList.add(ok ? "ok" : "bad");
+      out.className = "result " + (ok ? "ok" : "bad");
+      out.textContent = ok
+        ? "Correct. Section 1 and Section 4 explain the engine requirement and exit architecture."
+        : "Not that one. Review Section 1 for opcode 014E requirements and Section 4 for leave routine lifecycle.";
+    });
+  });
+});
+
+(function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem("lesson-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = getComputedStyle(root).colorScheme.indexOf("dark") === 0;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("lesson-theme", root.dataset.theme); } catch (e) {}
+  });
+
+  var secInput = document.getElementById("limit-sec");
+  var hudInput = document.getElementById("show-hud");
+  var preview = document.getElementById("codegen-preview");
+
+  try {
+    var savedSec = sessionStorage.getItem("lesson-6-limit");
+    if (savedSec) secInput.value = savedSec;
+    var savedHud = sessionStorage.getItem("lesson-6-hud");
+    if (savedHud !== null) hudInput.checked = savedHud === "true";
+  } catch (e) {}
+
+  function update() {
+    var sec = Math.max(1, parseInt(secInput.value, 10) || 60);
+    var ms = sec * 1000;
+    var hud = hudInput.checked;
+
+    try {
+      sessionStorage.setItem("lesson-6-limit", sec);
+      sessionStorage.setItem("lesson-6-hud", hud);
+    } catch (e) {}
+
+    var code = [
+      ":deliverDrugs",
+      "  TIMERA = 0",
+      "  TIMERB = 0"
+    ];
+    if (hud) {
+      code.push("  $hudTimer = " + ms);
+      code.push("  Hud.DisplayTimer($hudTimer)");
+    }
+    code.push("  // OnEnter steps run here...");
+    code.push("  while true");
+    code.push("    wait 0");
+    code.push("    if");
+    code.push("      TIMERB > " + ms);
+    code.push("    then");
+    code.push("      leaveDeliverDrugs()");
+    code.push("      state = STATE_LOSE");
+    code.push("      return");
+    code.push("    end");
+    code.push("    // Route & until checks...");
+    code.push("  end");
+    code.push("");
+    code.push(":leaveDeliverDrugs");
+    if (hud) {
+      code.push("  Hud.ClearTimer($hudTimer)");
+    }
+    code.push("  // OnExit steps run here...");
+    code.push("  return");
+
+    preview.textContent = code.join("\n");
+  }
+
+  secInput.addEventListener("input", update);
+  hudInput.addEventListener("change", update);
+  update();
+})();
+</script>
+</body>
+</html>

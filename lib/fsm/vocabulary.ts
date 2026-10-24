@@ -170,8 +170,8 @@ export const step = {
   storeClock: (): Step => ["Clock.Store()"],
   restoreClock: (): Step => ["Clock.Restore()"],
   /** Shows a countdown on the HUD that counts the value in `timer`, e.g. `TIMERB`. */
-  showTimer: (timer: Expr): Step => [`Hud.DisplayTimer(${timer})`],
-  clearTimer: (timer: Expr): Step => [`Hud.ClearTimer(${timer})`],
+  showTimer: (timer: Expr = "$hudTimer"): Step => [`Hud.DisplayTimer(${timer})`],
+  clearTimer: (timer: Expr = "$hudTimer"): Step => [`Hud.ClearTimer(${timer})`],
   freezeTimer: (on: boolean): Step => [`Hud.FreezeTimer(${on})`],
   forceWeather: (type: string): Step => [`Weather.Force(WeatherType.${type})`],
   forceWeatherNow: (type: string): Step => [

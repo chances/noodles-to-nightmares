@@ -924,7 +924,7 @@ export const stepDescriptors: StepDescriptor[] = [
       name: "timer",
       label: "Timer",
       type: "expr",
-      default: "TIMERB",
+      default: "$hudTimer",
     }],
   },
   {
@@ -936,7 +936,7 @@ export const stepDescriptors: StepDescriptor[] = [
       name: "timer",
       label: "Timer",
       type: "expr",
-      default: "TIMERB",
+      default: "$hudTimer",
     }],
   },
   {

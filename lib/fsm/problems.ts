@@ -330,6 +330,9 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     if (state.timeLimit !== undefined && state.finish) {
       error(`${id} has a time limit and finishes the mission.`, id);
     }
+    if (state.showTimer && state.timeLimit === undefined) {
+      warn(`${id} has a HUD timer enabled but no time limit`, id);
+    }
 
     if (!state.next && !state.on?.length && !state.finish) {
       warn(`${id} has no way out and does not finish the mission`, id);

@@ -67,6 +67,8 @@ export interface State<S extends string = string> {
    * mission goes to `onFail`. Only a state with this set is timed.
    */
   timeLimit?: number;
+  /** When true, a countdown timer on $hudTimer is shown on entry and cleared on exit. */
+  showTimer?: boolean;
 }
 
 export type Const = number | [value: number, comment: string];

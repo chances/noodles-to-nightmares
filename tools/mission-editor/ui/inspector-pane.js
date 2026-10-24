@@ -202,7 +202,12 @@ function SectionBody({ id, state, states, change, link, onFail }) {
         <input type="number" min="1" step="1" aria-label="Time limit in seconds" value=${state.timeLimit ?? ""}
           onInput=${(e) => { const seconds = Number(e.currentTarget.value); change("Time Limit", (s) => { s.timeLimit = seconds; }, "timeLimit"); }} />
         <span>seconds (wall-time)</span>
-      </div>`;
+      </div>
+      <label class="check">
+        <input type="checkbox" checked=${Boolean(state.showTimer)}
+          onChange=${(e) => { const on = e.currentTarget.checked; change("Show HUD Timer", (s) => { if (on) s.showTimer = true; else delete s.showTimer; }); }} />
+        Show HUD Timer
+      </label>`;
     case "notes": return html`<textarea rows=${Math.max(2, (state.notes ?? []).length)} aria-label="Notes" value=${(state.notes ?? []).join("\n")}
       onInput=${(e) => { const text = e.currentTarget.value; change("Notes", (s) => { s.notes = lines(text); }, "notes"); }}></textarea>`;
   }
@@ -235,11 +240,11 @@ function StateForm({ doc, edges, id, problems, onSelect, edit }) {
     // Latches are the one section that holds a flag, so adding it sets the flag.
     if (section.id === "latches") change("Add Section", (s) => { s.resetLatches = true; });
     // A time limit needs a value to be a limit at all, so the section starts at one minute.
-    if (section.id === "timeLimit") change("Add Section", (s) => { s.timeLimit = 60; });
+    if (section.id === "timeLimit") change("Add Section", (s) => { s.timeLimit = 60; s.showTimer = true; });
   };
   const remove = (section) => () => {
     setOpened((o) => ({ ...o, [`${id}:${section.id}`]: false }));
-    change("Remove Section", (s) => { delete s[section.field]; });
+    change("Remove Section", (s) => { delete s[section.field]; if (section.id === "timeLimit") delete s.showTimer; });
   };
 
   const mine = problems.filter((p) => p.state === id);

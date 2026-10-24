@@ -173,6 +173,29 @@ Deno.test("a state with a time limit restarts TIMERB on entry and goes to the fa
   );
 });
 
+Deno.test("a state with a time limit and showTimer displays and clears $hudTimer", () => {
+  const mission = defineMission({
+    header: ["Timed HUD"],
+    start: "A",
+    onFail: "LOSE",
+    fail: [cond.playerDead()],
+    states: {
+      A: { timeLimit: 90, showTimer: true, onEnter: [step.help("In A")], next: "B" },
+      B: { fail: false, finish: true },
+      LOSE: { fail: false, next: "A" },
+    },
+  });
+  const text = generate(mission, "x");
+  assertStringIncludes(
+    text,
+    ":stateA\n  TIMERA = 0\n  TIMERB = 0\n  $hudTimer = 90000\n  Hud.DisplayTimer($hudTimer)\n",
+  );
+  assertStringIncludes(
+    text,
+    ":leaveA\n  Hud.ClearTimer($hudTimer)\n  return\n",
+  );
+});
+
 Deno.test("a state without a time limit never reads TIMERB", () => {
   const text = generate(fixture, "x");
   assert(!text.includes("TIMERB"));

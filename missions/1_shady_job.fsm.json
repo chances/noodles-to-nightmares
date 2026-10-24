@@ -604,7 +604,8 @@
           }
         ],
         "next": "PAYOUT",
-        "timeLimit": 180
+        "timeLimit": 150,
+        "showTimer": true
       },
       "PAYOUT": {
         "kind": "ending",
