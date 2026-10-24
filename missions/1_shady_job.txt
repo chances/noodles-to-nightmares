@@ -100,7 +100,6 @@ end
   load_special_character 1 1 #SPECIAL01 'FRANKIE'
   Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
   Char.SetPersonality(sal, PedStat.ToughGuy)
-  Streaming.LoadAllModelsNow()
   Char.TurnToFacePlayer(sal, $player)
   Char.LookAtPlayerAlways(sal, $player)
   Char.SetAnimGroup(sal, AnimGroup.Man)
@@ -410,6 +409,7 @@ end
   // FIXME: Reset all blips back to whatever "tryStartMission" looks for
   TIMERA = 0
   Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
+  Mission.Fail()
   finishMission()
   return
 

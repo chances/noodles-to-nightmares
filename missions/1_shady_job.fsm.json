@@ -106,9 +106,6 @@
             "Char.SetPersonality(sal, PedStat.ToughGuy)"
           ],
           [
-            "Streaming.LoadAllModelsNow()"
-          ],
-          [
             "Char.TurnToFacePlayer(sal, $player)"
           ],
           [
@@ -656,6 +653,9 @@
         "onEnter": [
           [
             "Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)"
+          ],
+          [
+            "Mission.Fail()"
           ]
         ],
         "finish": true

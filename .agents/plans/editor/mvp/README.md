@@ -101,9 +101,8 @@ Unfinished work from the retired v1 and state machine plans that the MVP does no
 
 | Item | Why Deferred |
 | --- | --- |
-| `LOSE` as a terminal failure | No mission needs one yet; `LOSE` does not call `Mission.Fail()` |
-| Inspector sections: Spawns, Control, Prompt, state Spot | Each waits on generator support, per the "Not built" list in the Mission Editor section of `.agents/Memory.md` |
-| Where `kind` shows in the graph, and where Spawns positions come from | Open questions with no answer yet |
+| Generator-added `Mission.Fail()` in `LOSE` | Mission 1 writes the call as an authored step in `LOSE`, and mission 0's `LOSE` routes back to `GO_HOME`, so the generator does not add it yet |
+| Inspector sections: Spawns, Control, Prompt, state Spot | Spawns and state Spot are geography Spots. The inspector already has spot choosers (the `spot` field type, backed by `poiSpot` in `lib/fsm/geography.ts`), and many coordinate descriptors take a spot. Whether every descriptor accepts one is unverified. Control and Prompt wait on generator support. |
 | Search for era scripting languages as design references | Research; the first search returned nothing |
 | Port the remaining missions, delete dead code, and refactor | Later phases of the state machine plan |
 | Cross-thread channels, ownership lints, and the CLEO state plugin | Own plan: [cross-thread-state-and-cleo-plugin.md](../../cross-thread-state-and-cleo-plugin.md) |
