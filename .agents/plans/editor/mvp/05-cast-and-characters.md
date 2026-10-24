@@ -1,6 +1,6 @@
 # Cast and Characters
 
-Part of the [Mission Editor MVP PRD](README.md). Depends on the card component in [03](03-unified-step-cards.md).
+Part of the [Mission Editor MVP PRD](README.md). Depends on the card component in [`step-controls.js`](../../../../tools/mission-editor/ui/step-controls.js).
 
 ## Goal
 

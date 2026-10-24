@@ -20,6 +20,7 @@ import {
   enumOptions,
   fieldPattern as clientPattern,
   filterOptions,
+  flipMode,
   flipShown,
   formatField,
   formatName,
@@ -28,6 +29,7 @@ import {
   globalOptions,
   isValid,
   numberProblem,
+  pairOf,
   parseCond,
   parseLines,
   parseWhen,
@@ -638,6 +640,11 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
       cond.playerStoppedNear3D("SAFEHOUSE", "R"),
     ],
     [
+      "playerStoppedNear2D",
+      { spot: "PAYPHONE", radius: "R", sphere: "false" },
+      cond.playerStoppedNear2D("PAYPHONE", "R"),
+    ],
+    [
       "playerNear3D",
       { spot: "PAYPHONE", radius: "3.0", sphere: "false" },
       cond.playerNear3D("PAYPHONE", undefined, false),
@@ -734,11 +741,12 @@ Deno.test("every condition descriptor builds the condition its builder builds", 
     condDescriptors.map((d) => d.name),
   );
   for (const [name, values, expected] of cases) {
-    assertEquals(
-      buildCond(byName(condDescriptors, name), values),
-      expected,
-      name,
+    // A paired card records its mode, which the builder's condition does not carry.
+    const { mode: _mode, ...built } = buildCond(
+      byName(condDescriptors, name),
+      values,
     );
+    assertEquals(built, expected, name);
     const parsed = parseCond(condDescriptors, expected);
     assertEquals(parsed?.descriptor.name, name);
     assertEquals(parsed?.values, values);
@@ -1194,6 +1202,7 @@ Deno.test("every card with a radius has a Show Sphere toggle and a 3.0 default s
     "playerOnFootNear3D",
     "playerOnFootNear2D",
     "playerStoppedNear3D",
+    "playerStoppedNear2D",
   ]);
   for (const d of withRadius) {
     const radius = d.fields.find((f) => f.name === "radius")!;
@@ -1213,6 +1222,138 @@ Deno.test("every card with a radius has a Show Sphere toggle and a 3.0 default s
   assertEquals(
     defaults(byName(condDescriptors, "playerNear3D")).sphere,
     "true",
+  );
+});
+
+Deno.test("a 2D and 3D pair is one card: each form names the other, and the switch flips it", () => {
+  const near3 = byName(condDescriptors, "playerNear3D");
+  const near2 = byName(condDescriptors, "playerNear2D");
+  assertEquals(pairOf(condDescriptors, near3)?.name, "playerNear2D");
+  assertEquals(pairOf(condDescriptors, near2)?.name, "playerNear3D");
+  assertEquals(
+    pairOf(condDescriptors, byName(condDescriptors, "playerStoppedNear3D"))
+      ?.name,
+    "playerStoppedNear2D",
+  );
+  assertEquals(
+    condDescriptors.filter((d) => d.pair).map((d) => d.name),
+    [
+      "playerNear3D",
+      "playerNear2D",
+      "playerOnFootNear3D",
+      "playerOnFootNear2D",
+      "playerStoppedNear3D",
+      "playerStoppedNear2D",
+    ],
+  );
+  const context = { monitorIds: [], spotIds: ["PAYPHONE"], globals: [] };
+  const flipped = flipMode(
+    condDescriptors,
+    near3,
+    { spot: "PAYPHONE", radius: "R", sphere: "true" },
+    {},
+    context,
+  );
+  assertEquals(flipped.descriptor.name, "playerNear2D");
+  assertEquals(flipped.hidden, {});
+  assertEquals(
+    buildCond(flipped.descriptor, flipped.values, flipped.hidden),
+    { ...cond.playerNear2D("PAYPHONE", "R", true), mode: "2D" },
+  );
+});
+
+Deno.test("a paired card's mode is stored with its condition and reads back on reopen", () => {
+  const built = buildCond(byName(condDescriptors, "playerOnFootNear2D"), {
+    spot: "PAYPHONE",
+    radius: "3.0",
+    sphere: "false",
+  });
+  assertEquals(built.mode, "2D");
+  assertEquals(built.hidden, undefined);
+  const reopened = JSON.parse(JSON.stringify(built));
+  const parsed = parseCond(condDescriptors, reopened);
+  assertEquals(parsed?.descriptor.mode, "2D");
+  assertEquals(parsed?.values, {
+    spot: "PAYPHONE",
+    radius: "3.0",
+    sphere: "false",
+  });
+  assertEquals(
+    buildCond(byName(condDescriptors, "playerInCar"), {}).mode,
+    undefined,
+  );
+});
+
+Deno.test("a field only one mode uses waits in hidden, and comes back when the card switches back", () => {
+  const shared = byName(condDescriptors, "playerNear3D");
+  const extra = { name: "extra", label: "Extra", type: "text", default: "" };
+  const threeD = {
+    ...shared,
+    name: "probe3D",
+    fields: [...shared.fields, extra],
+    pair: "probe",
+    mode: "3D",
+  };
+  const twoD = { ...shared, name: "probe2D", pair: "probe", mode: "2D" };
+  const probes = [threeD, twoD];
+  const context = { monitorIds: [], spotIds: ["PAYPHONE"], globals: [] };
+  const out = flipMode(
+    probes,
+    threeD,
+    {
+      spot: "PAYPHONE",
+      radius: "R",
+      sphere: "true",
+      extra: "kept",
+    },
+    {},
+    context,
+  );
+  assertEquals(out.descriptor.name, "probe2D");
+  assertEquals(out.values, { spot: "PAYPHONE", radius: "R", sphere: "true" });
+  assertEquals(out.hidden, { extra: "kept" });
+  const stored = buildCond(out.descriptor, out.values, out.hidden);
+  assertEquals(stored.hidden, { extra: "kept" });
+  const back = flipMode(
+    probes,
+    out.descriptor,
+    out.values,
+    stored.hidden,
+    context,
+  );
+  assertEquals(back.descriptor.name, "probe3D");
+  assertEquals(back.values.extra, "kept");
+  assertEquals(back.hidden, {});
+});
+
+Deno.test("a handle field takes a mission local's name as well as a $global, and reads it back as a typed control", () => {
+  const handle = byName(stepDescriptors, "blipChangeColor").fields[0];
+  assert(isValid(handle, "payphoneBlip"));
+  assert(isValid(handle, "$Blip"));
+  assert(!isValid(handle, "1Blip"));
+  assertEquals(
+    parseLines(stepDescriptors, [
+      "Blip.ChangeColor(payphoneBlip, BlipColor.Red)",
+    ])
+      ?.values.handle,
+    "payphoneBlip",
+  );
+  assertEquals(
+    parseLines(stepDescriptors, ["Blip.Remove(payphoneBlip)"])?.descriptor.name,
+    "blipRemove",
+  );
+  assertEquals(
+    parseLines(stepDescriptors, ["Blip.Dim(payphoneBlip, true)"])?.descriptor
+      .name,
+    "blipDim",
+  );
+  const globals = [{ name: "$Blip", type: "Blip" }, {
+    name: "payphoneBlip",
+    type: "Blip",
+  }];
+  assertEquals(
+    globalOptions(globals, "Blip").map((o: { value: string }) => o.value),
+    ["$Blip", "payphoneBlip"],
   );
 });
 

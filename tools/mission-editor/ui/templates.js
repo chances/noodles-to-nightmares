@@ -8,7 +8,8 @@ const PATTERNS = {
   text: '[^"\\n]*',
   number: "\\d+",
   expr: "-?\\d+(?:\\.\\d+)?|#?[A-Za-z_$][\\w$]*",
-  handle: "\\$\\w+",
+  // A global variable with its `$`, or a mission local without one.
+  handle: "\\$?[A-Za-z_]\\w*",
   name: "\\w+",
   latch: "[A-Z]\\w*",
   // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
@@ -396,13 +397,56 @@ function whole(descriptor) {
   return wholes.get(descriptor);
 }
 
-/** A condition (`{ pre?, test, locals? }`) built from a descriptor. */
-export function buildCond(descriptor, values) {
+/**
+ * A condition (`{ pre?, test, locals?, mode?, hidden? }`) built from a descriptor. `hidden` holds the values the
+ * card keeps for fields its mode does not use; it is written only when there are some.
+ *
+ * @remarks A card with no mode-only field stores the same condition it stored before modes existed, so mission files
+ * without one are unchanged on save.
+ * @returns {{ test: string, pre?: string[], locals?: string[], mode?: "2D" | "3D", hidden?: Record<string, string> }}
+ */
+export function buildCond(descriptor, values, hidden = {}) {
   const lines = buildLines(whole(descriptor), values);
   const cond = { test: lines.at(-1) };
   if (descriptor.pre) cond.pre = lines.slice(0, -1);
   if (descriptor.locals) cond.locals = [...descriptor.locals];
+  if (descriptor.mode) cond.mode = descriptor.mode;
+  if (Object.keys(hidden).length > 0) cond.hidden = { ...hidden };
   return cond;
+}
+
+/** The descriptor a card's other mode is drawn with, or undefined when the function has no 2D and 3D pair. */
+export function pairOf(descriptors, descriptor) {
+  if (!descriptor.pair) return undefined;
+  return descriptors.find((d) =>
+    d.pair === descriptor.pair && d.mode !== descriptor.mode
+  );
+}
+
+/**
+ * The values of a paired card flipped to its other mode. Fields both modes use carry over; fields only the
+ * current mode uses move into `hidden`, and fields only the new mode uses come back from `hidden` when they were
+ * kept. Returns `{ descriptor, values, hidden }`.
+ */
+export function flipMode(descriptors, descriptor, values, hidden, context) {
+  const partner = pairOf(descriptors, descriptor);
+  const kept = { ...hidden, ...values };
+  const fresh = defaults(
+    partner,
+    context.monitorIds,
+    context.spotIds,
+    context.globals,
+  );
+  const used = new Set(partner.fields.map((f) => f.name));
+  return {
+    descriptor: partner,
+    values: Object.fromEntries(
+      partner.fields.map((f) => [f.name, kept[f.name] ?? fresh[f.name]]),
+    ),
+    hidden: Object.fromEntries(
+      Object.entries(kept).filter(([name]) => !used.has(name)),
+    ),
+  };
 }
 
 /** Like `parseLines`, for a condition; its `pre` lines (slots filled) and `locals` must be the descriptor's too. */

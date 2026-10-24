@@ -189,7 +189,8 @@ function Vocabulary({ vocabulary, mission, names, sannyFiles, children }) {
     return { name, kind: Number.isInteger(value) ? "int" : "float", value: String(value), comment: Array.isArray(v) ? v[1] : undefined, source: "This mission" };
   });
   const constants = [...own, ...(names?.constants ?? []).filter((c) => !(c.name in (mission.consts ?? {})))];
-  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: names?.globals ?? [], functions: names?.functions ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id), sannyFiles: sannyFiles ?? [] }}>${children}<//>`;
+  // @remarks A handle field offers the project's `$` globals and the mission's own locals, which have no `$`.
+  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: [...(names?.globals ?? []), ...(mission.locals ?? []).map((local) => ({ name: local.name, type: local.type }))], functions: names?.functions ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id), sannyFiles: sannyFiles ?? [] }}>${children}<//>`;
 }
 
 function App() {

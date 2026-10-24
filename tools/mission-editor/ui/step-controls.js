@@ -1,9 +1,11 @@
 // deno-fmt-ignore-file
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
-import { createContext, html, useContext, useEffect, useRef, useState } from "/vendor/preact.js";
+import { createContext, html, useContext, useEffect, useLayoutEffect, useRef, useState } from "/vendor/preact.js";
 import { Overlay } from "./overlay.js";
-import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
+import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipMode, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, pairOf, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
+import { CheckIcon, CopyIcon, GripIcon, SannyEditIcon } from "./icons.js";
+import { clampY, dropIndex, inColumn, insertionTop, HOLD_MS, moveItem, movedMessage, RETURN_MS, SLOP_PX, wrapIndex } from "./reorder.js";
 
 /** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
 export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], functions: [], monitorIds: [], sannyFiles: [] });
@@ -197,19 +199,213 @@ export function NumberField({ label, value, onCommit }) {
   return html`<label class="mini"><span>${label}</span><${FieldInput} field=${field} value=${String(value ?? 0)} onCommit=${(text) => onCommit(Number(text))} /></label>`;
 }
 
-function Row({ item, kind, n, onChange, onRemove, onMove }) {
+const CONTROL = "button, input, select, textarea, a, [role=combobox], [role=listbox], [role=option]";
+
+/**
+ * Drag to reorder one list of cards. A mouse or pen press on a card's title starts a drag at once. A touch lifts the
+ * card after HOLD_MS, and a move of more than SLOP_PX before that leaves the touch to scroll the page. Escape, a
+ * cancelled pointer, a tap elsewhere while a touch is held, or a drop outside the list's columns returns the card to
+ * its slot. Alt+Up and Alt+Down move the focused card one place, wrapping at the ends. `items` is the list, and
+ * `onChange` receives the reordered list.
+ *
+ * @remarks The other cards are measured once, at the press, and never again during the drag. A redraw after a reorder
+ * can move the `.pane-body` scroll position, so `commit` restores it in a layout effect until the next frame, and a
+ * keyboard move focuses its card with `preventScroll`. The drop line is centred in the gap, so a drop beside the
+ * dragged card's own slot draws no line.
+ */
+export function useReorder({ items, onChange }) {
+  const list = useRef(null);
+  const session = useRef(null);
+  const lifting = useRef(null);
+  const timers = useRef({});
+  const focusAt = useRef(null);
+  const keep = useRef(null);
+  const [shown, setShown] = useState(null);
+  const [message, setMessage] = useState("");
+
+  const show = (next) => {
+    lifting.current = next;
+    setShown(next);
+  };
+  const cancel = () => {
+    clearTimeout(timers.current.hold);
+    session.current = null;
+    if (!lifting.current) return;
+    show({ ...lifting.current, to: lifting.current.from, dy: 0, returning: true });
+    clearTimeout(timers.current.settle);
+    timers.current.settle = setTimeout(() => show(null), RETURN_MS);
+  };
+
+  // A reorder redraws the rows, which can move the pane's scroll position. The pane keeps the position it had when
+  // the card moved, through every redraw until the next frame.
+  const scroller = () => list.current?.closest(".pane-body") ?? null;
+  const commit = (next) => {
+    keep.current = scroller()?.scrollTop ?? null;
+    requestAnimationFrame(() => { keep.current = null; });
+    onChange(next);
+  };
+  useLayoutEffect(() => {
+    if (keep.current === null) return;
+    const pane = scroller();
+    if (pane) pane.scrollTop = keep.current;
+  });
+
+  const press = (index) => (e) => {
+    if (e.button !== 0 || e.target.closest(CONTROL)) return;
+    const touch = e.pointerType === "touch";
+    const box = list.current.getBoundingClientRect();
+    const others = [...list.current.querySelectorAll(":scope > [data-index]")]
+      .filter((card) => Number(card.dataset.index) !== index)
+      .map((card) => {
+        const { top, bottom } = card.getBoundingClientRect();
+        return { top, bottom, mid: (top + bottom) / 2 };
+      });
+    const gap = parseFloat(getComputedStyle(list.current).rowGap) || 0;
+    session.current = { pointerId: e.pointerId, from: index, startX: e.clientX, startY: e.clientY, touch, box, others, gap, handle: e.currentTarget };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    clearTimeout(timers.current.settle);
+    const resting = { from: index, to: index, dy: 0, inside: true, line: null };
+    if (touch) timers.current.hold = setTimeout(() => show(resting), HOLD_MS);
+    else show(resting);
+  };
+
+  const track = (e) => {
+    const s = session.current;
+    if (!s || e.pointerId !== s.pointerId) return;
+    if (!lifting.current) {
+      // A touch that moves before its hold ends is scrolling the page, not dragging a card.
+      if (Math.hypot(e.clientX - s.startX, e.clientY - s.startY) > SLOP_PX) {
+        clearTimeout(timers.current.hold);
+        session.current = null;
+      }
+      return;
+    }
+    const y = clampY(e.clientY, s.box.top, s.box.bottom);
+    const to = dropIndex(s.others.map((o) => o.mid), y);
+    const inside = inColumn(e.clientX, s.box.left, s.box.right);
+    const top = insertionTop(s.others, to, s.gap);
+    show({ ...lifting.current, to, dy: y - s.startY, inside, line: inside && to !== s.from && top !== null ? top - s.box.top : null });
+  };
+
+  const release = (e) => {
+    const s = session.current;
+    if (!s || e.pointerId !== s.pointerId) return;
+    clearTimeout(timers.current.hold);
+    session.current = null;
+    const at = lifting.current;
+    if (!at) return;
+    if (at.inside && at.to !== at.from) {
+      show(null);
+      setMessage(movedMessage(at.to + 1, items.length));
+      commit(moveItem(items, at.from, at.to));
+      return;
+    }
+    cancel();
+  };
+
+  const keys = (index) => (e) => {
+    if (e.target !== e.currentTarget || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+    e.preventDefault();
+    const to = wrapIndex(index, e.key === "ArrowUp" ? -1 : 1, items.length);
+    if (to === index) return;
+    focusAt.current = to;
+    setMessage(movedMessage(to + 1, items.length));
+    commit(moveItem(items, index, to));
+  };
+
+  // The card that moved keeps the keyboard focus, even though its row is drawn again in its new place.
+  useEffect(() => {
+    if (focusAt.current === null) return;
+    list.current?.querySelector(`[data-index="${focusAt.current}"]`)?.focus({ preventScroll: true });
+    focusAt.current = null;
+  });
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && session.current) cancel();
+    };
+    const onTap = (e) => {
+      const s = session.current;
+      if (s?.touch && !s.handle.contains(e.target)) cancel();
+    };
+    globalThis.addEventListener("keydown", onKey);
+    globalThis.addEventListener("pointerdown", onTap, true);
+    return () => {
+      globalThis.removeEventListener("keydown", onKey);
+      globalThis.removeEventListener("pointerdown", onTap, true);
+      clearTimeout(timers.current.hold);
+      clearTimeout(timers.current.settle);
+    };
+  }, []);
+
+  return {
+    list,
+    message,
+    line: shown?.line ?? null,
+    lift: (index) => (shown?.from === index ? shown : null),
+    item: (index) => ({
+      card: { "data-index": index, tabIndex: 0, onKeyDown: keys(index) },
+      grip: {
+        onPointerDown: press(index),
+        onPointerMove: track,
+        onPointerUp: release,
+        onPointerCancel: cancel,
+        // A lifted card holds the page still while it is dragged.
+        onTouchMove: (e) => {
+          if (lifting.current) e.preventDefault();
+        },
+      },
+    }),
+  };
+}
+
+/** A card's title: the six-dots grip when the card can be dragged, then its name. */
+export function CardTitle({ label, grip = null }) {
+  return html`
+    <hgroup class=${grip ? "item-title draggable" : "item-title"} onPointerDown=${grip?.onPointerDown} onPointerMove=${grip?.onPointerMove}
+      onPointerUp=${grip?.onPointerUp} onPointerCancel=${grip?.onPointerCancel} onTouchMove=${grip?.onTouchMove}>
+      ${grip && html`<span class="grip" aria-hidden="true"><${GripIcon} /></span>`}
+      <h4 class="item-label">${label}</h4>
+    </hgroup>
+  `;
+}
+
+function Row({ item, kind, n, onChange, onRemove, reorder, lift }) {
   const { steps, conds, monitorIds, spots, globals } = useContext(EditorContext);
   const [sanny, setSanny] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef(null);
   const isCond = kind === "cond";
   const noun = isCond ? "condition" : "step";
   const parsed = isCond ? parseCond(conds, item) : parseLines(steps, item);
   const when = isCond || parsed ? null : parseWhen(steps, conds, item);
   const raw = sanny || (!parsed && !when);
   const setWhen = (patch) => onChange(buildWhen({ ...when, ...patch }));
+  const hasSanny = !isCond && item.some((line) => line.trim() !== "");
+  const card = reorder?.card ?? {};
+  const grip = reorder?.grip ?? null;
+
+  useEffect(() => () => clearTimeout(copyTimer.current), []);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(item.join("\n"));
+    } catch {
+      return;
+    }
+    setCopied(true);
+    clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(false), 3000);
+  };
 
   const setValue = (name) => (text) => {
     const values = { ...parsed.values, [name]: text };
-    onChange(isCond ? { ...item, ...buildCond(parsed.descriptor, values) } : buildLines(parsed.descriptor, values));
+    onChange(isCond ? buildCond(parsed.descriptor, values, item.hidden) : buildLines(parsed.descriptor, values));
+  };
+  // A paired card (2D or 3D) keeps the values its other mode cannot hold, so switching back restores them.
+  const switchMode = (mode) => {
+    if (parsed.descriptor.mode === mode) return;
+    const next = flipMode(conds, parsed.descriptor, parsed.values, item.hidden ?? {}, { monitorIds, spotIds: spots.map((s) => s.id), globals });
+    onChange(buildCond(next.descriptor, next.values, next.hidden));
   };
   // A card with a "Shown" checkbox becomes its partner card (Add Blip <-> Remove Blip) when it is flipped.
   const remembered = useRef({});
@@ -219,15 +415,25 @@ function Row({ item, kind, n, onChange, onRemove, onMove }) {
     onChange(buildLines(next.descriptor, next.values));
   };
 
+  const copyTitle = !hasSanny ? "No Sanny to copy" : copied ? "Copied to clipboard" : "Copy as Sanny Builder";
+  const paired = isCond && parsed && pairOf(conds, parsed.descriptor) && !raw;
+  const rowClass = ["item", lift && !lift.returning && "lifted", lift?.returning && "returning"].filter(Boolean).join(" ");
+
   return html`
-    <li class="item">
+    <li class=${rowClass} style=${lift ? { transform: `translateY(${lift.dy}px)` } : undefined} data-index=${card["data-index"]} tabIndex=${card.tabIndex} onKeyDown=${card.onKeyDown}>
       <div class="item-head">
-        <span class="item-label">${parsed ? parsed.descriptor.label : when ? "Conditional Steps" : "Custom Sanny"}</span>
+        <${CardTitle} label=${parsed ? parsed.descriptor.label : when ? "Conditional Steps" : "Custom Sanny"} grip=${grip} />
         <span class="item-tools">
-          ${(parsed || when) && html`<button class="tool" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} onClick=${() => setSanny(!sanny)}>${sanny ? "Show Controls" : "Edit As Sanny"}</button>`}
-          <button class="tool" aria-label=${`Move ${noun} ${n} up`} title="Move Up" onClick=${() => onMove(-1)}>↑</button>
-          <button class="tool" aria-label=${`Move ${noun} ${n} down`} title="Move Down" onClick=${() => onMove(1)}>↓</button>
-          <button class="tool danger" aria-label=${`Remove ${noun} ${n}`} title=${`Remove ${isCond ? "Condition" : "Step"}`} onClick=${onRemove}>✕</button>
+          ${paired && html`
+            <div class="mode-switch" data-variant="compact" role="group" aria-label="Card Mode">
+              ${["2D", "3D"].map((mode) => html`<button class=${parsed.descriptor.mode === mode ? "mode-btn active" : "mode-btn"} key=${mode} aria-pressed=${parsed.descriptor.mode === mode} onClick=${() => switchMode(mode)}>${mode}</button>`)}
+            </div>`}
+          ${(parsed || when) && html`<button class="tool icon-only" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} aria-label=${sanny ? "Show Typed Controls" : `Edit this ${noun} as Sanny Builder`} onClick=${() => setSanny(!sanny)}><${SannyEditIcon} /></button>`}
+          ${!isCond && html`
+            <button class=${copied ? "tool icon-only copied" : "tool icon-only"} aria-label="Copy Step Sanny" title=${copyTitle} disabled=${!hasSanny} onClick=${copy}>
+              ${copied ? html`<${CheckIcon} />` : html`<${CopyIcon} />`}
+            </button>`}
+          <button class="tool danger icon-only" aria-label=${`Remove ${noun} ${n}`} title=${`Remove ${isCond ? "Condition" : "Step"}`} onClick=${onRemove}>✕</button>
         </span>
       </div>
       ${raw
@@ -262,6 +468,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
   // Rows keep a "Sanny" toggle of their own; a new generation remounts them after a removal or move.
   const [generation, setGeneration] = useState(0);
   const groups = [...new Set(descriptors.map((d) => d.group))].sort((a, b) => a.localeCompare(b));
+  const reorder = useReorder({ items, onChange: (next) => { setGeneration(generation + 1); onChange(next); } });
 
   const add = (name) => {
     if (!name) return;
@@ -277,29 +484,22 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
     setGeneration(generation + 1);
     onChange(items.filter((_, j) => j !== i));
   };
-  const move = (i) => (by) => {
-    const to = i + by;
-    if (to < 0 || to >= items.length) return;
-    const next = [...items];
-    [next[i], next[to]] = [next[to], next[i]];
-    setGeneration(generation + 1);
-    onChange(next);
-  };
-
   // TODO: Add a "JavaScript/TypeScript" item for CLEO JS scripts beside Sanny Builder.
   return html`
     <div class="typed-list">
       ${items.length === 0 && html`<p class="hint">${emptyText}</p>`}
       ${items.length > 0 && html`
-        <ul class="items">
-          ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} onMove=${move(i)} />`)}
-        </ul>`}
+        <ul class="items reorder" ref=${reorder.list} aria-label=${kind === "cond" ? "Conditions" : "Steps"}>
+          ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} reorder=${reorder.item(i)} lift=${reorder.lift(i)} />`)}
+          ${reorder.line !== null && html`<li class="drop-line" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
+        </ul>
+        <p class="sr-only" role="status" aria-live="polite">${reorder.message}</p>`}
       <select class="add" aria-label=${addLabel} value="" onChange=${(e) => { const name = e.currentTarget.value; e.currentTarget.value = ""; add(name); }}>
         <option value="">${addLabel}</option>
         ${kind === "step" && html`<option value="__when">If / Then / Else</option>`}
         ${groups.map((group) => html`
           <optgroup key=${group} label=${group}>
-            ${descriptors.filter((d) => d.group === group && d.shown?.on !== false).map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
+            ${descriptors.filter((d) => d.group === group && d.shown?.on !== false && d.mode !== "2D").map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
           </optgroup>`)}
         <option value="__sanny">Custom Sanny</option>
       </select>

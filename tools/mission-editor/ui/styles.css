@@ -1402,6 +1402,7 @@ small.error {
 }
 
 .item-label {
+  margin: 0;
   overflow: hidden;
   font-size: 12px;
   font-weight: 600;
@@ -1413,6 +1414,104 @@ small.error {
   display: flex;
   flex: none;
   gap: 4px;
+}
+
+/* Drag to reorder: the grip marks a card's title, a lifted card casts a shadow, and the drop line marks its slot. */
+.items.reorder {
+  position: relative;
+}
+
+.item-title {
+  display: flex;
+  flex: 1;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.item-title.draggable {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.item-title .grip {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.item.lifted {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  cursor: grabbing;
+}
+
+.item.returning {
+  transition: transform 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item.returning {
+    transition: none;
+  }
+}
+
+.drop-line {
+  position: absolute;
+  inset-inline: 0;
+  block-size: 2px;
+  background: var(--accent);
+  list-style: none;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* The Script pane restores its own scroll position after a reorder, so the browser does not also anchor it. */
+.right .pane-body {
+  overflow-anchor: none;
+}
+
+/* The compact variant sits in a card header: one line the height of a pane heading row, with no padding of its own. */
+.mode-switch[data-variant="compact"] {
+  block-size: 1.5rem;
+  padding: 0;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* Every child inherits the compact size. Global `button` sets a 28px minimum height and a border, so both are reset here. */
+.mode-switch[data-variant="compact"] > * {
+  block-size: 100%;
+  min-block-size: 0;
+  padding-block: 0;
+  border: 0;
+  line-height: 1;
+}
+
+.mode-switch[data-variant="compact"] .mode-btn {
+  padding-inline: 6px;
+}
+
+/* Icon-only card actions share one square box, so each one sits the same distance from its neighbors. */
+button.tool.icon-only {
+  block-size: 1.5rem;
+  inline-size: 1.5rem;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+button.tool.copied {
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .fields {

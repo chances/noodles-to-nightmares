@@ -80,7 +80,7 @@ This page is the PRD for the mission editor MVP and the index of its work packag
 | --- | --- | --- | --- |
 | 01 | [Add mission and templates](01-add-mission-and-templates.md) | None | Not started |
 | 02 | [Mission locals table](02-mission-locals-table.md) | None | Not started |
-| 03 | [Unified step cards](03-unified-step-cards.md) | None | Not started |
+| 03 | [Unified step cards](../../../../tools/mission-editor/ui/step-controls.js) | None | Built; browser checks open |
 | 04 | [Assets catalog](04-assets-catalog.md) | None | Partial: spots, cars, peds, blips, strings |
 | 05 | [Cast and Characters](05-cast-and-characters.md) | 03 | Partial: special character enum and Load, Unload, and HasLoaded steps exist; no Characters or Cast sections |
 | 06 | [Mission Rewards](06-mission-rewards.md) | None | Not started |
@@ -89,7 +89,7 @@ This page is the PRD for the mission editor MVP and the index of its work packag
 | 09 | [UX copy and accessibility](09-ux-copy-and-accessibility.md) | 01 to 08 | Not started |
 | 10 | [Mission rebuild verification](10-mission-rebuild-verification.md) | 01 to 06 | Partial: missions 0 and 1 have `.fsm.json` tables and generated `.txt` files |
 
-**Progress:** No package is complete. Partial: 04, 05, and 10. Open: 07. Not started: 01, 02, 03, 06, 08, and 09.
+**Progress:** No package is complete. Built, with browser checks open: 03. Partial: 04, 05, and 10. Open: 07. Not started: 01, 02, 06, 08, and 09.
 
 ## Order
 

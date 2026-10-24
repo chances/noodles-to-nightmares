@@ -1,6 +1,12 @@
 // The step and condition vocabulary as data, so the editor can show typed controls and read them back from
 // Sanny lines. Each `lines` entry is a Sanny line with `{field}` slots; `vocabulary.ts` builds the same
 // lines in code, and the editor's `templates_test.ts` keeps the two in step.
+//
+// One rule maps Sanny lines to controls: a line is a typed card when a descriptor's `lines` match it, with each
+// field read by its `FieldType` pattern. Any other line stays a Sanny text box. Two descriptors with one `pair`
+// are one card, drawn in the `mode` each names.
+
+import type { CardMode } from "./types.ts";
 
 /** How a field is written in Sanny. `expr` is a number or an identifier such as a constant name. */
 export type FieldType =
@@ -50,7 +56,8 @@ export const FIELD_PATTERNS: Record<Exclude<FieldType, "choice">, string> = {
   text: '[^"\\n]*',
   number: "\\d+",
   expr: "-?\\d+(?:\\.\\d+)?|#?[A-Za-z_$][\\w$]*",
-  handle: "\\$\\w+",
+  // A global variable with its `$`, or a mission local without one.
+  handle: "\\$?[A-Za-z_]\\w*",
   name: "\\w+",
   latch: "[A-Z]\\w*",
   // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
@@ -146,6 +153,15 @@ export interface CondDescriptor extends Descriptor {
   /** Lines that run before the `if`; `lines` holds the test. `pre` lines may use `{field}` slots like `lines`. */
   pre?: string[];
   locals?: string[];
+  /**
+   * The 2D and 3D descriptors of one function share a `pair` name, and each names its own `mode`.
+   *
+   * @remarks The add menu offers only the descriptor without `mode: "2D"`, and the card's switch flips between the
+   * two forms. A `spot` field reads `{spot}_X` and `{spot}_Y` in 2D and adds `{spot}_Z` in 3D, so one spot serves
+   * both forms.
+   */
+  pair?: string;
+  mode?: CardMode;
 }
 
 const ms: Field = {
@@ -2547,8 +2563,10 @@ export const condDescriptors: CondDescriptor[] = [
   },
   {
     name: "playerNear3D",
-    label: "Player is near (3D)",
+    label: "Player is near",
     group: "Player",
+    pair: "playerNear",
+    mode: "3D",
     lines: [
       "Player.LocateAnyMeans3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
@@ -2570,8 +2588,10 @@ export const condDescriptors: CondDescriptor[] = [
   },
   {
     name: "playerNear2D",
-    label: "Player is near (2D)",
+    label: "Player is near",
     group: "Player",
+    pair: "playerNear",
+    mode: "2D",
     lines: [
       "Player.LocateAnyMeans2D($player, {spot}_X, {spot}_Y, {radius}, {radius}, {sphere})",
     ],
@@ -2579,8 +2599,10 @@ export const condDescriptors: CondDescriptor[] = [
   },
   {
     name: "playerOnFootNear3D",
-    label: "Player is on foot near (3D)",
+    label: "Player is on foot near",
     group: "Player",
+    pair: "playerOnFootNear",
+    mode: "3D",
     lines: [
       "Player.LocateOnFoot3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
@@ -2588,8 +2610,10 @@ export const condDescriptors: CondDescriptor[] = [
   },
   {
     name: "playerOnFootNear2D",
-    label: "Player is on foot near (2D)",
+    label: "Player is on foot near",
     group: "Player",
+    pair: "playerOnFootNear",
+    mode: "2D",
     lines: [
       "Player.LocateOnFoot2D($player, {spot}_X, {spot}_Y, {radius}, {radius}, {sphere})",
     ],
@@ -2599,10 +2623,23 @@ export const condDescriptors: CondDescriptor[] = [
     name: "playerStoppedNear3D",
     label: "Player has stopped on foot near",
     group: "Player",
+    pair: "playerStoppedNear",
+    mode: "3D",
     lines: [
       "Player.LocateStoppedOnFoot3D($player, {spot}_X, {spot}_Y, {spot}_Z, {radius}, {radius}, {radius}, {sphere})",
     ],
     fields: [spot, radius, sphere(true)],
+  },
+  {
+    name: "playerStoppedNear2D",
+    label: "Player has stopped on foot near",
+    group: "Player",
+    pair: "playerStoppedNear",
+    mode: "2D",
+    lines: [
+      "Player.LocateStoppedOnFoot2D($player, {spot}_X, {spot}_Y, {radius}, {radius}, {sphere})",
+    ],
+    fields: [spot, radius, sphere(false)],
   },
   {
     name: "playerInThisCar",

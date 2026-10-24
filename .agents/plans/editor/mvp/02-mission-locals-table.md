@@ -24,4 +24,4 @@ The mission form shows a read-only table of each declared local and every place 
 
 ## Related
 
-The editor has no form for `mission.locals` today; mission 1 declares them in its `.fsm.json`. `handle` matching for mission locals is tracked in [03](03-unified-step-cards.md).
+The editor has no form for `mission.locals` today; mission 1 declares them in its `.fsm.json`. `handle` matching for mission locals is in `FIELD_PATTERNS.handle` in `lib/fsm/descriptors.ts` and in `tools/mission-editor/ui/templates.js`.

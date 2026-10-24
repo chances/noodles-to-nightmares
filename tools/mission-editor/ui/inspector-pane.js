@@ -11,7 +11,7 @@ import { hasData, KIND_SECTIONS, KINDS, kindOf, SECTIONS, takeOpened } from "./s
 import { missionLabel } from "./mission-label.js";
 import { formatName, formatNumber, reformat } from "./templates.js";
 import { roleKey, roles } from "./states-pane.js";
-import { CondList, Combo, EditorContext, FieldInput, StepList } from "./step-controls.js";
+import { CardTitle, CondList, Combo, EditorContext, FieldInput, StepList, useReorder } from "./step-controls.js";
 
 // @remarks The Script pane is the form for the selected state, or the Mission form when nothing is selected. Beats are
 // edited in the Beat pane, not here. Every keystroke commits through `edit`, one undoable command per change, with
@@ -350,13 +350,8 @@ function MissionForm({ doc, edit, onSelect }) {
   const fileOptions = sannyFiles.map((value) => ({ value }));
   const addable = sannyFiles.filter((file) => !included.includes(file));
   const setIncludes = (label, next) => change(label, (m) => { m.includes = next; });
-  const moveInclude = (i, by) => {
-    const to = i + by;
-    if (to < 0 || to >= included.length) return;
-    const next = [...included];
-    [next[i], next[to]] = [next[to], next[i]];
-    setIncludes("Move Include", next);
-  };
+  // @remarks The list order is the order of `{$INCLUDE}` lines in the generated Sanny, so a drop changes the mission's output.
+  const reorder = useReorder({ items: included, onChange: (next) => setIncludes("Move Include", next) });
 
   return html`
     <div class="inspector">
@@ -415,21 +410,22 @@ function MissionForm({ doc, edit, onSelect }) {
         action=${html`<button class="icon" aria-label="Add an include" title="Add Include" onClick=${() => setAdding(!adding)}><${Plus} /></button>${mission.includes && html`<button onClick=${() => change("Default Includes", (m) => { delete m.includes; })}>Use Default Include</button>`}`}>
         <p class="hint">${mission.includes ? "Sanny files included after the generated code, in this order." : "The default, ../utils/missions.txt, is included."}</p>
         ${included.length === 0 && html`<p class="hint">No Sanny files are included.</p>`}
-        <ol class="items">
+        <ol class="items reorder" ref=${reorder.list} aria-label="Includes">
           ${included.map((path, i) => html`
-            <li class="item" key=${i}>
+            <li class=${["item", reorder.lift(i)?.returning ? "returning" : reorder.lift(i) && "lifted"].filter(Boolean).join(" ")} key=${i}
+              style=${reorder.lift(i) ? { transform: `translateY(${reorder.lift(i).dy}px)` } : undefined} data-index=${i} tabIndex=${0} onKeyDown=${reorder.item(i).card.onKeyDown}>
               <div class="item-head">
-                <span class="item-label">Include ${i + 1}</span>
+                <${CardTitle} label=${`Include ${i + 1}`} grip=${reorder.item(i).grip} />
                 <span class="item-tools">
-                  <button class="tool" aria-label=${`Move include ${i + 1} up`} title="Move Up" onClick=${() => moveInclude(i, -1)}>↑</button>
-                  <button class="tool" aria-label=${`Move include ${i + 1} down`} title="Move Down" onClick=${() => moveInclude(i, 1)}>↓</button>
-                  <button class="tool danger" aria-label=${`Remove include ${i + 1}`} title="Remove Include" onClick=${() => setIncludes("Remove Include", included.filter((_, j) => j !== i))}>✕</button>
+                  <button class="tool danger icon-only" aria-label=${`Remove include ${i + 1}`} title="Remove Include" onClick=${() => setIncludes("Remove Include", included.filter((_, j) => j !== i))}>✕</button>
                 </span>
               </div>
               <${Combo} value=${path} options=${fileOptions} label=${`Sanny file for include ${i + 1}`} missing="is not a Sanny file in this project"
                 onCommit=${(next) => setIncludes("Include", included.map((p, j) => (j === i ? next : p)))} />
             </li>`)}
+          ${reorder.line !== null && html`<li class="drop-line" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
         </ol>
+        <p class="sr-only" role="status" aria-live="polite">${reorder.message}</p>
         ${adding && addable.length > 0 && html`
           <div ref=${addBox}>
             <${Combo} value="" options=${addable.map((value) => ({ value }))} label="Add Include" missing="is not a Sanny file in this project"

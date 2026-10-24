@@ -1,10 +1,24 @@
 // Types for a mission state table (`missions/<stem>.states.ts`). `generate.ts` turns a table into Sanny source.
 
-/** A Sanny condition. `pre` lines run before the `if`, `locals` names scratch locals the test reads. */
+/** The two forms of a paired Sanny function, such as `Player.LocateAnyMeans3D` and `Player.LocateAnyMeans2D`. */
+export const CARD_MODES = ["2D", "3D"] as const;
+export type CardMode = typeof CARD_MODES[number];
+
+/**
+ * A Sanny condition. `pre` lines run before the `if`, `locals` names scratch locals the test reads.
+ *
+ * @remarks The test text, not `mode`, decides which form of a paired card a condition reads back as. `mode` is
+ * stored beside it so the file records the form the author chose, and `hidden` is written only when a field exists
+ * for one mode alone.
+ */
 export interface Cond {
   pre?: string[];
   test: string;
   locals?: string[];
+  /** The mode of a card with a 2D and 3D pair. The editor writes it, and the generator reads only `test`. */
+  mode?: CardMode;
+  /** Field values a paired card keeps while its mode does not use them, so switching back restores them. */
+  hidden?: Record<string, string>;
 }
 
 /** Sanny lines for one action; build them with `step` from `vocabulary.ts`. */

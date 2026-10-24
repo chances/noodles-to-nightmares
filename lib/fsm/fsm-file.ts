@@ -7,14 +7,18 @@ import * as v from "@valibot/valibot";
 import { join, resolve, toFileUrl } from "@std/path";
 import { layout } from "./graph.ts";
 import type { Point } from "./graph.ts";
-import { STATE_KINDS } from "./types.ts";
+import { CARD_MODES, STATE_KINDS } from "./types.ts";
 import type { Mission } from "./types.ts";
 
 const lines = v.array(v.string());
+// @remarks Valibot objects drop every key they do not list, so a condition field added to the editor must be listed
+// here or it is silently stripped on the next save.
 const cond = v.object({
   pre: v.optional(lines),
   test: v.string(),
   locals: v.optional(lines),
+  mode: v.optional(v.picklist(CARD_MODES)),
+  hidden: v.optional(v.record(v.string(), v.string())),
 });
 const conds = v.array(cond);
 const steps = v.array(lines);

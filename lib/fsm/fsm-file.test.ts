@@ -107,6 +107,35 @@ Deno.test("parseFsmDoc keeps an await beat's conditions", () => {
   }]);
 });
 
+Deno.test("parseFsmDoc keeps a paired card's mode and the values its other mode holds", () => {
+  const mission = JSON.parse(JSON.stringify(table));
+  mission.states.A.beats = [{
+    await: [{
+      test:
+        "Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, R, R, false)",
+      mode: "2D",
+      hidden: { sphere: "true" },
+    }],
+  }];
+  const doc = parseFsmDoc({ version: 1, mission });
+  assertEquals(doc.mission.states.A.beats?.[0].await, [{
+    test:
+      "Player.LocateAnyMeans2D($player, PAYPHONE_X, PAYPHONE_Y, R, R, false)",
+    mode: "2D",
+    hidden: { sphere: "true" },
+  }]);
+});
+
+Deno.test("parseFsmDoc rejects a card mode that is neither 2D nor 3D", () => {
+  const mission = JSON.parse(JSON.stringify(table));
+  mission.states.A.beats = [{ await: [{ test: "true", mode: "4D" }] }];
+  assertThrows(
+    () => parseFsmDoc({ version: 1, mission }),
+    Error,
+    "mission.states.A.beats.0.await.0.mode",
+  );
+});
+
 Deno.test("parseFsmDoc names the path of a bad field", () => {
   const mission = JSON.parse(JSON.stringify(table));
   mission.states.A.beats = [{ wait: "soon" }];

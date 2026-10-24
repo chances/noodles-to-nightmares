@@ -524,6 +524,15 @@ export const cond = {
       coords(spot, 3)
     }, ${radius}, ${radius}, ${radius}, ${sphere})`,
   }),
+  playerStoppedNear2D: (
+    spot: Spot2D,
+    radius: Expr = DEFAULT_RADIUS,
+    sphere = false,
+  ): Cond => ({
+    test: `Player.LocateStoppedOnFoot2D($player, ${
+      coords(spot, 2)
+    }, ${radius}, ${radius}, ${sphere})`,
+  }),
   playerInThisCar: (car: Expr): Cond => ({
     test: `Player.IsInCar($player, ${car})`,
   }),
