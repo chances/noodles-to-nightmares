@@ -1,12 +1,14 @@
-# Mission Editor MVP
+# Mission Editor MVP: Epic Overview
+
+This page is the PRD for the mission editor MVP and the index of its work packages. Each numbered file is one package with its own tasks and done criteria. The upstream PRD is [epic.md](../../../../docs/ways-of-work/plan/mission-editor-mvp/epic.md). The v1 decisions are recorded in the [Mission Editor section](../../../Memory.md#mission-editor) of `.agents/Memory.md`.
 
 ## Goal
 
 **Problem:** Mission authoring runs through hand-edited tables and generated Sanny scripts. The editor already edits state graphs, beats, and steps, and exports compiling missions 0 and 1, but its forms are inconsistent, its mission list has no way to create a mission, its assets browser covers only part of the game, and its help lives outside the app. Each new mission adds more work for the one person who knows the tooling, and outside authors cannot start without that knowledge. The editor has to become complete enough for a new author to make a mission without reading the source.
 
-**Solution:** Finish the editor as a usable authoring tool. Add a mission creation flow with starter templates, unify paired 2D and 3D Sanny steps into one card with a per-card mode switch, widen the assets browser, show each mission local's usage, and add in-app help that opens a generated reference. Close the open telemetry and desktop packaging items so the editor runs as a desktop app. Run an accessibility and UX copy review before release.
+**Solution:** Finish the editor as a usable authoring tool. Add a mission creation flow with starter templates, unify paired 2D and 3D Sanny steps into one card with a per-card mode switch, widen the assets browser, show each mission local's usage, add a Characters section that loads and creates special characters per state, and add in-app help that opens a generated reference. Close the open telemetry and desktop packaging items so the editor runs as a desktop app. Run an accessibility and UX copy review before release.
 
-**Impact:** Missions 0 and 1 are rebuilt in the editor and compile to the same Sanny output as today. Authors edit missions without opening a `.fsm.json` in a text editor. A new author can finish a playable mission from the setup guide and the in-app help alone. The WCAG AA audit reports no failures on the main views.
+**Impact:** Missions 0 and 1 are rebuilt in the editor and compile to the same behavior as today. Sanny diffs from moving pass lines into a Reward section are recorded in package 10. Authors edit missions without opening a `.fsm.json` in a text editor. A new author can finish a playable mission from the setup guide and the in-app help alone. The WCAG AA audit reports no failures on the main views.
 
 ## User Personas
 
@@ -18,10 +20,11 @@
 1. **Start a mission:** Open the mission select, choose Add Mission, and pick an empty starter or one of the basic templates (Linear Story, Timed Chase, Delivery).
 2. **Build the graph:** Add, rename, and wire states, and reorder and retime beats in the timeline. Each step is a card.
 3. **Set a mode per card:** Switch a 2D or 3D card between modes. Spot-based steps stay 3D. The mode is saved in the mission file.
-4. **Find a local's uses:** Open the mission locals table, see each local's declared name and usages, and follow a link to the state or story beat that uses it.
-5. **Pull a reference:** Hover the circled "?" icon on a card or vocabulary entry for a summary, then click it to open the knowledge base in a non-modal dialog.
-6. **Export and check:** Open Export, read the generated Sanny and the compile log, and check the local count.
-7. **Set up:** Follow the setup guide to point the editor at the GTA III folder and `.env`, then run it.
+4. **Cast a character:** Add a member to the Characters section, then pick it in a state's Cast section. The editor loads and creates it at state entry.
+5. **Find a local's uses:** Open the mission locals table, see each local's declared name and usages, and follow a link to the state or story beat that uses it.
+6. **Pull a reference:** Hover the circled "?" icon on a card or vocabulary entry for a summary, then click it to open the knowledge base in a non-modal dialog.
+7. **Export and check:** Open Export, read the generated Sanny and the compile log, and check the local count.
+8. **Set up:** Follow the setup guide to point the editor at the GTA III folder and `.env`, then run it.
 
 ## Business Requirements
 
@@ -31,6 +34,8 @@
 - **Starter content:** An empty starter (one start state and one finishing state) and three basic templates: Linear Story, Timed Chase, and Delivery.
 - **Unified step cards:** Paired 2D and 3D Sanny functions share one card. Each card has its own 2D or 3D switch, styled like the edit and debug switch. Spot steps are 3D only.
 - **Per-card mode storage:** Each card's mode is stored in the `.fsm.json` beside its step.
+- **Reward section:** Any state can hold an optional Reward section with a Mission Name Key and a Score Amount. After the story beats, the generator writes the pass tune, mission-passed registration, score, and pass banner, so authors script none of them.
+- **Characters section:** A mission-level cast list, with a Cast section on each state. The generator loads each member into a free slot, waits for it to stream in, and creates the ped at state entry, so authors write none of those lines. See [package 05](05-cast-and-characters.md).
 - **Form consistency:** One rule for how Sanny statements map to GUI controls across all cards. Lines the vocabulary does not know stay text boxes, as they do now.
 - **Assets browser:** Keep geography spots, cars and models, characters and peds, blip sprites, and strings. Add interiors and IPL placements, audio and music, weapons and pickups, and vehicle colors and handling.
 - **Mission locals table:** A read-only table on the mission form that lists each declared local (like constants) and its usages. Static analysis fills it. Each usage links to the state name, story beat, or step that uses it.
@@ -54,7 +59,7 @@
 
 ## Success Metrics
 
-- Missions 0 and 1 are rebuilt in the editor and compile to the same Sanny output as the current files.
+- Missions 0 and 1 are rebuilt in the editor and compile to the same behavior as the current files. Sanny diffs from the Reward migration are recorded in package 10. Mission 1 and `side_supply_run` compile from `.fsm.json` files with their cast steps.
 - Authors create and edit missions with zero hand-edited `.fsm.json` files.
 - The WCAG AA audit reports no failures on the main views.
 
@@ -71,17 +76,38 @@
 
 ## Work Packages
 
-| # | Package | Depends On |
-| --- | --- | --- |
-| Index | [00-mission-editor-mvp.md](00-mission-editor-mvp.md) | None |
-| 01 | [Add mission and templates](01-add-mission-and-templates.md) | None |
-| 02 | [Unified step cards](02-unified-step-cards.md) | None |
-| 03 | [Assets browser expansion](03-assets-browser-expansion.md) | None |
-| 04 | [Mission locals table](04-mission-locals-table.md) | None |
-| 05 | [Help and knowledge base](05-help-and-knowledge-base.md) | 02 |
-| 06 | [Telemetry and desktop build](06-telemetry-and-desktop-build.md) | None |
-| 07 | [UX copy and accessibility](07-ux-copy-and-accessibility.md) | 01 to 06 |
-| 08 | [Mission rebuild verification](08-mission-rebuild-verification.md) | 01 to 04 |
+| # | Package | Depends On | Status |
+| --- | --- | --- | --- |
+| 01 | [Add mission and templates](01-add-mission-and-templates.md) | None | Not started |
+| 02 | [Mission locals table](02-mission-locals-table.md) | None | Not started |
+| 03 | [Unified step cards](03-unified-step-cards.md) | None | Not started |
+| 04 | [Assets catalog](04-assets-catalog.md) | None | Partial: spots, cars, peds, blips, strings |
+| 05 | [Cast and Characters](05-cast-and-characters.md) | 03 | Partial: special character enum and Load, Unload, and HasLoaded steps exist; no Characters or Cast sections |
+| 06 | [Mission Rewards](06-mission-rewards.md) | None | Not started |
+| 07 | [Telemetry and desktop build](07-telemetry-and-desktop-build.md) | None | Open bug, build blocked by disk space |
+| 08 | [Help and KB](08-help-and-kb.md) | 01 to 06 | Not started |
+| 09 | [UX copy and accessibility](09-ux-copy-and-accessibility.md) | 01 to 08 | Not started |
+| 10 | [Mission rebuild verification](10-mission-rebuild-verification.md) | 01 to 06 | Partial: missions 0 and 1 have `.fsm.json` tables and generated `.txt` files |
+
+**Progress:** No package is complete. Partial: 04, 05, and 10. Open: 07. Not started: 01, 02, 03, 06, 08, and 09.
+
+## Order
+
+Packages 01, 02, 03, 04, 06, and 07 start in parallel. Package 05 waits for the card component in 03. Package 08 documents the authoring features, so it waits for 01 to 06. Package 09 reviews the finished UI, including the help. Package 10 closes the epic.
+
+## Deferred Items
+
+Unfinished work from the retired v1 and state machine plans that the MVP does not own.
+
+| Item | Why Deferred |
+| --- | --- |
+| `LOSE` as a terminal failure | No mission needs one yet; `LOSE` does not call `Mission.Fail()` |
+| Inspector sections: Spawns, Control, Prompt, state Spot | Each waits on generator support, per the "Not built" list in the Mission Editor section of `.agents/Memory.md` |
+| Where `kind` shows in the graph, and where Spawns positions come from | Open questions with no answer yet |
+| Search for era scripting languages as design references | Research; the first search returned nothing |
+| Port the remaining missions, delete dead code, and refactor | Later phases of the state machine plan |
+| Cross-thread channels, ownership lints, and the CLEO state plugin | Own plan: [cross-thread-state-and-cleo-plugin.md](../../cross-thread-state-and-cleo-plugin.md) |
+| Automatically merge states that link to each other with one kind | The "Consider simplifying states" warning only suggests a merge; how states combine is open |
 
 ## Related Plans and Bugs
 

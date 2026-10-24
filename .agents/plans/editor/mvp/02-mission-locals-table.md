@@ -1,6 +1,6 @@
 # Mission Locals Table
 
-Part of the [Mission Editor MVP PRD](README.md), indexed by [00-mission-editor-mvp.md](00-mission-editor-mvp.md).
+Part of the [Mission Editor MVP PRD](README.md).
 
 ## Goal
 
@@ -24,4 +24,4 @@ The mission form shows a read-only table of each declared local and every place 
 
 ## Related
 
-The editor has no form for `mission.locals` today; mission 1 declares them in its `.fsm.json`. `handle` matching for mission locals is tracked in [02](02-unified-step-cards.md).
+The editor has no form for `mission.locals` today; mission 1 declares them in its `.fsm.json`. `handle` matching for mission locals is tracked in [03](03-unified-step-cards.md).

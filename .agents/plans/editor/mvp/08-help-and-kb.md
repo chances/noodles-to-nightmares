@@ -1,6 +1,6 @@
-# Help and Knowledge Base
+# Help and KB
 
-Part of the [Mission Editor MVP PRD](README.md), indexed by [00-mission-editor-mvp.md](00-mission-editor-mvp.md). Depends on the card component in [02](02-unified-step-cards.md).
+Part of the [Mission Editor MVP PRD](README.md). Runs after packages 01 to 06 finish, so it documents the finished authoring features.
 
 ## Goal
 

@@ -1,6 +1,6 @@
 # Telemetry and Desktop Build
 
-Part of the [Mission Editor MVP PRD](README.md), indexed by [00-mission-editor-mvp.md](00-mission-editor-mvp.md).
+Part of the [Mission Editor MVP PRD](README.md).
 
 ## Goal
 

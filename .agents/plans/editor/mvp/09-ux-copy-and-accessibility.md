@@ -1,6 +1,6 @@
 # UX Copy and Accessibility
 
-Part of the [Mission Editor MVP PRD](README.md), indexed by [00-mission-editor-mvp.md](00-mission-editor-mvp.md). Runs after packages 01 to 06 finish, so it reviews the finished UI.
+Part of the [Mission Editor MVP PRD](README.md). Runs after packages 01 to 08 finish, so it reviews the finished UI.
 
 ## Goal
 
@@ -8,7 +8,7 @@ The app meets WCAG 2.1 AA, and its labels, buttons, and messages read clearly. B
 
 ## Tasks
 
-- [ ] Run the accessibility review skill across the main views: the mission select, the graph, the timeline, the step cards, the locals table, and the Export dialog.
+- [ ] Run the accessibility review skill across the main views: the mission select, the graph, the timeline, the step cards, the locals table, the Reward section, the Characters and Cast sections, and the Export dialog.
 - [ ] Run the WCAG AA contrast check on text in light and dark modes.
 - [ ] Check keyboard use for every control, including the card switch and the info icon.
 - [ ] Check touch target size on each control.
