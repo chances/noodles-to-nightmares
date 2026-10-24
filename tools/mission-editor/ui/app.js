@@ -257,7 +257,7 @@ function App() {
   const [vocabulary, setVocabulary] = useState(null);
   const assetFilters = useAssetFilters(project);
   const hasAssetFilters = assetFilters.filters.districts.length > 0 || assetFilters.filters.categories.length > 0 || assetFilters.filters.proximity.enabled;
-  useEffect(() => { getJson("/api/vocabulary").then(setVocabulary, () => setVocabulary({ steps: [], conds: [], spots: [], enums: {} })); }, []);
+  useEffect(() => { getJson(`/api/vocabulary?${projectQuery}`).then(setVocabulary, () => setVocabulary({ steps: [], conds: [], spots: [], enums: {} })); }, []);
   const [mode, setMode] = useState("edit");
   const { connected, telemetry, capture, captures, setCapture, runInGame, stopGame, running, runState, runLog, exit, debugValues, debugLog, names } = useTelemetry(projectQuery);
   useEffect(() => {

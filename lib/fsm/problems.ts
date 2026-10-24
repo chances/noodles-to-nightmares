@@ -4,7 +4,8 @@ import { latchLocal, stateConst } from "./emit.ts";
 import { transitions } from "./graph.ts";
 import { describeMismatch, fieldUses, numberMismatches } from "./numeric.ts";
 import type { NumberKind } from "./numeric.ts";
-import { ENUMS } from "./sprites.ts";
+import { enumsFor } from "./enums.ts";
+import type { EnumMember } from "./enums.ts";
 import type { Cond, Mission, State, Step } from "./types.ts";
 
 export interface Problem {
@@ -78,8 +79,12 @@ const listOf = (names: string[]) =>
     ? names.join(" and ")
     : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 
-/** Every problem in `mission`, errors first. Pass `known` to also check constants and globals against the project's Sanny files. */
-export function problems(mission: Mission, known?: Known): Problem[] {
+/** Every problem in `mission`, errors first. Pass `known` to also check constants and globals against the project's Sanny files. Pass `enums` for the project's game; GTA III's are the default. */
+export function problems(
+  mission: Mission,
+  known?: Known,
+  enums: Record<string, EnumMember[]> = enumsFor("gta3"),
+): Problem[] {
   const found: Problem[] = [];
   const error = (message: string, state?: string) =>
     found.push({ severity: "error", message: sentence(message), state });
@@ -139,7 +144,7 @@ export function problems(mission: Mission, known?: Known): Problem[] {
     }
     for (const line of lines) {
       for (const { field, value } of fieldUses(line)) {
-        const members = field.enum && ENUMS[field.enum];
+        const members = field.enum && enums[field.enum];
         if (members && !members.some((m) => m.name === value)) {
           once(
             `${state}:${field.enum}:${value}`,

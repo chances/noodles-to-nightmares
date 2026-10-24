@@ -37,7 +37,7 @@ export interface Field {
    * parameter as about zero, so `problems` rejects the mismatch.
    */
   numeric?: "int" | "float";
-  /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`; see `ENUMS` in `sprites.ts`. */
+  /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`; see `enumsFor` in `enums.ts`. */
   enum?: string;
   /** An `enum` field the editor fills by typing, rather than from a select, because its list is long. */
   typeahead?: boolean;
@@ -498,8 +498,9 @@ export const stepDescriptors: StepDescriptor[] = [
       },
       {
         name: "name",
-        label: "Name",
+        label: "Model Name",
         type: "name",
+        enum: "SpecialCharacter",
         default: "FRANKIE",
       },
       {
@@ -510,7 +511,7 @@ export const stepDescriptors: StepDescriptor[] = [
       },
       {
         name: "pedType",
-        label: "PedType",
+        label: "Pedestrian Type",
         type: "name",
         enum: "PedType",
         default: "Special",
@@ -1779,7 +1780,8 @@ export const stepDescriptors: StepDescriptor[] = [
       name: "name",
       label: "Model Name",
       type: "name",
-      default: "sal",
+      enum: "SpecialCharacter",
+      default: "FRANKIE",
     }],
   },
   {

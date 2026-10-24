@@ -86,10 +86,9 @@ end
 05DC: terminate_custom_thread
 
 :stateIntro
-  // Rosa's Handler enters, Salvatore Leone
+  // Enter Salvatore Leone, Rosa's Handler; the "mysterious contact"
   // QUESTION: Trigger mission with this? Char.HasSpottedPlayer(sal, $player)
   // QUESTION: How long after the game starts do we need to slow down the player?
-  // Start a cutscene with the "mysterious contact", Salvatore
   // Ensure the neighborhood is loaded
   // TODO: Add more NPCs, e.g. the noodle man
   // TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
@@ -97,6 +96,7 @@ end
   // FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop
   TIMERA = 0
   Player.SetControl($player, false)
+  Streaming.LoadSpecialCharacter(1, 'FRANKIE')
   load_special_character 1 1 #SPECIAL01 'FRANKIE'
   Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
   Char.SetPersonality(sal, PedStat.ToughGuy)
@@ -407,9 +407,9 @@ end
   return
 
 :stateLose
+  // FIXME: Reset all blips back to whatever "tryStartMission" looks for
   TIMERA = 0
   Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
-  wait 3000
   finishMission()
   return
 

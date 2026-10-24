@@ -4,7 +4,7 @@ import { generateGeographyTxt } from "./geography.ts";
 import { loadKnown, parseConsts } from "./known.ts";
 import { loadMission } from "./fsm-file.ts";
 import { problems } from "./problems.ts";
-import { ENUMS } from "./sprites.ts";
+import { enumsFor } from "./enums.ts";
 import type { Known } from "./problems.ts";
 import { defineMission } from "./types.ts";
 import type { Cond, Mission } from "./types.ts";
@@ -138,9 +138,10 @@ Deno.test("a map icon that is not a RadarSprite member is an error, with or with
 });
 
 Deno.test("the radar sprite list matches the ids constants.txt relies on", () => {
-  const diablo = ENUMS.RadarSprite.find((m) => m.name === "Diablo");
+  const sprites = enumsFor("gta3").RadarSprite;
+  const diablo = sprites.find((m) => m.name === "Diablo");
   assertEquals(diablo?.id, 8);
-  assertEquals(ENUMS.RadarSprite.some((m) => m.name === "None"), false);
+  assertEquals(sprites.some((m) => m.name === "None"), false);
 });
 
 Deno.test("a ScriptSound the library names without a number is still a member", () => {

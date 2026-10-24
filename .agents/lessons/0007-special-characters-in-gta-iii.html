@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Special Characters in GTA III</title>
+<link rel="stylesheet" href="assets/callout.css">
+<link rel="stylesheet" href="assets/quiz.css">
+<style>
+:root { color-scheme:light dark; --bg:#fbfaf7; --fg:#222; --mute:#666; --line:#ddd; --accent:#b4531a; --code:#f0ede6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; } }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#1b1b1d; --fg:#e8e6e1; --mute:#9a9892; --line:#3a3a3d; --accent:#e8935a; --code:#26262a; }
+:root[data-theme="light"] { color-scheme:light; }
+body { background:var(--bg); color:var(--fg); font:17px/1.6 Georgia, serif; max-inline-size:46rem; margin-inline:auto; padding-inline:1rem; padding-block:2rem; }
+h1 { font-size:1.8rem; margin-block-end:.2rem; }
+h2 { font-size:1.15rem; margin-block-start:2rem; border-block-end:1px solid var(--line); padding-block-end:.2rem; }
+h3 { font-size:.95rem; font-family:system-ui, sans-serif; color:var(--accent); margin-block:1.2rem .2rem; padding-inline-start:.6rem; border-inline-start:3px solid var(--accent); }
+.sub, small { color:var(--mute); }
+table { border-collapse:collapse; inline-size:100%; font-size:.9rem; }
+td, th { border-block-end:1px solid var(--line); padding:.35rem .5rem; text-align:start; vertical-align:top; }
+code, pre { background:var(--code); border-radius:.25rem; font-size:.88rem; }
+code { padding-inline:.25rem; }
+pre { padding:.7rem .9rem; overflow-x:auto; }
+a { color:var(--accent); }
+button { font:inherit; font-size:.9rem; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:.3rem; padding:.4rem .7rem; margin-block:.25rem; cursor:pointer; display:block; text-align:start; }
+#theme { position:fixed; inset-block-start:.6rem; inset-inline-end:.6rem; }
+.result { min-block-size:1.6rem; }
+</style>
+</head>
+<body>
+<button id="theme" type="button">Toggle Theme</button>
+<h1>Special Characters in GTA III</h1>
+<p class="sub">Mission: load, create, and remove the special characters <code>1_shady_job</code> uses, and know which GTA III rules differ from Vice City and San Andreas. Target: GTA III, Sanny Builder library <code>gta3</code>.</p>
+
+<h2>1. Two Spellings, One Opcode</h2>
+<p>Both spellings in the project refer to opcode <code>023C</code>, the GTA III opcode that loads a special character into a slot. The library names it <code>LOAD_SPECIAL_CHARACTER</code> with 2 parameters, a slot and a model name (<a href="https://github.com/sannybuilder/library/blob/master/gta3/gta3.json">gta3.json</a>, entry <code>023C</code>).</p>
+<table>
+<tr><th>Spelling</th><th>Opcode</th><th>Arguments</th><th>Where It Is Documented</th></tr>
+<tr><td><code>Streaming.LoadSpecialCharacter(slot, name)</code></td><td><code>023C</code></td><td>2</td><td>Library, Section 1 of <a href="0004-the-streaming-class.html">Lesson 4</a></td></tr>
+<tr><td><code>023C: load_special_actor 'NAME' as 1</code></td><td><code>023C</code></td><td>2</td><td><a href="https://gtamods.com/wiki/023C">GTAMods wiki 023C</a>, GTA III syntax</td></tr>
+<tr><td><code>load_special_character 1 1 #SPECIAL01 'FRANKIE'</code></td><td>not listed</td><td>4</td><td>Project mission files only, not in the library or the wiki</td></tr>
+</table>
+<blockquote class="callout" data-variant="warning">The 4-argument line is in <code>missions/1_shady_job.txt</code> and in the Create Character card. The user reports it is required on GTA III in testing. The library and the wiki both list <code>023C</code> with two parameters, the form in the table above.</blockquote>
+
+<h2>2. The Lifecycle</h2>
+<p>A special character takes four steps. Each step has its own opcode, and the wiki says the game can crash if you skip the load.</p>
+<table>
+<tr><th>Step</th><th>Library Member</th><th>Opcode</th><th>Job</th></tr>
+<tr><td>Load</td><td><code>Streaming.LoadSpecialCharacter</code></td><td><code>023C</code></td><td>Request the model into a slot</td></tr>
+<tr><td>Check</td><td><code>Streaming.HasSpecialCharacterLoaded</code></td><td><code>023D</code></td><td>Wait until the slot is ready</td></tr>
+<tr><td>Create</td><td><code>Char.Create</code> in the project; library name <code>CREATE_CHAR</code></td><td><code>009A</code></td><td>Spawn the ped with <code>#SPECIAL01</code> to <code>#SPECIAL04</code></td></tr>
+<tr><td>Unload</td><td><code>Streaming.UnloadSpecialCharacter</code></td><td><code>0296</code></td><td>Free the slot when the ped is no longer needed</td></tr>
+</table>
+<p>The wiki's example sends each special character through the same four steps. It pairs the <code>0296</code> unload with <code>01C2</code>, which releases the ped's references.</p>
+
+<h2>3. What Is Specific to GTA III</h2>
+<p>Most sources you find were written for Vice City or San Andreas, and the numbers differ.</p>
+<table>
+<tr><th>Rule</th><th>GTA III</th><th>Vice City</th><th>San Andreas</th></tr>
+<tr><td>Slots for <code>023C</code></td><td>1 to 4</td><td>1 to 21</td><td>1 to 10</td></tr>
+<tr><td>Special ped models for <code>009A</code></td><td><code>#SPECIAL01</code> to <code>#SPECIAL04</code></td><td>01 to 21</td><td>01 to 10</td></tr>
+</table>
+<p>GTA III also has its own list of 42 valid names for <code>023C</code>, including <code>FRANKIE</code>, <code>MARIA</code>, and <code>PLAYER</code>. Those names are the options in the project's special character dropdown. The wiki excludes the characters that only appear in cutscenes (<a href="https://gtamods.com/wiki/023C">GTAMods wiki 023C</a>).</p>
+<blockquote class="callout" data-variant="danger">A GTA III Steam mission that loaded <code>EIGHT2</code> and spawned <code>#SPECIAL01</code> crashed at <code>023C</code>. The fix reported on the forum was upgrading <code>scm.ini</code>, so the opcode definitions the editor uses must match the game build (<a href="https://gtaforums.com/topic/946212-gta-iii-using-special-actors-crash-the-game/">GTAForums thread 946212</a>).</blockquote>
+
+<h2>4. Cutscenes</h2>
+<p>A cutscene object can be a special character. The wiki says <code>02E5</code> creates one with a <code>SPECIAL##</code> model, and that model loads through <code>023C</code> (<a href="https://gtamods.com/wiki/02E5">GTAMods wiki 02E5</a>). Then <code>02E6</code> sets the object's animation by name, and the model for that animation must be loaded (<a href="https://gtamods.com/wiki/02E6">GTAMods wiki 02E6</a>).</p>
+<p>A cutscene model loaded with <code>02F3</code> is a different path. It comes from the HIER section of an IDE file and uses <code>0248</code> and <code>0249</code> to check and release it (<a href="https://gtamods.com/wiki/02F3">GTAMods wiki 02F3</a>).</p>
+
+<h2>5. Check Yourself</h2>
+<p>How many slots does GTA III give to special characters?</p>
+<div class="quiz" data-ok="1">
+<button type="button">10 slots</button>
+<button type="button" data-correct="1">4 slots</button>
+<button type="button">21 slots</button>
+</div>
+<p class="result" aria-live="polite"></p>
+<p>Which opcode checks that a special character has loaded?</p>
+<div class="quiz">
+<button type="button">009A</button>
+<button type="button">0248</button>
+<button type="button" data-correct="1">023D</button>
+</div>
+<p class="result" aria-live="polite"></p>
+<p>Which opcode releases a special character's slot?</p>
+<div class="quiz">
+<button type="button">0249</button>
+<button type="button" data-correct="1">0296</button>
+<button type="button">0247</button>
+</div>
+<p class="result" aria-live="polite"></p>
+
+<h2>Next</h2>
+<p>Primary source: the <a href="https://gtamods.com/wiki/023C">GTAMods wiki page for 023C</a>, which lists the GTA III models and gives the syntax. Confirm it against the <a href="https://library.sannybuilder.com/#/gta3/default/023C">Sanny Builder Library entry for 023C</a>. Related: <a href="0004-the-streaming-class.html">Lesson 4, The Streaming Class</a>. Ask follow-up questions in the session whenever a step is unclear.</p>
+
+<script>
+document.querySelectorAll(".quiz").forEach(function (q) {
+  var out = q.nextElementSibling;
+  q.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var ok = !!b.dataset.correct;
+      b.classList.add(ok ? "ok" : "bad");
+      out.className = "result " + (ok ? "ok" : "bad");
+      out.textContent = ok
+        ? "Correct. Section 2 and Section 3 cover this one."
+        : "Not that one. Check the lifecycle table in Section 2 and the GTA III column in Section 3.";
+    });
+  });
+});
+(function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem("lesson-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = getComputedStyle(root).colorScheme.indexOf("dark") === 0;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("lesson-theme", root.dataset.theme); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

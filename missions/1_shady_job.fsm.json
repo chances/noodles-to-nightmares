@@ -81,10 +81,9 @@
       "INTRO": {
         "kind": "cutscene",
         "notes": [
-          "Rosa's Handler enters, Salvatore Leone",
+          "Enter Salvatore Leone, Rosa's Handler; the \"mysterious contact\"",
           "QUESTION: Trigger mission with this? Char.HasSpottedPlayer(sal, $player)",
           "QUESTION: How long after the game starts do we need to slow down the player?",
-          "Start a cutscene with the \"mysterious contact\", Salvatore",
           "Ensure the neighborhood is loaded",
           "TODO: Add more NPCs, e.g. the noodle man",
           "TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!",
@@ -95,6 +94,9 @@
         "onEnter": [
           [
             "Player.SetControl($player, false)"
+          ],
+          [
+            "Streaming.LoadSpecialCharacter(1, 'FRANKIE')"
           ],
           [
             "load_special_character 1 1 #SPECIAL01 'FRANKIE'",
@@ -651,15 +653,10 @@
           "FIXME: Reset all blips back to whatever \"tryStartMission\" looks for"
         ],
         "fail": false,
-        "beats": [
-          {
-            "do": [
-              [
-                "Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)"
-              ]
-            ],
-            "wait": 3000
-          }
+        "onEnter": [
+          [
+            "Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)"
+          ]
         ],
         "finish": true
       }

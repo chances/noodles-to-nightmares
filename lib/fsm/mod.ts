@@ -55,5 +55,5 @@ export {
   poiSpot,
 } from "./geography.ts";
 export type { GeoPoi } from "./geography.ts";
-export { ENUMS } from "./sprites.ts";
-export type { EnumMember } from "./sprites.ts";
+export { enumsFor } from "./enums.ts";
+export type { EnumMember, Game } from "./enums.ts";

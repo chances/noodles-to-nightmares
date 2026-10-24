@@ -103,10 +103,7 @@ while true
   end
 end
 
-// Load our characters
-Streaming.LoadSpecialCharacter(1, 'ASUKA')
-Streaming.LoadSpecialCharacter(2, 'MARIA')
-// TODO: utils/characters.txt
+// Load player character
 // QUESTION: `Char` class is only for third-party characters?
 // FIXME: Char.Create(PedType.CivFemale, 83, 1039, -653, 14, $playerChar)
 Char.Undress($playerChar, 'PLAYER')

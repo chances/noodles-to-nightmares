@@ -100,6 +100,11 @@ async function readGame(folder: string): Promise<Game | undefined> {
   return isGame(marker?.game) ? marker.game : undefined;
 }
 
+/** The game a project folder is marked with. A folder with no marker is GTA III. */
+export async function projectGame(folder: string): Promise<Game> {
+  return (await readGame(folder)) ?? "gta3";
+}
+
 /** Folders in the two game Projects folders that look like projects and are not remembered yet. */
 export async function scanProjects(
   dirs: ProjectDirs,

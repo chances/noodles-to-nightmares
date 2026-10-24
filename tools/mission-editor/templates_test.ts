@@ -3,7 +3,7 @@ import { fromFileUrl } from "@std/path";
 import {
   cond,
   condDescriptors,
-  ENUMS,
+  enumsFor,
   fieldPattern,
   loadMission,
   step,
@@ -1115,7 +1115,7 @@ Deno.test("the map icon field offers the RadarSprite members, filtered as you ty
     f.name === "sprite"
   )!;
   assertEquals(sprite.enum, "RadarSprite");
-  const options = enumOptions(ENUMS.RadarSprite);
+  const options = enumOptions(enumsFor("gta3").RadarSprite);
   const names = (query: string) =>
     filterOptions(options, query).map((o: { value: string }) => o.value);
   assertEquals(names("save"), ["Savehouse"]);

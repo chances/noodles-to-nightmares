@@ -15,7 +15,7 @@ import { stripAnsiCode } from "@std/fmt/colors";
 import { fromFileUrl, join, resolve } from "@std/path";
 import {
   condDescriptors,
-  ENUMS,
+  enumsFor,
   GEOGRAPHY,
   listMissions,
   listNames,
@@ -34,7 +34,12 @@ import {
   TELEMETRY_PORT,
 } from "../../scripts/telemetry.ts";
 import { killTree } from "./process-tree.ts";
-import { createProject, listProjects, openProject } from "./projects.ts";
+import {
+  createProject,
+  listProjects,
+  openProject,
+  projectGame,
+} from "./projects.ts";
 import type { ProjectDirs } from "./projects.ts";
 
 const uiDir = fromFileUrl(new URL("./ui/", import.meta.url));
@@ -204,7 +209,11 @@ export function createApp(
         ...loaded,
         edges: transitions(loaded.mission),
         node: NODE,
-        problems: problems(loaded.mission, known),
+        problems: problems(
+          loaded.mission,
+          known,
+          enumsFor(await projectGame(resolve(project))),
+        ),
         // The constants and globals the typeaheads offer, from the project's Sanny files.
         names: listNames(known),
         sannyFiles: await listSannyFiles(join(resolve(project), "missions")),
@@ -234,6 +243,7 @@ export function createApp(
         problems: problems(
           saved.mission,
           await loadKnown(join(resolve(project), "missions"), saved.mission),
+          enumsFor(await projectGame(resolve(project))),
         ),
       });
     },
@@ -242,15 +252,18 @@ export function createApp(
   // The steps and conditions the Inspector offers as typed controls.
   app.get(
     "/api/vocabulary",
-    (c) =>
-      c.json({
+    vValidator("query", v.object({ project: v.optional(v.string()) })),
+    async (c) => {
+      const { project } = c.req.valid("query");
+      return c.json({
         steps: stepDescriptors,
         conds: condDescriptors,
         // The spots a `spot` field offers.
         spots: Object.values(GEOGRAPHY),
-        // The members of the Sanny enums that `enum` fields offer, e.g. `RadarSprite`.
-        enums: ENUMS,
-      }),
+        // The members of the Sanny enums that `enum` fields offer for the project's game, e.g. `RadarSprite`.
+        enums: enumsFor(project ? await projectGame(resolve(project)) : "gta3"),
+      });
+    },
   );
 
   // POI catalog from data/geography.json
