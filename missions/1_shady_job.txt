@@ -13,15 +13,12 @@
 const REWARD = 800 // Fee for the job
 
 const STATE_INTRO = 0
-const STATE_SAL_CUTSCENE = 1
-const STATE_END_INTRO = 2
-const STATE_APPROACH_PHONE = 3
-const STATE_RING_PHONE = 4
-const STATE_ANSWER_CALL = 5
-const STATE_FETCH_PACKAGE = 6
-const STATE_DELIVER = 7
-const STATE_PAYOUT = 8
-const STATE_LOSE = 9
+const STATE_GOTO_PHONE = 1
+const STATE_RING_PHONE = 2
+const STATE_ANSWER_CALL = 3
+const STATE_DELIVER_DRUGS = 4
+const STATE_PAYOUT = 5
+const STATE_LOSE = 6
 
 // Mission-private state is CLEO locals, which need no global slot (16 per script)
 int state = STATE_INTRO
@@ -36,6 +33,8 @@ int deliveryBlip = 0
 int wanted = 0
 
 $onMission = true
+$onCutscene = true
+Hud.SwitchWidescreen(true)
 
 while true
   wait 0
@@ -47,21 +46,9 @@ while true
   end
 
   if
-    state == STATE_SAL_CUTSCENE
+    state == STATE_GOTO_PHONE
   then
-    stateSalCutscene()
-  end
-
-  if
-    state == STATE_END_INTRO
-  then
-    stateEndIntro()
-  end
-
-  if
-    state == STATE_APPROACH_PHONE
-  then
-    stateApproachPhone()
+    stateGotoPhone()
   end
 
   if
@@ -77,15 +64,9 @@ while true
   end
 
   if
-    state == STATE_FETCH_PACKAGE
+    state == STATE_DELIVER_DRUGS
   then
-    stateFetchPackage()
-  end
-
-  if
-    state == STATE_DELIVER
-  then
-    stateDeliver()
+    stateDeliverDrugs()
   end
 
   if
@@ -105,22 +86,31 @@ end
 05DC: terminate_custom_thread
 
 :stateIntro
+  // Rosa's Handler enters, Salvatore Leone
   // QUESTION: Trigger mission with this? Char.HasSpottedPlayer(sal, $player)
   // QUESTION: How long after the game starts do we need to slow down the player?
   // Start a cutscene with the "mysterious contact", Salvatore
   // Ensure the neighborhood is loaded
   // TODO: Add more NPCs, e.g. the noodle man
   // TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
+  // Note: Sal's name is Frankie, internally
+  // FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop
   TIMERA = 0
-  $onCutscene = true
   Player.SetControl($player, false)
+  load_special_character 1 1 #SPECIAL01 'FRANKIE'
+  Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
+  Char.SetPersonality(sal, PedStat.ToughGuy)
+  Streaming.LoadAllModelsNow()
+  Char.TurnToFacePlayer(sal, $player)
+  Char.LookAtPlayerAlways(sal, $player)
+  Char.SetAnimGroup(sal, AnimGroup.Man)
+  wait 0
   Text.PrintBigString("Easy Money", 5000, TextStyle.BottomRight)
   Camera.DoFade(500, Fade.Out)
   Hud.LoadSplash('SPLASH1')
   wait 500
   // FIXME: The neighborhood text will not go away.
   // NOTE: The neighborhood text stays there for at least five (5) seconds
-  // Artificially inflated wait to give the player a break
   clearUI()
   Streaming.RequestModel(#RUMPO)
   Streaming.RequestModel(332)
@@ -131,42 +121,15 @@ end
   Streaming.RequestModel(961)
   Streaming.RequestModel(1357)
   Streaming.LoadAllModelsNow()
+  // Artificially inflated wait to give the player a break
   wait 1250
-  if
-    $skipCutscene == false
-  then
-    state = STATE_SAL_CUTSCENE
-    return
-  else
-    state = STATE_END_INTRO
-    return
-  end
-  return
-
-:stateSalCutscene
-  // Rosa's Handler enters, Salvatore Leone
-  // Note: Sal's name is Frankie, internally
-  // FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop
-  // Note: Rosa turns to face Sal after he first speaks
-  TIMERA = 0
-  load_special_character {slotId} 1 {modelName} 'FRANKIE'
-  Streaming.LoadAllModelsNow()
-  Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
-  Char.SetPersonality(sal, PedStat.ToughGuy)
-  Char.TurnToFacePlayer(sal, $player)
-  Char.LookAtPlayerAlways(sal, $player)
-  Char.SetAnimGroup(sal, AnimGroup.Man)
-  wait 0
   // Move the camera, like one of the shop's security cameras for a spooky vibe
   Camera.SetFixedPosition(NOODLES_SECURITY_CAM_X, NOODLES_SECURITY_CAM_Y, NOODLES_SECURITY_CAM_Z, 0, 0, 0)
   Camera.PointAtChar(sal, CameraMode.Fixed, SwitchType.JumpCut)
-  wait 250
   Camera.DoFade(500, Fade.In)
   wait 525
   // TODO: Rosa mulls around the shop for a few moments
-  wait 1500
-  Sound.AddOneOffSound(NOODLES_SOUND_X, NOODLES_SOUND_Y, NOODLES_SOUND_Z, ScriptSound.SoundMarcoBistroS)
-  wait 2500
+  wait 2000
   // Sal
   // TODO: Char.SetSay()
   Text.PrintString("I hear you're meek like a mouse.", 3500)
@@ -187,7 +150,7 @@ end
   wait 3750
   // Sal
   // TODO: Char.SetSay()
-  Text.PrintString("I'll call you soon.", 4000)
+  Text.PrintString("I'll call you soon.", 2250)
   wait 2250
   // Watch Sal leave (without paying 😏)
   Char.StopLooking(sal)
@@ -195,31 +158,24 @@ end
   Char.SetObjGotoCoordOnFoot(sal, ROSA_SPAWN_X, ROSA_SPAWN_Y)
   Camera.SetInterpolationParameters(0, 750)
   Camera.PointAtChar(sal, CameraMode.Fixed, SwitchType.Interpolation)
+  Player.StopLooking($player)
   wait 2750
   // TODO: Make Rosa walk towards the West door
   Camera.DoFade(500, Fade.Out)
-  Player.StopLooking($player)
-  wait 2500
-  // Remove Sal from the scene
+  wait 525
   Char.MarkAsNoLongerNeeded(sal)
   Char.Delete(sal)
   sal = 0
-  state = STATE_END_INTRO
-  return
-
-:stateEndIntro
-  // End cutscene
-  TIMERA = 0
-  $onCutscene = false
+  wait 2500
   Camera.SetInterpolationParameters(0, 0)
-  Camera.SetBehindPlayer()
-  Camera.Restore()
+  Camera.RestoreJumpcut()
   Camera.DoFade(500, Fade.In)
   wait 525
+  Player.SetControl($player, true)
   // Ensure the neighborhood is visible
   // Spawn Lee Chong's van outside the shop
-  // Show a payphone waypoint blip
-  // FIXME: I don't see the phone blip on the HUD
+  Camera.SetInterpolationParameters(0, 0)
+  Camera.SetBehindPlayer()
   Streaming.RequestModel(333)
   Streaming.RequestModel(343)
   Streaming.RequestModel(444)
@@ -233,18 +189,19 @@ end
   $myCarModel = #RUMPO
   Car.TurnToFaceCoord($myCar, PAYPHONE_X, PAYPHONE_BLIP_Y)
   ensureVanBlip()
-  payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)
   debugLogInt(DEBUG_PLAYER, $player)
   debugLogInt(DEBUG_VAN, $myCar)
   debugLogInt(DEBUG_VAN_BLIP, $VanBlip)
   debugLogInt(DEBUG_PAYPHONE_BLIP, payphoneBlip)
-  Player.SetControl($player, true)
-  state = STATE_APPROACH_PHONE
+  $onCutscene = false
+  Hud.SwitchWidescreen(false)
+  state = STATE_GOTO_PHONE
   return
 
-:stateApproachPhone
-  // Wait for the player to get near the payphone
+:stateGotoPhone
+  // Show the payphone blip, then wait for the player to get near there
   TIMERA = 0
+  payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)
   while true
     wait 0
     failCheck()
@@ -265,7 +222,6 @@ end
 :stateRingPhone
   // Wait for the player to answer the phone
   TIMERA = 0
-  // Wait a beat
   TIMERA = 0
   while TIMERA < 2500
     wait 0
@@ -290,8 +246,10 @@ end
       return
     end
     if
-      Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 2.0, 2.0, 2.0, true)
+      Player.LocateOnFoot3D($player, PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, 1.5, 1.5, 1.5, true)
     then
+      $onCutscene = true
+      Hud.SwitchWidescreen(true)
       state = STATE_ANSWER_CALL
       return
     end
@@ -300,11 +258,9 @@ end
 
 :stateAnswerCall
   // Note: Player.IsLiftingAPhone($player) is true here
-  // Start a cutscene
   TIMERA = 0
   Blip.Remove(payphoneBlip)
   Phone.TurnOff(payphoneHandle)
-  $onCutscene = true
   Player.SetControl($player, false)
   // Player "picks up" the phone
   // See https://gtamods.com/wiki/0372
@@ -322,7 +278,6 @@ end
   Text.PrintString("Keep a low profile. We don't want the cops sniffin' around.", 3500)
   wait 3750
   // End the cutscene
-  $onCutscene = false
   Camera.DoFade(500, Fade.Out)
   wait 525
   Camera.RestoreJumpcut()
@@ -330,64 +285,61 @@ end
   Camera.DoFade(500, Fade.In)
   wait 375
   Player.SetControl($player, true)
-  state = STATE_FETCH_PACKAGE
+  $onCutscene = false
+  Hud.SwitchWidescreen(false)
+  state = STATE_DELIVER_DRUGS
   return
 
-:stateFetchPackage
-  // Wait for the package to be picked up
-  // TODO: Start a two minute countdown
+:stateDeliverDrugs
   // Spawn the drugs pickup
   TIMERA = 0
+  TIMERB = 0
   packagePickup = Pickup.Create(1321, PickupType.OnStreet, PACKAGE_PICKUP_X, PACKAGE_PICKUP_Y, PACKAGE_PICKUP_Z)
   pickupBlip = Blip.AddForPickup(packagePickup)
   debugLogInt(DEBUG_PICKUP_BLIP, pickupBlip)
+  // Wait for the player to pickup the drugs
   while true
     wait 0
     failCheck()
     if
       state == STATE_LOSE
     then
+      return
+    end
+    if
+      TIMERB > 120000
+    then
+      state = STATE_LOSE
       return
     end
     if
       Pickup.HasBeenCollected(packagePickup)
     then
-      state = STATE_DELIVER
-      return
+      break
     end
   end
-  return
-
-:stateDeliver
-  // Wait for the player to "deliver" the package to the projects
-  TIMERA = 0
-  Blip.Remove(pickupBlip)
-  Pickup.Remove(packagePickup)
   Text.PrintString("Take the ~r~drugs ~w~to the ~p~dropoff point~w~.", 3000)
-  deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)
-  TIMERA = 0
-  while TIMERA < 3000
-    wait 0
-    failCheck()
-    if
-      state == STATE_LOSE
-    then
-      return
-    end
-  end
-  // Flash the radar to draw attention to the dropoff point
   Hud.FlashObject(HudObject.Radar)
   TIMERA = 0
-  while TIMERA < 5000
+  while TIMERA < 4500
     wait 0
     failCheck()
     if
       state == STATE_LOSE
     then
+      return
+    end
+    if
+      TIMERB > 120000
+    then
+      state = STATE_LOSE
       return
     end
   end
   Hud.FlashObject(0)
+  Blip.Remove(pickupBlip)
+  deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)
+  // Wait for the player to deliver the drugs to the projects
   while true
     wait 0
     failCheck()
@@ -397,11 +349,33 @@ end
       return
     end
     if
-      Player.LocateAnyMeans3D($player, DELIVERY_X, DELIVERY_Y, DELIVERY_Z, DELIVERY_RADIUS, DELIVERY_RADIUS, DELIVERY_RADIUS, true)
+      TIMERB > 120000
     then
-      state = STATE_PAYOUT
+      state = STATE_LOSE
       return
     end
+    if
+      Player.LocateOnFoot3D($player, DELIVERY_X, DELIVERY_Y, DELIVERY_Z, 1.5, 1.5, 1.5, true)
+    then
+      break
+    end
+  end
+  while true
+    wait 0
+    failCheck()
+    if
+      state == STATE_LOSE
+    then
+      return
+    end
+    if
+      TIMERB > 120000
+    then
+      state = STATE_LOSE
+      return
+    end
+    state = STATE_PAYOUT
+    return
   end
   return
 
@@ -425,6 +399,8 @@ end
   TIMERA = 0
   Text.PrintBig('M_FAIL', 3500, TextStyle.Middle)
   wait 3000
+  $onCutscene = true
+  Hud.SwitchWidescreen(true)
   state = STATE_INTRO
   return
 
