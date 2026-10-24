@@ -8,13 +8,15 @@
 
 var
   $missionIndex: int
+  $onMission: int
   $onCutscene: int
+  $skipCutscene: int
   $player: Player
   $playerChar: Char
   $myCar: Car
   $myCarModel: int
-  $isCameraAvoidingObstacle: int
   $isCarInWater: int
+  $isCameraAvoidingObstacle: int
   $hudTimer: int
   //====================//
   $SafeBlip: Blip
@@ -22,19 +24,22 @@ var
   $NoodlesBlip: Blip
   $VanBlip: Blip
   $ApartmentGarage: Garage
+  $tempPickup: Pickup
+  $SafeInfo: Pickup
+  $SavePickup: Pickup
 end
 
 // Shared by main and the missions
 Alloc($missionIndex, 4400)
-Alloc($onCutscene, 4401)
-Alloc($player, 4402)
-Alloc($playerChar, 4403)
-Alloc($myCar, 4405)
-Alloc($isCameraAvoidingObstacle, 4406)
-Alloc($isCarInWater, 4407)
-Alloc($myCarModel, 4408)
-Alloc($onMission, 4409)
-Alloc($skipCutscene, 4410)
+Alloc($onMission, 4401)
+Alloc($onCutscene, 4402)
+Alloc($skipCutscene, 4403)
+Alloc($player, 4404)
+Alloc($playerChar, 4405)
+Alloc($myCar, 4406)
+Alloc($myCarModel, 4407)
+Alloc($isCarInWater, 4408)
+Alloc($isCameraAvoidingObstacle, 4409)
 Alloc($hudTimer, 4410)
 
 // Main
@@ -43,13 +48,11 @@ Alloc($PunkNoodles, 4502)
 Alloc($NoodlesBlip, 4503)
 Alloc($VanBlip, 4504)
 Alloc($ApartmentGarage, 4505)
-Alloc($SafeInfo, 4506)
-Alloc($Bribe, 4507)
+Alloc($tempPickup, 4506)
+Alloc($SafeInfo, 4507)
 Alloc($SavePickup, 4508)
 Alloc($Canyonero, 4509)
 Alloc($KurumaGen, 4510)
-Alloc($gen_car3, 4511)
-Alloc($tempPickup, 4512)
 
 // Mission-private state are CLEO locals declared in its mission scripts (16 per script),
 // _not_ a global. Add a global here only when main, utils/, or more than one script share it.

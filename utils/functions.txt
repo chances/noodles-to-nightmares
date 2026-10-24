@@ -32,7 +32,6 @@ end
 
 function initBlips()
   // Spawn a Safehouse: Rosa's apartment, NE Portland, lot behind Rosa's building
-  $Bribe = Pickup.Create(1383, PickupType.OnStreetSlow, 1173, -398.5, 25.8)
   // TODO: $HealthPickup = Pickup.Create(1362, PickupType.OnStreetSlow, x, y, z)
   $SavePickup = Pickup.Create(1362, PickupType.Once, 1165.0, -398.5, 25.8)
 end
@@ -60,7 +59,6 @@ function initParkedCars()
   CarGenerator.Switch($StingerGen, 101)
   CarGenerator.Switch($SentinelGen, 101)
   CarGenerator.Switch($Canyonero, 101)
-  CarGenerator.Switch($gen_car3, 101)
 end
 
 function initHiddenPkgs()
