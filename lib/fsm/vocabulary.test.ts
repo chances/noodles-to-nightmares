@@ -11,6 +11,19 @@ Deno.test("say and title print text for a duration", () => {
   ]);
 });
 
+Deno.test("charCreate waits for the special character to load before creating it", () => {
+  assertEquals(
+    step.charCreate(1, "FRANKIE", "#SPECIAL01", "Special", "NOODLES_SAL", "sal"),
+    [
+      "Streaming.LoadSpecialCharacter(1, 'FRANKIE')",
+      "while not Streaming.HasSpecialCharacterLoaded(1)",
+      "  wait 0",
+      "end",
+      "Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)",
+    ],
+  );
+});
+
 Deno.test("help prints a help message", () => {
   assertEquals(step.help("Drive safe."), [
     'Text.PrintHelpString("Drive safe.")',
@@ -108,11 +121,9 @@ Deno.test("healthBelow reads health into a scratch local", () => {
   });
 });
 
-Deno.test("wantedAbove reads the wanted level into a scratch local", () => {
+Deno.test("wantedAbove tests the wanted level with IsWantedLevelGreater", () => {
   assertEquals(cond.wantedAbove(1), {
-    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
-    test: "wanted > 1",
-    locals: ["wanted"],
+    test: "Player.IsWantedLevelGreater($player, 1)",
   });
 });
 

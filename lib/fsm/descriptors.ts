@@ -510,7 +510,10 @@ export const stepDescriptors: StepDescriptor[] = [
     label: "Create Character",
     group: "Char",
     lines: [
-      "load_special_character {slot} 1 {model} '{name}'",
+      "Streaming.LoadSpecialCharacter({slot}, '{name}')",
+      "while not Streaming.HasSpecialCharacterLoaded({slot})",
+      "  wait 0",
+      "end",
       "Char.Create(PedType.{pedType}, {model}, {spot}_X, {spot}_Y, {spot}_Z, {char})",
     ],
     fields: [
@@ -2757,9 +2760,7 @@ export const condDescriptors: CondDescriptor[] = [
     name: "wantedAbove",
     label: "Wanted level above",
     group: "Player",
-    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
-    lines: ["wanted > {max}"],
-    locals: ["wanted"],
+    lines: ["Player.IsWantedLevelGreater($player, {max})"],
     fields: [{
       name: "max",
       label: "Highest Allowed Stars",

@@ -4,8 +4,8 @@
   "exports": "./server.ts",
   "tasks": {
     "dev": "deno run --allow-run dev.ts",
-    "serve": "deno run --watch --allow-env --allow-read --allow-write --allow-net --allow-run=deno,powershell,pkill main.ts",
-    "build": "deno desktop --allow-env --allow-read --allow-write --allow-net --allow-run=deno,powershell,pkill --include ui --output ../../dist/MissionEditor main.ts",
+    "serve": "deno run --watch --allow-env --allow-read --allow-write --allow-net --allow-run=deno,powershell main.ts",
+    "build": "deno desktop --allow-env --allow-read --allow-write --allow-net --allow-run=deno,powershell --include ui --output ../../dist/MissionEditor main.ts",
     "test": "deno test --allow-env --allow-read --allow-write --allow-run --allow-net=127.0.0.1,0.0.0.0:0"
   },
   "fmt": { "exclude": ["ui/vendor"] },

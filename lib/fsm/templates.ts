@@ -209,11 +209,7 @@ function deliveryTemplate(title = "Delivery"): Mission {
     fail: [
       { test: "Player.IsDead($player)" },
       { test: "Player.HasBeenArrested($player)" },
-      {
-        pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
-        test: "wanted > 0",
-        locals: ["wanted"],
-      },
+      { test: "Player.IsWantedLevelGreater($player, 0)" },
     ],
     states: {
       INTRO: {

@@ -67,14 +67,7 @@
         "test": "Player.IsDead($player)"
       },
       {
-        "pre": [
-          "wanted = 0",
-          "01C0: wanted = player $player wanted_level"
-        ],
-        "test": "wanted > 1",
-        "locals": [
-          "wanted"
-        ]
+        "test": "Player.IsWantedLevelGreater($player, 1)"
       }
     ],
     "states": {
@@ -95,10 +88,10 @@
             "Player.SetControl($player, false)"
           ],
           [
-            "Streaming.LoadSpecialCharacter(1, 'FRANKIE')"
-          ],
-          [
-            "load_special_character 1 1 #SPECIAL01 'FRANKIE'",
+            "Streaming.LoadSpecialCharacter(1, 'FRANKIE')",
+            "while not Streaming.HasSpecialCharacterLoaded(1)",
+            "  wait 0",
+            "end",
             "Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)"
           ],
           [
@@ -112,9 +105,6 @@
           ],
           [
             "Char.SetAnimGroup(sal, AnimGroup.Man)"
-          ],
-          [
-            "wait 0"
           ]
         ],
         "beats": [
@@ -510,12 +500,10 @@
             "do": [
               [
                 "Camera.DoFade(500, Fade.Out)"
-              ]
-            ],
-            "wait": 525
-          },
-          {
-            "do": [
+              ],
+              [
+                "wait 525"
+              ],
               [
                 "Camera.RestoreJumpcut()"
               ],
@@ -524,16 +512,15 @@
               ],
               [
                 "Camera.DoFade(500, Fade.In)"
-              ]
-            ],
-            "wait": 375
-          },
-          {
-            "do": [
+              ],
+              [
+                "wait 375"
+              ],
               [
                 "Player.SetControl($player, true)"
               ]
-            ]
+            ],
+            "wait": 0
           }
         ],
         "next": "DELIVER_DRUGS"

@@ -1,0 +1,182 @@
+DEFINE OBJECTS 3
+DEFINE OBJECT (noname)
+DEFINE OBJECT INDHELIX_BARRIER
+DEFINE OBJECT LOD_LAND014
+
+DEFINE MISSIONS 0
+
+{$USE CLEO}
+{$USE ini}
+nop
+
+// DEBUG: Repro probe for the crash to desktop when the player hits a cop (1_shady_job failCheck).
+// A cop stands 6 units ahead of the player. Hit it with fists or a car, then watch the game.
+// Each frame reads the wanted level the way the mission does. Keys:
+//   F9  cycles the read: 0 raw 01C0 (the mission's), 1 Player.StoreWantedLevel, 2 Player.IsWantedLevelGreater, 3 none
+//   F10 raises the wanted level to 1 with no cop hit, to split "wanted level raised" from "cop hit"
+// Writes results to CLEO\wanted-probe.ini in the GTA3 folder.
+
+var
+  $player: Player
+  $playerChar: Char
+  $cop: Char
+  $mode: int
+  $wanted: int
+  $frames: int
+  $framesSinceWanted: int
+  $f9Held: int
+  $f10Held: int
+  $hitReported: int
+end
+
+//-------------MAIN---------------
+script_name 'MAIN'
+Game.SetMaxWantedLevel(3)
+set_deatharrest_state 0
+Clock.SetTimeOfDay(12, 0)
+Streaming.LoadCollision(0)
+
+// Spawn at the default Portland start
+$player = Player.Create(0, 1144.0, -596.0, 14.97)
+Player.SetHeading($player, 0.0)
+$playerChar = Player.GetChar($player)
+Camera.SetBehindPlayer
+Weather.ForceNow(WeatherType.Sunny)
+Stat.SetIndustrialPassed
+Stat.SetCommercialPassed
+
+Streaming.LoadScene(1144.0, -596.0, 14.97)
+Streaming.RequestModel(#COP)
+Streaming.LoadAllModelsNow()
+
+// Wait for the scene to load
+while true
+  wait 0
+
+  if
+    Streaming.IsCollisionInMemory(LevelName.Industrial)
+  then
+    break
+  else
+    wait 250
+  end
+end
+
+Camera.DoFade(500, Fade.In)
+Player.SetControl($player, true)
+Weather.Release
+
+// The cop stands still and does not fight back until hit
+Char.Create(PedType.Cop, #COP, 1144.0, -590.0, 14.97, $cop)
+Char.SetHeading($cop, 180.0)
+
+IniFile.WriteInt(1, "CLEO\wanted-probe.ini", "Probe", "started")
+$mode = 0
+$wanted = 0
+$frames = 0
+$framesSinceWanted = 0
+$f9Held = 0
+$f10Held = 0
+$hitReported = 0
+Text.PrintString("MODE 0: RAW 01C0", 1500)
+
+while true
+  wait 0
+  $frames += 1
+
+  // F9 (VK_F9 = 0x78) cycles the wanted-level read
+  if
+    0AB0: is_key_pressed 0x78
+  then
+    if
+      $f9Held == 0
+    then
+      $f9Held = 1
+      $mode += 1
+      if
+        $mode > 3
+      then
+        $mode = 0
+      end
+      IniFile.WriteInt($mode, "CLEO\wanted-probe.ini", "Probe", "mode")
+      if
+        $mode == 0
+      then
+        Text.PrintString("MODE 0: RAW 01C0", 1500)
+      end
+      if
+        $mode == 1
+      then
+        Text.PrintString("MODE 1: STORE WANTED LEVEL", 1500)
+      end
+      if
+        $mode == 2
+      then
+        Text.PrintString("MODE 2: IS WANTED LEVEL GREATER", 1500)
+      end
+      if
+        $mode == 3
+      then
+        Text.PrintString("MODE 3: NO READ", 1500)
+      end
+    end
+  else
+    $f9Held = 0
+  end
+
+  // F10 (VK_F10 = 0x79) raises the wanted level with no cop hit
+  if
+    0AB0: is_key_pressed 0x79
+  then
+    if
+      $f10Held == 0
+    then
+      $f10Held = 1
+      Player.AlterWantedLevel($player, 1)
+      IniFile.WriteInt($frames, "CLEO\wanted-probe.ini", "Probe", "f10_raised_at_frame")
+    end
+  else
+    $f10Held = 0
+  end
+
+  // The wanted-level read under test, once per frame
+  $wanted = 0
+  if
+    $mode == 0
+  then
+    01C0: $wanted = player $player wanted_level
+  end
+  if
+    $mode == 1
+  then
+    Player.StoreWantedLevel($player, $wanted)
+  end
+  if
+    $mode == 2
+  then
+    if
+      Player.IsWantedLevelGreater($player, 0)
+    then
+      $wanted = 1
+    end
+  end
+
+  // Count the frames survived since the wanted level first read above 0
+  if
+    $wanted > 0
+  then
+    if
+      $hitReported == 0
+    then
+      $hitReported = 1
+      IniFile.WriteInt($frames, "CLEO\wanted-probe.ini", "Probe", "wanted_first_seen_at_frame")
+      IniFile.WriteInt($mode, "CLEO\wanted-probe.ini", "Probe", "wanted_first_seen_in_mode")
+    end
+    $framesSinceWanted += 1
+    if
+      $framesSinceWanted == 120
+    then
+      IniFile.WriteInt(1, "CLEO\wanted-probe.ini", "Probe", "survived_wanted_expect_1")
+    end
+  end
+end

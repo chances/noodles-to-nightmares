@@ -109,7 +109,8 @@ async function compile(inputPath: string, outputPath: string) {
   }
   if (await logStamp() !== before) {
     const log = (await Deno.readTextFile(logPath)).trim();
-    if (log.toLowerCase().includes(basename(inputPath).toLowerCase())) {
+    // An error inside an include names the include, not the input, and the compiler drops the failing line
+    if (log) {
       say.error(`Failed to compile: ${inputPath}\n${log}`);
       Deno.exit(1);
     }

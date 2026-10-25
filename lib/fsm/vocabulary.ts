@@ -1,7 +1,7 @@
 // The step and condition vocabulary for mission state tables. Each entry maps a friendly name to its Sanny lines.
 
 import { DEFAULT_RADIUS } from "./descriptors.ts";
-import { cmp, ifBlock, latchLocal } from "./emit.ts";
+import { cmp, ifBlock, latchLocal, whileBlock } from "./emit.ts";
 import type { Cond, Step } from "./types.ts";
 
 /** A number or a Sanny identifier such as a constant name. */
@@ -70,7 +70,10 @@ export const step = {
     spot: Spot,
     char: Expr,
   ): Step => [
-    `load_special_character ${slot} 1 ${model} '${name}'`,
+    `Streaming.LoadSpecialCharacter(${slot}, '${name}')`,
+    ...whileBlock(`not Streaming.HasSpecialCharacterLoaded(${slot})`, [
+      "wait 0",
+    ]),
     `Char.Create(PedType.${pedType}, ${model}, ${coords(spot, 3)}, ${char})`,
   ],
   charPersonality: (char: Expr, stat: string): Step => [
@@ -553,11 +556,9 @@ export const cond = {
   modelLoaded: (model: Expr): Cond => ({
     test: `Streaming.IsModelLoaded(${model})`,
   }),
-  /** Reads the wanted level (stars) into the scratch local `wanted`. */
+  /** True when the wanted level (stars) is over `max`; 010F, not 01C0, which crashes when hitting a cop. */
   wantedAbove: (max: number): Cond => ({
-    pre: ["wanted = 0", "01C0: wanted = player $player wanted_level"],
-    test: `wanted > ${max}`,
-    locals: ["wanted"],
+    test: `Player.IsWantedLevelGreater($player, ${max})`,
   }),
   /** Reads the car's health (1000 is undamaged) into the scratch local `carHealth`. */
   carHealthBelow: (car: Expr, amount: number): Cond => ({

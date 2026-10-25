@@ -30,7 +30,6 @@ int payphoneBlip = 0
 int packagePickup = 0
 int pickupBlip = 0
 int deliveryBlip = 0
-int wanted = 0
 
 $onMission = true
 $onCutscene = true
@@ -92,18 +91,18 @@ end
   // Ensure the neighborhood is loaded
   // TODO: Add more NPCs, e.g. the noodle man
   // TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!
-  // Note: Sal's name is Frankie, internally
   // FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop
   TIMERA = 0
   Player.SetControl($player, false)
   Streaming.LoadSpecialCharacter(1, 'FRANKIE')
-  load_special_character 1 1 #SPECIAL01 'FRANKIE'
+  while not Streaming.HasSpecialCharacterLoaded(1)
+    wait 0
+  end
   Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)
   Char.SetPersonality(sal, PedStat.ToughGuy)
   Char.TurnToFacePlayer(sal, $player)
   Char.LookAtPlayerAlways(sal, $player)
   Char.SetAnimGroup(sal, AnimGroup.Man)
-  wait 0
   Text.PrintBigString("Easy Money", 5000, TextStyle.BottomRight)
   Camera.DoFade(500, Fade.Out)
   Hud.LoadSplash('SPLASH1')
@@ -418,12 +417,10 @@ end
   return
 
 :failCheck
-  wanted = 0
-  01C0: wanted = player $player wanted_level
   if or
     Player.HasBeenArrested($player)
     Player.IsDead($player)
-    wanted > 1
+    Player.IsWantedLevelGreater($player, 1)
   then
     state = STATE_LOSE
   end

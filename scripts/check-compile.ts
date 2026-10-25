@@ -29,7 +29,8 @@ for (const arg of Deno.args) {
   const log = (await stampOf()) !== before
     ? (await Deno.readTextFile(logPath)).trim()
     : "";
-  const failedHere = log.toLowerCase().includes(basename(input).toLowerCase());
+  // An error inside an include names the include, not the input, and the compiler drops the failing line
+  const failedHere = log !== "";
   failed ||= failedHere;
   if (failedHere) {
     say.error(`${basename(input)}: ${log}`);
