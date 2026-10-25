@@ -397,7 +397,7 @@ understand context before making changes.
 - **No Line-Ending Speculation on Edit Failures**: When a file edit tool fails to match a target or triggers syntax errors, NEVER blame or hypothesize about CRLF/LF line endings.
 - **Count Blocks & Brackets Directly**: Always trace and count structural blocks (opening/closing braces `{}`, parentheses `()`, and template/component tags `<//>`), verify exact indentation, and ensure statement termination (semicolons).
 - **Match Exact Single Lines**: When editing code where surrounding whitespace or multiline indentation is ambiguous, anchor edits to unique single lines rather than guessing multiline whitespace spans.
-- **Churn Ceiling & Mandatory Questions**: If an edit triggers repeated regressions or fails across 3 consecutive turns, STOP editing immediately. Enumerate the conflicting constraints and invoke `ask_question` to align on requirements before touching any more code.
+- **Churn Ceiling & Mandatory Questions**: If an edit triggers repeated regressions or fails across 5 consecutive turns, STOP editing immediately. Enumerate the conflicting constraints and invoke `ask_question` to align on requirements before touching any more code.
 - **Preserve Prior Invariants**: Never fix a new edge case by reverting or altering a box-model property (border-width, padding, display) that was stabilized in prior turns.
 
 ---

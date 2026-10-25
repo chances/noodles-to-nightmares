@@ -574,11 +574,85 @@ Deno.test("stopping a run ends it, reports it stopped, and answers 409 when none
 });
 
 Deno.test("serves geography catalog", async () => {
-  const res = await get("/api/geography");
+  const res = await get(`/api/geography?project=${repo}`);
   assertEquals(res.status, 200);
   const geo = await res.json();
   assert(geo.SAFEHOUSE);
   assertEquals(typeof geo.SAFEHOUSE.pos[0], "number");
+});
+
+Deno.test("serves mission templates over the API", async () => {
+  const res = await get("/api/templates");
+  assertEquals(res.status, 200);
+  const templates = await res.json();
+  assertEquals(Array.isArray(templates), true);
+  assertEquals(templates.length, 4);
+  const empty = templates.find((t: { id: string }) => t.id === "empty");
+  assert(empty);
+  assertEquals(empty.name, "Empty Starter");
+});
+
+Deno.test("creates a new mission from a template and refuses stem collisions", async () => {
+  const dir = await Deno.makeTempDir();
+  try {
+    const project = encodeURIComponent(dir);
+    const postMission = (body: unknown) =>
+      handler(
+        new Request(`http://editor.test/api/missions?project=${project}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      );
+
+    const res = await postMission({
+      stem: "3_delivery_job",
+      template: "delivery",
+      title: "Delivery Job",
+    });
+    assertEquals(res.status, 201);
+    const created = await res.json();
+    assertEquals(created.stem, "3_delivery_job");
+    assertEquals(created.mission.start, "INTRO");
+    assertEquals(created.mission.states.PICKUP.kind, "interaction");
+
+    // Recreating with the same stem yields 409 Conflict
+    const conflict = await postMission({
+      stem: "3_delivery_job",
+      template: "empty",
+    });
+    assertEquals(conflict.status, 409);
+    assertStringIncludes((await conflict.json()).error, "already exists");
+
+    // An invalid stem yields 400 Bad Request
+    const badStem = await postMission({
+      stem: "invalid stem with spaces",
+      template: "empty",
+    });
+    assertEquals(badStem.status, 400);
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
+});
+
+Deno.test("serves project-specific geography and spots, returning empty when absent", async () => {
+  const dir = await Deno.makeTempDir();
+  try {
+    const emptyProj = encodeURIComponent(dir);
+    const emptyGeo = await (await get(`/api/geography?project=${emptyProj}`)).json();
+    assertEquals(emptyGeo, {});
+
+    const emptyVocab = await (await get(`/api/vocabulary?project=${emptyProj}`)).json();
+    assertEquals(emptyVocab.spots, []);
+
+    const repoGeo = await (await get(`/api/geography?project=${repo}`)).json();
+    assert(Object.keys(repoGeo).length > 0);
+
+    const repoVocab = await (await get(`/api/vocabulary?project=${repo}`)).json();
+    assert(repoVocab.spots.length > 0);
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
 });
 
 Deno.test("answers 404 for an unknown path", async () => {

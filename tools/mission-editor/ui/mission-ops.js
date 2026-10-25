@@ -180,3 +180,43 @@ export function addState(draft, { name, kind, after, leadsTo }, node) {
   if (after) mission.states[after].next = name;
   draft.layout = layout(mission, node);
 }
+
+/** The next free sequential integer index for numbered story missions, or 0 when none exist. */
+export function nextMissionIndex(missions) {
+  const indices = (missions || []).map((m) => {
+    const match = m.stem.match(/^(\d+)_/);
+    return match ? parseInt(match[1], 10) : -1;
+  });
+  const max = Math.max(-1, ...indices);
+  return max + 1;
+}
+
+/** Formats a text title into an identifier-safe stem slug. */
+export function slugify(text) {
+  return (text || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/** Formats input as typed for a mission stem (letters, numbers, hyphens, and underscores in lower case). */
+export function formatStem(text) {
+  return (text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "");
+}
+
+/**
+ * Computes the presentation state for the first-launch welcome view.
+ *
+ * @remarks `Loaded` in `app.js` renders the welcome whenever no mission is loaded, so this check covers both zero missions and missions with none open.
+ */
+export function welcomeState(missions) {
+  const hasMissions = Boolean(missions && missions.length > 0);
+  return {
+    hasMissions,
+    heading: hasMissions ? "Select or Create a Mission" : "Welcome to Mission Editor",
+    showPicker: hasMissions,
+  };
+}

@@ -16,8 +16,11 @@ import { stripAnsiCode } from "@std/fmt/colors";
 import { fromFileUrl, join, resolve } from "@std/path";
 import {
   condDescriptors,
+  createMissionFromTemplate,
+  docFromMission,
   enumsFor,
   GEOGRAPHY,
+  type GeoPoi,
   listMissions,
   listNames,
   loadKnown,
@@ -26,6 +29,8 @@ import {
   problems,
   saveMission,
   stepDescriptors,
+  TEMPLATE_IDS,
+  TEMPLATES,
   transitions,
 } from "@noodles/fsm";
 import { ScriptWriter } from "./script-emit.ts";
@@ -54,6 +59,33 @@ const saveBody = v.object({
   mission: v.unknown(),
   layout: v.optional(v.unknown()),
 });
+
+const createMissionBody = v.object({
+  stem: v.pipe(
+    v.string(),
+    v.regex(
+      /^[A-Za-z0-9_-]+$/,
+      "Stem must only contain letters, numbers, hyphens, and underscores",
+    ),
+  ),
+  template: v.optional(v.picklist(TEMPLATE_IDS), "empty"),
+  title: v.optional(v.string()),
+});
+
+/** Loads a project's geography catalog from `<projectDir>/data/geography.json`. Returns empty when absent. */
+export async function loadGeography(
+  projectDir: string,
+): Promise<Record<string, GeoPoi>> {
+  try {
+    const text = await Deno.readTextFile(
+      join(projectDir, "data", "geography.json"),
+    );
+    const catalog = JSON.parse(text) as GeoPoi[];
+    return Object.fromEntries(catalog.map((p) => [p.id, p]));
+  } catch {
+    return {};
+  }
+}
 
 export function defaultDirs(): ProjectDirs {
   const home = Deno.env.get("USERPROFILE") ?? Deno.env.get("HOME") ?? ".";
@@ -231,12 +263,54 @@ export function createApp(
     return c.json(await listMissions(join(resolve(project), "missions")));
   });
 
+  app.get("/api/templates", (c) => {
+    return c.json(
+      Object.values(TEMPLATES).map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+      })),
+    );
+  });
+
+  // @remarks Returns 409 when the stem already loads. The stem regex in `createMissionBody` is the only character guard. A failed save returns 422 through `unprocessable`.
+  app.post(
+    "/api/missions",
+    vValidator("query", projectQuery),
+    vValidator("json", createMissionBody),
+    async (c) => {
+      const { project } = c.req.valid("query");
+      const geo = project ? await loadGeography(resolve(project)) : GEOGRAPHY;
+      const { stem, template, title } = c.req.valid("json");
+      const missionsDir = join(resolve(project), "missions");
+      const existing = await loadMission(missionsDir, stem);
+      if (existing) {
+        throw new HTTPException(409, {
+          message: `Mission ${stem} already exists`,
+        });
+      }
+      const mission = createMissionFromTemplate(template, title ?? stem);
+      const doc = docFromMission(mission);
+      const saved = await unprocessable(() =>
+        saveMission(missionsDir, stem, doc)
+      );
+      return c.json(saved, 201);
+    },
+  );
+
   app.get(
+  /*
+    },
+  });
+
+  app.get(
+  */
     "/api/missions/:stem",
     vValidator("query", projectQuery),
     async (c) => {
       const stem = c.req.param("stem");
       const { project } = c.req.valid("query");
+      const geo = project ? await loadGeography(resolve(project)) : GEOGRAPHY;
       const loaded = await unprocessable(() => {
         return loadMission(join(resolve(project), "missions"), stem);
       });
@@ -265,13 +339,15 @@ export function createApp(
 
   // Autosave: the editor sends the whole table after every edit. A `.states.ts` mission gets a `.fsm.json`
   // beside it on its first save, and that file wins from then on.
-  app.put(
+  app.put(/*
+  */
     "/api/missions/:stem",
     vValidator("query", projectQuery),
     vValidator("json", saveBody),
     async (c) => {
       const stem = c.req.param("stem");
       const { project } = c.req.valid("query");
+      const geo = project ? await loadGeography(resolve(project)) : GEOGRAPHY;
       const { mission, layout } = c.req.valid("json");
       const saved = await unprocessable(() => {
         return saveMission(join(resolve(project), "missions"), stem, {
@@ -301,11 +377,12 @@ export function createApp(
     vValidator("query", v.object({ project: v.optional(v.string()) })),
     async (c) => {
       const { project } = c.req.valid("query");
+      const geo = project ? await loadGeography(resolve(project)) : GEOGRAPHY;
       return c.json({
         steps: stepDescriptors,
         conds: condDescriptors,
         // The spots a `spot` field offers.
-        spots: Object.values(GEOGRAPHY).map((spot) => ({
+        spots: Object.values(geo).map((spot) => ({
           ...spot,
           docHtml: docHtml(spot.comment),
         })),
@@ -324,7 +401,14 @@ export function createApp(
   );
 
   // POI catalog from data/geography.json
-  app.get("/api/geography", (c) => c.json(GEOGRAPHY));
+  app.get(
+    "/api/geography",
+    vValidator("query", projectQuery),
+    async (c) => {
+      const { project } = c.req.valid("query");
+      return c.json(await loadGeography(resolve(project)));
+    },
+  );
 
   // Live telemetry from the game (plugins/sockets), as SSE events on /api/telemetry. Packets come from this
   // editor's own UDP listener, or, while a run is in progress, from the run's output (see below).

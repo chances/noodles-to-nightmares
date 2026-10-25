@@ -116,14 +116,14 @@ export function useAssetFilters(project) {
 }
 
 /** The "Choose Filters" icon button and its popover. */
-export function AssetsFilterButton({ filterState, telemetry }) {
+export function AssetsFilterButton({ filterState, telemetry, projectQuery }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
   const hostRef = useRef(null);
   const [availableCategories, setAvailableCategories] = useState([]);
 
   useEffect(() => {
-    fetch("/api/geography")
+    fetch(`/api/geography${projectQuery ? `?${projectQuery}` : ""}`)
       .then((r) => r.json())
       .then((data) => {
         const spots = Object.values(data);
@@ -131,7 +131,7 @@ export function AssetsFilterButton({ filterState, telemetry }) {
         setAvailableCategories(cats);
       })
       .catch(() => {});
-  }, []);
+  }, [projectQuery]);
 
   useEffect(() => {
     if (!open) return;
@@ -293,15 +293,15 @@ export function AssetsFilterBar({ filterState, telemetry }) {
 }
 
 /** Displays filtered POI catalog spots and live player coordinates. */
-export function AssetsPane({ telemetry, filterState }) {
+export function AssetsPane({ telemetry, filterState, projectQuery }) {
   const [spots, setSpots] = useState([]);
 
   useEffect(() => {
-    fetch("/api/geography")
+    fetch(`/api/geography${projectQuery ? `?${projectQuery}` : ""}`)
       .then((r) => r.json())
       .then((data) => setSpots(Object.values(data)))
       .catch(() => setSpots([]));
-  }, []);
+  }, [projectQuery]);
 
   const filters = filterState?.filters ?? { districts: [], categories: [], proximity: { enabled: false, radius: 200 } };
   const center = telemetry?.pos ? telemetry.pos : [0, 0, 0];

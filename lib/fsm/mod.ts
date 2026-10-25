@@ -33,6 +33,12 @@ export { floatLiteral, kindOfLiteral } from "./numeric.ts";
 export type { NumberKind } from "./numeric.ts";
 export { syncMissions } from "./sync.ts";
 export type { SyncResult } from "./sync.ts";
+export {
+  createMissionFromTemplate,
+  TEMPLATE_IDS,
+  TEMPLATES,
+} from "./templates.ts";
+export type { TemplateId, TemplateInfo } from "./templates.ts";
 export { defineMission, STATE_KINDS } from "./types.ts";
 export type {
   Beat,

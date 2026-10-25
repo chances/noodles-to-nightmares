@@ -1021,6 +1021,99 @@ dialog .form {
   gap: 16px;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: border-color 160ms, background-color 160ms;
+}
+
+.template-card:hover {
+  border-color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 50%, var(--surface));
+}
+
+.template-card.selected,
+.template-card:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.template-card:has(input:focus-visible),
+.template-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.template-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.template-card-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.template-card.selected .template-card-name,
+.template-card:has(input:checked) .template-card-name {
+  color: var(--accent);
+}
+
+.template-card-indicator {
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.template-card.selected .template-card-indicator,
+.template-card:has(input:checked) .template-card-indicator {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.template-card.selected .template-card-indicator::after,
+.template-card:has(input:checked) .template-card-indicator::after {
+  content: "";
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--on-accent);
+}
+
+.template-card-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 .choice {
   display: flex;
   align-items: center;

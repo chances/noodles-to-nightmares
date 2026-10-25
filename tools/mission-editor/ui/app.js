@@ -13,6 +13,7 @@ import { GraphControls, GraphPane } from "./graph-pane.js";
 import { BuildIcon, RedoIcon, StopIcon, UndoIcon } from "./icons.js";
 import { InspectorCrumb, InspectorPane, InspectorTitle } from "./inspector-pane.js";
 import { missionLabel } from "./mission-label.js";
+import { MissionMenu } from "./mission-menu.js";
 import { loadNodeSelection, saveNodeSelection } from "./node-selection.js";
 import { ProblemsPanel, ProblemsPill } from "./problems.js";
 import { ProjectMenu } from "./project-menu.js";
@@ -21,6 +22,7 @@ import { StatesPane } from "./states-pane.js";
 import { EditorContext } from "./step-controls.js";
 import { TimelinePane, TimelineSummary } from "./timeline-pane.js";
 import { Status } from "./status.js";
+import { WelcomePane } from "./first-launch.js";
 import { CaptureToast, TelemetryPill, useTelemetry } from "./telemetry.js";
 
 async function getJson(url) {
@@ -68,14 +70,23 @@ function useMissions(preferredStem = null) {
     return () => { stale = true; };
   }, [stem]);
 
-  return { list, stem, setStem, mission };
+  const addMission = (created) => {
+    setList((current) => ({
+      ...current,
+      data: [...(current.data ?? []).filter((m) => m.stem !== created.stem), { stem: created.stem, source: created.source }]
+        .sort((a, b) => a.stem.localeCompare(b.stem, undefined, { numeric: true })),
+    }));
+    setStem(created.stem);
+  };
+
+  return { list, stem, setStem, mission, addMission };
 }
 
 /** Shows `ready(data)` once the mission has loaded, else the matching status message. */
-function Loaded({ mission, empty, ready }) {
+function Loaded({ mission, empty, ready, welcome }) {
   if (mission.loading) return html`<${Status} loading heading="Loading Mission">Reading the mission table.<//>`;
   if (mission.error) return html`<${Status} heading="Mission Failed to Load">${mission.error}<//>`;
-  if (!mission.data) return html`<${Status} heading="No Missions">${empty}<//>`;
+  if (!mission.data) return welcome ? welcome() : html`<${Status} heading="No Missions">${empty}<//>`;
   return ready(mission.data);
 }
 
@@ -93,7 +104,7 @@ const PANES = {
   states: { axis: "y", sign: 1, limits: [80, 640] },
 };
 const KEYS = { x: { ArrowLeft: -KEY_STEP, ArrowRight: KEY_STEP }, y: { ArrowUp: -KEY_STEP, ArrowDown: KEY_STEP } };
-const size = (axis, el) => (axis === "x" ? el.offsetWidth : el.offsetHeight);
+const size = (axis, el) => (el ? (axis === "x" ? el.offsetWidth : el.offsetHeight) : 0);
 
 /** The saved pixel sizes of the panes in PANES; anything else in storage is dropped. */
 function loadSizes() {
@@ -214,7 +225,7 @@ function App() {
   const [showProblems, setShowProblems] = useState(false);
   const [adding, setAdding] = useState(false);
   const [savedSelection] = useState(() => loadNodeSelection(localStorage, project));
-  const { list, stem, setStem, mission: loadedMission } = useMissions(savedSelection?.stem ?? null);
+  const { list, stem, setStem, mission: loadedMission, addMission } = useMissions(savedSelection?.stem ?? null);
   const { doc, edit, undo, redo, canUndo, canRedo, problems: found, save } = useDocument(loadedMission.data ?? null, projectQuery);
   // A failed save is listed first, with its reason, beside the build's errors and the mission's own problems.
   const [buildErrors, setBuildErrors] = useState([]);
@@ -335,6 +346,7 @@ function App() {
   };
 
   useEffect(() => {
+    if (!mission.data) return;
     const sync = () => {
       setMeasured(Object.fromEntries(Object.entries(PANES).map(([side, { axis }]) => [side, size(axis, panes[side].current)])));
     };
@@ -348,22 +360,30 @@ function App() {
         }
       }
     });
-    observer.observe(main.current);
+    if (main.current) observer.observe(main.current);
     for (const pane of Object.values(panes)) observer.observe(pane.current);
     return () => observer.disconnect();
-  }, [custom]);
+  }, [custom, mission.data]);
 
   const style = Object.entries(custom).map(([side, px]) => `--${side}: ${px}px`).join(";");
 
   return html`
     <header>
       <${ProjectMenu} name=${projectName} path=${project} />
-      <label class="field">
-        <span class="sr-only">Mission</span>
-        <select value=${stem ?? ""} disabled=${!list.data?.length} onChange=${(e) => setStem(e.currentTarget.value)}>
-          ${(list.data ?? []).map((m) => html`<option key=${m.stem} value=${m.stem}>${missionLabel(m.stem)}</option>`)}
-        </select>
-      </label>
+      ${(list.data ?? []).length > 0 && html`
+        <${MissionMenu}
+          stem=${stem}
+          missions=${list.data ?? []}
+          onSelect=${setStem}
+          project=${project}
+          onCreated=${addMission}
+        />
+      `}
+
+
+
+
+
       <div class="toolbar">
         <span class="save-status" role="status" data-state=${save.state}>
           ${save.state === "error" ? "Save failed" : SAVE_TEXT[save.state] ?? ""}
@@ -387,6 +407,16 @@ function App() {
         ${mode === "debug" && html`<${TelemetryPill} connected=${connected} telemetry=${telemetry} />`}
       </div>
     </header>
+    ${!mission.data ? html`
+      <main class="welcome-container" style="display:flex;align-items:center;justify-content:center;height:100%;overflow:auto">
+        <${WelcomePane}
+          missions=${list.data ?? []}
+          project=${project}
+          onSelect=${setStem}
+          onCreated=${addMission}
+        />
+      </main>
+    ` : html`
     <main ref=${main} style=${style}>
       <div class="workspace">
       <${Splitter}
@@ -423,9 +453,9 @@ function App() {
             ready=${(m) => html`<${StatesPane} doc=${m} selected=${selected} onSelect=${setSelected} />`} />
         <//>
         <${Pane} title="Asset Catalog"
-          trail=${html`<${AssetsFilterButton} filterState=${assetFilters} telemetry=${telemetry} />`}
+          trail=${html`<${AssetsFilterButton} filterState=${assetFilters} telemetry=${telemetry} projectQuery=${projectQuery} />`}
           bar=${hasAssetFilters ? html`<${AssetsFilterBar} filterState=${assetFilters} telemetry=${telemetry} />` : null}>
-          <${AssetsPane} telemetry=${telemetry} filterState=${assetFilters} />
+          <${AssetsPane} telemetry=${telemetry} filterState=${assetFilters} projectQuery=${projectQuery} />
         <//>
       </aside>
       <div class="center">
@@ -474,6 +504,7 @@ function App() {
         onReset=${reset}
       />
     </main>
+    `}
     ${adding && mission.data && html`
       <${AddStateDialog} mission=${mission.data.mission} selected=${selected} onClose=${() => setAdding(false)}
         onCreate=${(values) => {
