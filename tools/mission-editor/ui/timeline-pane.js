@@ -1,8 +1,9 @@
 // deno-fmt-ignore-file
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
-import { html } from "/vendor/preact.js";
+import { html, useEffect, useRef } from "/vendor/preact.js";
 import { Status } from "./status.js";
+import { revealElement } from "./reveal.js";
 
 // These two match `--second` and `--pad` on `.timeline-grid` in styles.css.
 const PX_PER_SECOND = 48;
@@ -58,6 +59,14 @@ export function TimelineSummary({ doc, selected }) {
  * beat starts, and a card spanning the time it waits. A beat that waits no time is only a keyframe.
  */
 export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
+  // The selected beat is scrolled into view when the pane opens, such as on load, and when a beat is picked elsewhere.
+  const grid = useRef(null);
+  useEffect(() => {
+    const picked = grid.current?.querySelector('[aria-pressed="true"]');
+    if (!picked) return;
+    revealElement(picked, "inline", CARD_GAP);
+    revealElement(picked, "block");
+  }, [shown, selected]);
   if (!selected) {
     return html`<${Status} heading="No State Selected">Select a state in the list or the graph to see its beats.<//>`;
   }
@@ -85,7 +94,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
   const spanPx = Math.max(x(totalSeconds * 1000), cursor) + PAD;
 
   return html`
-    <div class="timeline-grid" role="table" aria-label=${`Beats of ${selected}`} style=${`--span: ${spanPx}px`}>
+    <div class="timeline-grid" ref=${grid} role="table" aria-label=${`Beats of ${selected}`} style=${`--span: ${spanPx}px`}>
       <div role="row">
         <div class="tl-corner" role="columnheader"></div>
         <div class="tl-ruler" role="columnheader" aria-label="Time in seconds">

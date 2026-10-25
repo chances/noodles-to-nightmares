@@ -6,6 +6,8 @@ import { Overlay } from "./overlay.js";
 import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipMode, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, optionAnchor, pairOf, parseCond, parseLines, parseWhen, reformat, sannyLines, spotOptions, spriteOptions } from "./templates.js";
 import { CheckIcon, CopyIcon, GripIcon, SannyEditIcon } from "./icons.js";
 import { clampY, dropIndex, inColumn, insertionTop, HOLD_MS, moveItem, movedMessage, RETURN_MS, SLOP_PX, wrapIndex } from "./reorder.js";
+import { angleFromPoint, constantDegrees, dialPlace, literal, modeFor, onDialFace, placeValue, sliderKind, snapAngle, stepFor } from "./angle-control.js";
+import { revealElement } from "./reveal.js";
 
 /** The vocabulary (`steps`, `conds`), the geography `spots`, and the open mission's monitor ids, which the latch fields offer. */
 export const EditorContext = createContext({ steps: [], conds: [], spots: [], enums: {}, constants: [], globals: [], functions: [], monitorIds: [], sannyFiles: [] });
@@ -47,7 +49,8 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
   useEffect(() => {
     if (!reveal.current) return;
     reveal.current = false;
-    listEl.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
+    const active = listEl.current?.querySelector('[data-active="true"]');
+    if (active) revealElement(active, "block");
   }, [active, open]);
   const matches = open ? filterOptions(options, typed ?? "") : [];
   // An emptied field with a placeholder takes the placeholder's value, e.g. the default radius.
@@ -141,6 +144,98 @@ const EMPTY = {
   function: "Choose a function from the mission's includes.",
 };
 
+/** A compass dial: a needle at `degrees` (none when null), and a click sets the angle under the pointer. */
+function CompassDial({ degrees, label, onPick }) {
+  const pick = (e) => {
+    // A keyboard press has no pointer position, so it sets nothing.
+    if (e.detail === 0) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const dx = e.clientX - (box.left + box.width / 2);
+    const dy = e.clientY - (box.top + box.height / 2);
+    // The round button also catches a ring outside the drawn face, which is not part of the dial.
+    if (!onDialFace(dx, dy, box.width / 2)) return;
+    onPick(snapAngle(angleFromPoint(dx, dy), stepFor({ shift: e.shiftKey, ctrl: e.ctrlKey })));
+  };
+  const letters = [["N", 0], ["E", 90], ["S", 180], ["W", 270]];
+  const at = (deg, r) => {
+    const rad = (dialPlace(deg) * Math.PI) / 180;
+    return [r * Math.sin(rad), -r * Math.cos(rad)];
+  };
+  return html`
+    <button type="button" class=${degrees === null ? "compass dim" : "compass"} aria-label=${label} title="Pick Heading On Compass" onClick=${pick}>
+      <svg viewBox="-24 -24 48 48" aria-hidden="true" focusable="false">
+        <circle class="compass-face" r="21" />
+        ${[0, 45, 90, 135, 180, 225, 270, 315].map((d) => html`<line class="compass-tick" x1="0" y1="-21" x2="0" y2=${d % 90 === 0 ? -16 : -18} transform=${`rotate(${dialPlace(d)})`} />`)}
+        ${letters.map(([letter, d]) => {
+          const [x, y] = at(d, 13);
+          return html`<text class="compass-letter" x=${x} y=${y} text-anchor="middle" dominant-baseline="central">${letter}</text>`;
+        })}
+        ${degrees !== null && html`<line class="compass-needle" x1="0" y1="0" x2="0" y2="-16" transform=${`rotate(${dialPlace(degrees)})`} />`}
+      </svg>
+    </button>
+  `;
+}
+
+/**
+ * An expression field that declares a `min` and `max`: the typeahead, or a slider over the range. A toggle inside the box
+ * switches between them. An `angle` field also gets a compass dial beside the box.
+ */
+function RangeField({ field, value, label, onCommit }) {
+  const { constants } = useContext(EditorContext);
+  const auto = sliderKind(value);
+  // A toggle holds only while the value keeps the auto mode it had when the toggle was pressed.
+  const [picked, setPicked] = useState({ mode: null, auto });
+  const mode = modeFor(picked, auto);
+  // The slider's place while the value is a name, which has no number to show.
+  const [pending, setPending] = useState(field.min);
+  const mods = useRef({ shift: false, ctrl: false });
+  // An angle takes whole degrees only when the field's Sanny type is int, and a range of anything else takes whole steps.
+  const whole = field.angle ? field.numeric === "int" : true;
+  const shown = auto === "slider" && mode === "slider" ? Number(value) : pending;
+  const degrees = mode === "slider" ? shown : auto === "slider" ? Number(value) : constantDegrees(value, constants);
+  const track = (e) => { mods.current = { shift: e.shiftKey, ctrl: e.ctrlKey }; };
+  const step = () => (field.angle ? stepFor(mods.current) : 1);
+  const commit = (n) => {
+    setPending(n);
+    onCommit(literal(n, whole));
+  };
+  const drag = (e) => commit(placeValue(Number(e.currentTarget.value), field, step(), whole));
+  const keys = (e) => {
+    track(e);
+    const dir = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    commit(placeValue(shown + dir * step(), field, step(), whole));
+  };
+  const choose = (next) => {
+    if (next === mode) return;
+    // Switching back rounds a number to the nearest half degree, or a whole one, and leaves a name as it is.
+    if (next === "expr" && auto === "slider") {
+      const text = literal(Number(value), whole);
+      if (text !== value) onCommit(text);
+    }
+    setPicked({ mode: next, auto });
+  };
+  // The typeahead is the plain field, so it keeps its own options and its problem notes.
+  const typed = { ...field, min: undefined, max: undefined };
+  return html`
+    <div class="range-field">
+      ${field.angle && html`<${CompassDial} degrees=${degrees} label=${`${label} Compass`} onPick=${commit} />`}
+      <div class="range-box">
+        ${mode === "slider"
+          ? html`<input type="range" class="range-slider" min=${field.min} max=${field.max} step=${field.angle ? 0.5 : 1} value=${shown} aria-label=${label}
+              onPointerDown=${track} onPointerMove=${track} onKeyDown=${keys} onInput=${drag} />`
+          : html`<${FieldInput} field=${typed} value=${value} onCommit=${onCommit} />`}
+        ${mode === "slider" && html`<output class="range-readout">${literal(shown, whole)}</output>`}
+        <button type="button" role="checkbox" aria-checked=${mode === "slider"} aria-label="Slider" title=${mode === "slider" ? "Type an Expression" : "Use Slider"}
+          class="range-toggle" onClick=${() => choose(mode === "slider" ? "expr" : "slider")}>
+          <span class="script-glyph" aria-hidden="true">fn</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 /** One typed field. Typing is rewritten into the field's format; an empty or unfinished value is not saved. */
 export function FieldInput({ field, value, onCommit }) {
   const { monitorIds, spots, constants, globals, functions, enums } = useContext(EditorContext);
@@ -174,6 +269,7 @@ export function FieldInput({ field, value, onCommit }) {
   // A Call Function card names a function from the mission's includes, so only those are offered.
   if (field.type === "function") return html`<${Combo} field=${field} value=${value} options=${functionOptions(functions)} label=${field.label} missing="is not defined in this mission's includes" onCommit=${onCommit} />`;
   // A number or variable is typed freely; the list offers the project's constants (of the field's number type) or variables (of its type).
+  if (field.type === "expr" && field.min !== undefined && field.max !== undefined) return html`<${RangeField} field=${field} value=${value} label=${field.label} onCommit=${onCommit} />`;
   if (field.type === "expr" || field.type === "handle") {
     const options = field.type === "handle" || !field.numeric ? globalOptions(globals, field.varType) : constantOptions(constants, field.numeric);
     return html`<${Combo} field=${field} value=${value} options=${options} free label=${field.label} note=${numberProblem(field, value, constants)} onCommit=${onCommit} />`;
@@ -412,6 +508,10 @@ function Row({ item, kind, n, onChange, onRemove, reorder, lift }) {
   const hasSanny = lines.some((line) => line.trim() !== "");
   const card = reorder?.card ?? {};
   const grip = reorder?.grip ?? null;
+  // A Shown checkbox counts as a control, so a card with one field and no checkbox has a single control.
+  const controls = (parsed?.descriptor.fields.length ?? 0) + (parsed?.descriptor.shown ? 1 : 0);
+  // A card whose one control is a checkbox centres it. Other single controls keep filling the card.
+  const solo = controls === 1 && (parsed.descriptor.shown !== undefined || parsed.descriptor.fields.some((f) => f.type === "toggle"));
 
   useEffect(() => () => clearTimeout(copyTimer.current), []);
   const copy = async () => {
@@ -477,12 +577,12 @@ function Row({ item, kind, n, onChange, onRemove, reorder, lift }) {
             <${StepList} steps=${when.otherwise} emptyText="Nothing runs otherwise." onChange=${(list) => setWhen({ otherwise: list })} />
           </div>`
         : (parsed.descriptor.fields.length > 0 || parsed.descriptor.shown) && html`
-          <div class="fields">
+          <div class=${solo ? "fields solo" : "fields"}>
             ${parsed.descriptor.shown && html`
-              <label class="mini"><span>${parsed.descriptor.shown.label ?? "Shown"}</span><input type="checkbox" class="toggle" checked=${parsed.descriptor.shown.on} onChange=${flip} /></label>`}
-            ${parsed.descriptor.fields.map((f) => html`
-              <label class="mini" key=${f.name}><span>${f.label}</span><${FieldInput} field=${f} value=${parsed.values[f.name]} onCommit=${setValue(f.name)} /></label>
-            `)}
+              <label class="mini inline"><input type="checkbox" class="toggle" checked=${parsed.descriptor.shown.on} onChange=${flip} /><span>${parsed.descriptor.shown.label ?? "Shown"}</span></label>`}
+            ${parsed.descriptor.fields.map((f) => f.type === "toggle"
+              ? html`<label class="mini inline" key=${f.name}><${FieldInput} field=${f} value=${parsed.values[f.name]} onCommit=${setValue(f.name)} /><span>${f.label}</span></label>`
+              : html`<label class="mini" key=${f.name}><span class=${controls === 1 ? "sr-only" : undefined}>${f.label}</span><${FieldInput} field=${f} value=${parsed.values[f.name]} onCommit=${setValue(f.name)} /></label>`)}
           </div>`}
     </li>
   `;

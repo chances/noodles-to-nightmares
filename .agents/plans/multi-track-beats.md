@@ -70,6 +70,10 @@ interface State {
 - A cell is a keyframe dot at the column start and a bar for its `wait`. The bar can be shorter than the column; the gap is the actor idle. A background cell is a hollow, dashed bar with no length. A conditional cell has a dashed edge, and a column `when` is a badge in its header.
 - A state with only `beats` shows one row, `Direction`, as it does now.
 - Pan, zoom, the fixed heading bar, and the sticky name column and header follow the current timeline.
+- The top-left corner, above the name column and beside the ruler, is reserved for three controls:
+  - A search icon button. Clicking it hides the other corner controls and expands a full-width search field. Escape, a clear button, or blur while empty restores the corner.
+  - The playhead timecode. It appears only with telemetry on, for debugging missions.
+  - Right-aligned action icon buttons: "Choose Filters" (a new filter set for timeline rows and columns), and a "Timeline Settings" gear that opens a modal dialog.
 
 ## Open Items
 

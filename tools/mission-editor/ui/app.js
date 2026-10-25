@@ -2,6 +2,7 @@
 // The formatter indents htm templates by nesting depth and breaks the `<//>` closers, so this file is left as written.
 
 import { html, render, useEffect, useRef, useState } from "/vendor/preact.js";
+import { readUrlState, writeUrlState } from "./url-state.js";
 import { AddStateDialog, Plus } from "./add-state.js";
 import { AssetsFilterBar, AssetsFilterButton, AssetsPane, useAssetFilters } from "./assets-pane.js";
 import { DebugControls, DebuggerPane } from "./debugger-pane.js";
@@ -34,6 +35,7 @@ const project = new URLSearchParams(location.search).get("project");
 if (!project) location.replace("/");
 const projectName = project?.split(/[\\/]/).filter(Boolean).pop() ?? "";
 const projectQuery = `project=${encodeURIComponent(project ?? "")}`;
+const urlState = readUrlState(location.search);
 
 /** Loads the mission list once, then the table of the chosen mission. `mission` is { loading } | { error } | { data }. */
 function useMissions(preferredStem = null) {
@@ -243,7 +245,7 @@ function App() {
     : current
       ? { data: { ...current, edges: transitions(current.mission), node: loadedMission.data.node } }
       : loadedMission;
-  const [picked, setSelected] = useState(savedSelection?.node ?? null);
+  const [picked, setSelected] = useState(urlState.state ?? savedSelection?.node ?? null);
   const [zoom, setZoom] = useState(1);
   // Recomputes the default layout, so the saved positions give way to it.
   const resetLayout = () => edit("Reset Layout", (d) => {
@@ -266,9 +268,18 @@ function App() {
     }
   }, [current, stem, selected]);
   // The beat the Beat pane edits; a click on the timeline picks it, and a new state starts at its first beat.
-  const [beatPick, setBeatPick] = useState(0);
-  useEffect(() => setBeatPick(0), [selected]);
+  // The URL's beat is kept on load, and a state picked afterwards starts at its first beat.
+  const [beatPick, setBeatPick] = useState(urlState.beat ?? 0);
+  const beatSettled = useRef(false);
+  useEffect(() => {
+    if (beatSettled.current) setBeatPick(0);
+    else beatSettled.current = true;
+  }, [selected]);
   const beat = current && selected ? activeBeat(current, selected, beatPick) : -1;
+  // The selected state and beat live in the URL, and a null one is left out of it.
+  useEffect(() => {
+    history.replaceState(null, "", `${location.pathname}${writeUrlState(location.search, { state: selected, beat: beat >= 0 ? beat : null })}`);
+  }, [selected, beat]);
   const [vocabulary, setVocabulary] = useState(null);
   const assetFilters = useAssetFilters(project);
   const hasAssetFilters = assetFilters.filters.districts.length > 0 || assetFilters.filters.categories.length > 0 || assetFilters.filters.proximity.enabled;

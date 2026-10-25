@@ -981,7 +981,7 @@ Deno.test("arrow keys scroll the highlighted typeahead option into view, and hov
   assertStringIncludes(source, "reveal.current = true;");
   assertStringIncludes(
     source,
-    `listEl.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });`,
+    `if (active) revealElement(active, "block");`,
   );
   assertStringIncludes(source, "ref=${listEl}");
 });

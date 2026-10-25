@@ -4,6 +4,7 @@
 import { html, useEffect, useRef } from "/vendor/preact.js";
 import { stateKindIcon } from "./icons.js";
 import { kindOf } from "./sections.js";
+import { revealElement } from "./reveal.js";
 
 /** The roles a state plays, as chip labels. Shared by the list and the graph. */
 export function roles(doc, id) {
@@ -26,7 +27,8 @@ export function StatesPane({ doc, selected, onSelect }) {
   // A state picked elsewhere, such as a state link, scrolls its row into view.
   const list = useRef(null);
   useEffect(() => {
-    list.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest" });
+    const picked = list.current?.querySelector('[aria-pressed="true"]');
+    if (picked) revealElement(picked, "block");
   }, [selected]);
   return html`
     <ul class="state-list" ref=${list}>

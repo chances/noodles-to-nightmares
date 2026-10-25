@@ -30,9 +30,14 @@ export interface Field {
   name: string;
   label: string;
   type: FieldType;
-  /** The bounds of a `number` field; the editor shows an `input[type=number]` with these `min` and `max` attributes. */
+  /**
+   * The bounds of a `number` field; the editor shows an `input[type=number]` with these `min` and `max` attributes. An
+   * `expr` field with both bounds also gets a range slider beside its typeahead.
+   */
   min?: number;
   max?: number;
+  /** An angle in degrees: the editor adds a compass dial, and the slider wraps from `max` to `min`. */
+  angle?: boolean;
   /** The allowed values of a `choice`. */
   options?: string[];
   /** What the editor shows for an option whose Sanny value reads poorly; the value itself is unchanged. */
@@ -344,7 +349,7 @@ export const stepDescriptors: StepDescriptor[] = [
   },
   {
     name: "restoreJumpcut",
-    shown: { on: false, partner: "cameraAtPlayer", label: "Fixed" },
+    shown: { on: false, partner: "cameraAtPlayer", label: "Looking at player" },
     label: "Restore Camera",
     group: "Camera",
     lines: ["Camera.RestoreJumpcut()"],
@@ -681,6 +686,9 @@ export const stepDescriptors: StepDescriptor[] = [
       label: "Heading",
       type: "expr",
       default: "faceSalHeading",
+      min: 0,
+      max: 360,
+      angle: true,
     }],
   },
   {
@@ -1424,6 +1432,9 @@ export const stepDescriptors: StepDescriptor[] = [
       default: "0.0",
       placeholder: "0.0",
       numeric: "float",
+      min: 0,
+      max: 360,
+      angle: true,
     }],
   },
   {
@@ -1485,6 +1496,9 @@ export const stepDescriptors: StepDescriptor[] = [
       default: "0.0",
       placeholder: "0.0",
       numeric: "float",
+      min: 0,
+      max: 360,
+      angle: true,
     }],
   },
   {

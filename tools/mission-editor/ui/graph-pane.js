@@ -6,6 +6,7 @@ import { ResetLayoutIcon, stateKindIcon, ZoomInIcon, ZoomOutIcon } from "./icons
 import { kindOf } from "./sections.js";
 import { roleKey, roles } from "./states-pane.js";
 import { cutsceneRegions, regionHull } from "./mission-ops.js";
+import { revealElement } from "./reveal.js";
 
 const PADDING = 24;
 const ARCH = 48;
@@ -164,7 +165,11 @@ export function GraphPane({ doc, edges, node, selected, onSelect, zoom, setZoom 
   useZoom(canvas, zoom, setZoom);
   // A state picked elsewhere, such as a state link, scrolls its node into view.
   useEffect(() => {
-    canvas.current?.querySelector('.node[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const picked = canvas.current?.querySelector('.node[aria-pressed="true"]');
+    if (!picked) return;
+    // The clear space is the layout's gap, half on each side, so the node keeps its spacing from its neighbours.
+    revealElement(picked, "inline", (node.gapX / 2) * zoom);
+    revealElement(picked, "block", (node.gapY / 2) * zoom);
   }, [selected]);
 
   return html`

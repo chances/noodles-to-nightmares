@@ -296,6 +296,12 @@ h3 {
   padding-inline: 4px;
 }
 
+/* The timeline table runs edge to edge in its pane, so its ruler and name column pin to the pane's start edges too. */
+.pane:has(.timeline-grid) .pane-body {
+  padding-inline: 0;
+  padding-block-start: 0;
+}
+
 .state-list {
   display: flex;
   flex-direction: column;
@@ -491,7 +497,7 @@ button.link code {
 .tl-corner,
 .tl-ruler {
   position: sticky;
-  inset-block-start: calc(var(--pane-pad) * -1);
+  inset-block-start: 0;
   z-index: 2;
   block-size: var(--ruler);
   border-block-end: 1px solid var(--line);
@@ -500,7 +506,7 @@ button.link code {
 .tl-corner,
 .tl-name {
   position: sticky;
-  inset-inline-start: calc(var(--pane-pad) * -1);
+  inset-inline-start: 0;
   z-index: 1;
   border-inline-end: 1px solid var(--line);
 }
@@ -1261,11 +1267,25 @@ small.error {
   accent-color: var(--accent);
 }
 
+/* A toggle field reads as one row: its checkbox first, then its label. */
+.mini.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.mini.inline > input.toggle {
+  margin-block: 0;
+  align-self: center;
+}
+
 /* A toggle takes only the width it needs, wherever it sits, so the fields beside it stay in one row. */
 .fields:has(.toggle) {
   display: flex;
   flex-wrap: wrap;
-  align-items: start;
+  align-items: center;
 }
 
 .fields:has(.toggle) > .mini {
@@ -1284,6 +1304,162 @@ small.error {
 
 .combo input {
   inline-size: 100%;
+}
+
+/* An expression field with a range: an optional compass dial, the typeahead or slider box, then its readout. */
+.range-field {
+  --range-inset: 4px;
+  display: flex;
+  align-items: center;
+  gap: var(--range-inset);
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* The box wears the input frame, so the slider, the typeahead, and the fn toggle read as one control. */
+.range-box {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: var(--range-inset);
+  min-inline-size: 0;
+  min-block-size: var(--control-size);
+  padding-inline: var(--range-inset);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  transition: border-color 160ms;
+}
+
+.range-box:hover {
+  border-color: var(--muted);
+}
+
+.range-box:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.range-box > .combo {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.range-box .combo input {
+  min-block-size: 0;
+  padding-inline: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* One focus outline, drawn by the box. The inner slider, input, and toggle draw none of their own. */
+.range-box input:focus-visible,
+.range-box button:focus-visible {
+  outline: 0;
+}
+
+/* The box frames the slider, so the slider resets the input chrome it inherits. */
+.range-slider {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  accent-color: var(--accent);
+}
+
+/* The fn toggle sits at the box's end, and reads as checked while the slider is in use. */
+.range-toggle {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  /* A square inset by the box's inset on its top, bottom, and end edges, inside the box's 1px border. */
+  inline-size: calc(var(--control-size) - 2px - 2 * var(--range-inset));
+  block-size: calc(var(--control-size) - 2px - 2 * var(--range-inset));
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+}
+
+/* The checked and focused toggles change their background, not their border, so the box keeps its one frame. */
+.range-toggle[aria-checked="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.range-toggle:focus-visible {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.script-glyph {
+  font-family: ui-monospace, Consolas, monospace;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.range-readout {
+  flex: 0 0 auto;
+  min-inline-size: 4ch;
+  text-align: end;
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--muted);
+}
+
+/* The compass dial is a round button, larger than a control so its cardinal letters stay legible, with the needle at the current angle. */
+.compass {
+  flex: 0 0 3.125rem;
+  inline-size: 3.125rem;
+  block-size: 3.125rem;
+  min-block-size: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.compass svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.compass-face {
+  fill: none;
+  stroke: var(--line);
+}
+
+.compass-tick {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.compass-letter {
+  fill: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.compass-needle {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.compass.dim {
+  opacity: 0.45;
+}
+
+/* Hover marks the dial with a border, as inputs do, instead of tinting its face. --muted is 7.6:1 against --surface. */
+.compass:hover {
+  background: var(--surface);
+  border-color: var(--muted);
 }
 
 .combo-list {
@@ -1554,6 +1730,12 @@ button.tool.copied {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   gap: 8px var(--gap);
+}
+
+/* A card with one control centres it in a fixed column, rather than stretching it across the card. */
+.fields.solo {
+  grid-template-columns: minmax(0, 18rem);
+  justify-content: center;
 }
 
 .mission-state-fields {
