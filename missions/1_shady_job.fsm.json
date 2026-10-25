@@ -87,7 +87,6 @@
           "Ensure the neighborhood is loaded",
           "TODO: Add more NPCs, e.g. the noodle man",
           "TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!",
-          "Note: Sal's name is Frankie, internally",
           "FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop"
         ],
         "fail": false,

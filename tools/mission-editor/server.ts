@@ -10,6 +10,7 @@ import { HTTPException } from "jsr:@hono/hono@^4.13.13/http-exception";
 import { logger } from "jsr:@hono/hono@^4.13.13/logger";
 import { secureHeaders } from "jsr:@hono/hono@^4.13.13/secure-headers";
 import { vValidator } from "jsr:@hono/valibot-validator@^0.6.1";
+import { render } from "jsr:@deno/gfm@^0.12.0";
 import * as v from "@valibot/valibot";
 import { stripAnsiCode } from "@std/fmt/colors";
 import { fromFileUrl, join, resolve } from "@std/path";
@@ -58,6 +59,33 @@ export function defaultDirs(): ProjectDirs {
   return {
     appData: Deno.env.get("APPDATA") ?? join(home, ".config"),
     documents: join(home, "Documents"),
+  };
+}
+
+/** A doc comment rendered as Markdown for a tooltip, or undefined when the option has none. */
+function docHtml(text: string | undefined) {
+  return text === undefined ? undefined : render(text);
+}
+
+/**
+ * The names a typeahead offers, with each constant's comment and each function's `///` doc comment rendered as
+ * Markdown for its tooltip.
+ */
+export function withDocHtml(names: ReturnType<typeof listNames>) {
+  return {
+    ...names,
+    constants: names.constants.map((c) => ({
+      ...c,
+      docHtml: docHtml(c.comment),
+    })),
+    globals: names.globals.map((g) => ({
+      ...g,
+      docHtml: docHtml(g.doc),
+    })),
+    functions: names.functions.map((f) => ({
+      ...f,
+      docHtml: docHtml(f.doc),
+    })),
   };
 }
 
@@ -215,7 +243,7 @@ export function createApp(
           enumsFor(await projectGame(resolve(project))),
         ),
         // The constants and globals the typeaheads offer, from the project's Sanny files.
-        names: listNames(known),
+        names: withDocHtml(listNames(known)),
         sannyFiles: await listSannyFiles(join(resolve(project), "missions")),
       });
     },
@@ -259,11 +287,22 @@ export function createApp(
         steps: stepDescriptors,
         conds: condDescriptors,
         // The spots a `spot` field offers.
-        spots: Object.values(GEOGRAPHY),
+        spots: Object.values(GEOGRAPHY).map((spot) => ({
+          ...spot,
+          docHtml: docHtml(spot.comment),
+        })),
         // The members of the Sanny enums that `enum` fields offer for the project's game, e.g. `RadarSprite`.
         enums: enumsFor(project ? await projectGame(resolve(project)) : "gta3"),
       });
     },
+  );
+
+  // Renders the comments of mission constants, which the editor holds in memory, as Markdown for their tooltips.
+  app.post(
+    "/api/markdown",
+    vValidator("json", v.object({ texts: v.array(v.string()) })),
+    (c) =>
+      c.json({ html: c.req.valid("json").texts.map((text) => render(text)) }),
   );
 
   // POI catalog from data/geography.json

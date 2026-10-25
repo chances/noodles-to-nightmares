@@ -21,7 +21,7 @@ export interface ConstInfo {
   kind?: NumberKind;
   /** The value as written, e.g. `20.0`. */
   value?: string;
-  /** The `//` comment after the declaration. */
+  /** The `///` doc comment above the declaration. */
   comment?: string;
   /** Where it is declared: a file name, or `geography` for the generated spot constants. */
   source: string;
@@ -33,6 +33,8 @@ export interface GlobalInfo {
   type?: string;
   /** The `Alloc($name, slot)` slot. A mission cannot use a global that has none. */
   slot?: number;
+  /** The `///` doc comment above the `$name: Type` declaration. */
+  doc?: string;
 }
 
 /** Names the project's Sanny files declare, which a table can use without declaring them itself. */
@@ -42,7 +44,7 @@ export interface Known {
   /** Global names, with the `$`, from variables.txt. */
   globals: Map<string, GlobalInfo>;
   /** Functions the mission's includes define, with the file each comes from. Omitted when a caller has no includes. */
-  functions?: Map<string, { source: string }>;
+  functions?: Map<string, { source: string; signature: string; doc?: string }>;
 }
 
 const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -97,6 +99,9 @@ export function problems(
   );
   const stateConsts = new Set(Object.keys(mission.states).map(stateConst));
   const consts = new Set(Object.keys(mission.consts ?? {}));
+  const declaredLocals = new Set(
+    (mission.locals ?? []).map((local) => local.name),
+  );
   // A constant's number type, from how its value is written: the table's own, then the project's files.
   const kindOfName = (name: string): NumberKind | undefined => {
     const own = mission.consts?.[name];
@@ -145,10 +150,47 @@ export function problems(
     for (const line of lines) {
       for (const { field, value } of fieldUses(line)) {
         const members = field.enum && enums[field.enum];
-        if (members && !members.some((m) => m.name === value)) {
+        // A `sprite` field names a member only as `Enum.Member`; a bare name there is a constant or a local.
+        const prefix = `${field.enum}.`;
+        const named = field.type !== "sprite"
+          ? value
+          : value.startsWith(prefix)
+          ? value.slice(prefix.length)
+          : undefined;
+        if (
+          members && named !== undefined &&
+          !members.some((m) => m.name === named)
+        ) {
+          once(
+            `${state}:${field.enum}:${named}`,
+            () => error(`${field.enum}.${named} does not exist`, state),
+          );
+        }
+        if (
+          members && named === undefined &&
+          members.some((m) => m.name === value)
+        ) {
           once(
             `${state}:${field.enum}:${value}`,
-            () => error(`${field.enum}.${value} does not exist`, state),
+            () =>
+              error(
+                `${value} is a ${field.enum} member, so write ${prefix}${value}`,
+                state,
+              ),
+          );
+        }
+      }
+    }
+    for (const line of lines) {
+      for (const { field, value } of fieldUses(line)) {
+        // A handle without a `$` is a mission local, so the mission must declare it.
+        if (
+          field.type === "handle" && !value.startsWith("$") &&
+          !declaredLocals.has(value)
+        ) {
+          once(
+            `${state}:local:${value}`,
+            () => error(`${value} is used, but no local declares it`, state),
           );
         }
       }

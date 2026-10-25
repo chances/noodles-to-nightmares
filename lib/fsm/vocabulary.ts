@@ -29,11 +29,9 @@ export const step = {
   radarFlash: (on: boolean): Step => [
     on ? "Hud.FlashObject(HudObject.Radar)" : "Hud.FlashObject(0)",
   ],
-  /** Stores a new sprite blip's handle in `handle`, e.g. `$SafeBlip`. */
+  /** Stores a new sprite blip's handle in `handle`, e.g. `$SafeBlip`. `sprite` is `RadarSprite.Savehouse`, or a constant, local, or number. */
   blipAt: (handle: string, spot: Spot, sprite: string): Step => [
-    `${handle} = Blip.AddSpriteForCoord(${
-      coords(spot, 3)
-    }, RadarSprite.${sprite})`,
+    `${handle} = Blip.AddSpriteForCoord(${coords(spot, 3)}, ${sprite})`,
   ],
   /** Removes the blip whose handle `handle` holds, e.g. `$SafeBlip`. */
   blipRemove: (handle: string): Step => [`Blip.Remove(${handle})`],

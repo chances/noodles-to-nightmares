@@ -23,8 +23,14 @@ Deno.test("radarFlash turns the radar flash on and off", () => {
 });
 
 Deno.test("blipAt stores a sprite blip handle", () => {
-  assertEquals(step.blipAt("$SafeBlip", ["X", "Y", "Z"], "Savehouse"), [
-    "$SafeBlip = Blip.AddSpriteForCoord(X, Y, Z, RadarSprite.Savehouse)",
+  assertEquals(
+    step.blipAt("$SafeBlip", ["X", "Y", "Z"], "RadarSprite.Savehouse"),
+    [
+      "$SafeBlip = Blip.AddSpriteForCoord(X, Y, Z, RadarSprite.Savehouse)",
+    ],
+  );
+  assertEquals(step.blipAt("payphoneBlip", ["X", "Y", "Z"], "PAYPHONE"), [
+    "payphoneBlip = Blip.AddSpriteForCoord(X, Y, Z, PAYPHONE)",
   ]);
 });
 

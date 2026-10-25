@@ -15,6 +15,8 @@ export type FieldType =
   | "expr"
   | "handle"
   | "name"
+  // A RadarSprite member as `RadarSprite.Name`, or an int number, constant, or local.
+  | "sprite"
   | "choice"
   | "latch"
   | "spot"
@@ -43,7 +45,7 @@ export interface Field {
    * parameter as about zero, so `problems` rejects the mismatch.
    */
   numeric?: "int" | "float";
-  /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`; see `enumsFor` in `enums.ts`. */
+  /** The Sanny enum a `name` field takes a member of, e.g. `RadarSprite`, and a `sprite` field takes one as `RadarSprite.Name`; see `enumsFor` in `enums.ts`. */
   enum?: string;
   /** An `enum` field the editor fills by typing, rather than from a select, because its list is long. */
   typeahead?: boolean;
@@ -59,6 +61,7 @@ export const FIELD_PATTERNS: Record<Exclude<FieldType, "choice">, string> = {
   // A global variable with its `$`, or a mission local without one.
   handle: "\\$?[A-Za-z_]\\w*",
   name: "\\w+",
+  sprite: "RadarSprite\\.\\w+|\\d+|\\$?[A-Za-z_]\\w*",
   latch: "[A-Z]\\w*",
   // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
   spot: "[A-Z][A-Z0-9_]*",
@@ -308,7 +311,7 @@ export const stepDescriptors: StepDescriptor[] = [
     group: "Blip",
     shown: { on: true, partner: "blipRemove" },
     lines: [
-      "{handle} = Blip.AddSpriteForCoord({spot}_X, {spot}_Y, {spot}_Z, RadarSprite.{sprite})",
+      "{handle} = Blip.AddSpriteForCoord({spot}_X, {spot}_Y, {spot}_Z, {sprite})",
     ],
     fields: [
       blipHandle,
@@ -316,9 +319,10 @@ export const stepDescriptors: StepDescriptor[] = [
       {
         name: "sprite",
         label: "Map Icon",
-        type: "name",
-        default: "Savehouse",
+        type: "sprite",
+        default: "RadarSprite.Savehouse",
         enum: "RadarSprite",
+        numeric: "int",
         typeahead: true,
       },
     ],

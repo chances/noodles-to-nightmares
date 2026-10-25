@@ -155,6 +155,7 @@
 - Open: the phone probe crashed (access violation `0xC0000005`) while waiting on `IsCollisionInMemory` after spawning at `SAFEHOUSE_TELEPORT_*`; with the spawn changed to 1144.0, -596.0, 14.97 it ran to a pass. Cause not isolated.
 - Open: mission 1 crashes the game when the player hits a cop car in the van and gets one wanted star, in state `APPROACH_PHONE`. ModLoader logs `Unhandled exception at 0x004A1002 in gta3-game.exe: Access violation reading location 0x00001136`. The last `scrlog` commands are `STORE_WANTED_LEVEL -> 1`, a clean `failCheck`, then `LOCATE_PLAYER_ANY_MEANS_2D`. An INI trace showed `main.txt` still looping before the crash (`MainStep=14`, `Wanted=0`). `0x1136` is 4406, the slot of `$isCameraAvoidingObstacle`, possibly a coincidence. The model requests match the hand-written mission; the wanted read and fail check are new. Not bisected against the hand-written mission.
 - Open: the editor's debugger shows no player position or F8 captures; `START_CUSTOM_THREAD "capture.cs"` logs `File Not Found` in `cleo.log`, so the script never runs. See [`bugs/player-telemetry-debug.md`](bugs/player-telemetry-debug.md).
+- Open: the editor's save rewrites cutscene beats in `missions/1_shady_job.fsm.json` as explicit `wait` steps after a combo edit. Cause not found. See [`bugs/mission-editor-save-rewrites-beats.md`](bugs/mission-editor-save-rewrites-beats.md).
 - Resolved bugs live in [`.agents/reports/bugs/`](reports/bugs/).
 
 ## Host Disk Constraints

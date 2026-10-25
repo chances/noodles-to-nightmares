@@ -3,10 +3,12 @@ const MAX_MISSION_INDEX = 2
 
 // Characters
 const CHONG = 87
+/// Note: Sal's name is Frankie, internally.
 const SALVATORE = 100
 
 // Blips
-const PAYPHONE = 8 // RadarSprite.Diablo
+/// See `RadarSprite.Diablo`.
+const PAYPHONE = 8
 
 // Telemetry: the mission editor listens on this UDP port (plugins/sockets)
 const TELEMETRY_PORT = 8089

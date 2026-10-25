@@ -428,3 +428,9 @@ understand context before making changes.
 - **Location**: Open bugs live in `.agents/bugs/<bug-name>.md` and resolved bugs in `.agents/reports/bugs/<bug-name>.md` (kebab-case file names).
 - **Content**: Symptom, root cause, fix, and ruled-out candidates, written as the current state of the finding.
 - **Index**: `.agents/Memory.md` lists open bugs under "Known Issues & Open Bugs" and links the report for resolved ones.
+
+---
+
+## 11. Mission Editor Typeaheads
+
+- **Suggestion Order**: An enum field's members come first, in the enum's index order. Then come values the current mission declares, its locals and mission constants. The rest put names that start with the query first, then sort alphabetically, numbers in order. The full rules live in `.agents/rules/typeahead-ordering.md`, and `filterOptions` in `tools/mission-editor/ui/templates.js` is the only place that orders them.

@@ -3,7 +3,7 @@
 
 import { createContext, html, useContext, useEffect, useLayoutEffect, useRef, useState } from "/vendor/preact.js";
 import { Overlay } from "./overlay.js";
-import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipMode, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, pairOf, parseCond, parseLines, parseWhen, reformat, spotOptions } from "./templates.js";
+import { buildCond, buildLines, buildWhen, closedCombo, constantOptions, defaults, enumOptions, filterOptions, flipMode, flipShown, formatField, functionOptions, globalOptions, isValid, numberProblem, optionAnchor, pairOf, parseCond, parseLines, parseWhen, reformat, sannyLines, spotOptions, spriteOptions } from "./templates.js";
 import { CheckIcon, CopyIcon, GripIcon, SannyEditIcon } from "./icons.js";
 import { clampY, dropIndex, inColumn, insertionTop, HOLD_MS, moveItem, movedMessage, RETURN_MS, SLOP_PX, wrapIndex } from "./reorder.js";
 
@@ -24,6 +24,16 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const root = useRef(null);
+  const listHost = useRef(null);
+  const listEl = useRef(null);
+  const reveal = useRef(false);
+  // The highlighted option's row, at the list's right edge, which its tooltip is aligned to.
+  const activeOption = {
+    get current() {
+      const row = listEl.current?.querySelector('[data-active="true"]');
+      return row && listEl.current ? optionAnchor(row, listEl.current) : null;
+    },
+  };
   const last = useRef(value);
   const [listId] = useState(() => `combo-${++comboCount}`);
   useEffect(() => {
@@ -33,6 +43,12 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
     }
   }, [value]);
 
+  // Arrow keys scroll the highlighted option into view. The pointer does not, because hovering must not move the list.
+  useEffect(() => {
+    if (!reveal.current) return;
+    reveal.current = false;
+    listEl.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
   const matches = open ? filterOptions(options, typed ?? "") : [];
   // An emptied field with a placeholder takes the placeholder's value, e.g. the default radius.
   const resolve = (text) => (text === "" && field.placeholder ? field.placeholder : text);
@@ -70,6 +86,7 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
       e.preventDefault();
       if (!open) { show(); return; }
       const step = e.key === "ArrowDown" ? 1 : -1;
+      reveal.current = true;
       setActive((a) => (matches.length ? (a + step + matches.length) % matches.length : 0));
     } else if (e.key === "Enter" && open && matches[active]) {
       e.preventDefault();
@@ -88,8 +105,8 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
         value=${free ? draft : open ? typed ?? "" : value} placeholder=${free ? field.placeholder ?? "" : open ? value : ""}
         onFocus=${show} onInput=${input} onKeyDown=${keys} />
       ${open && matches.length > 0 && html`
-        <${Overlay} fit gap=${2}>
-        <ul class="combo-list" role="listbox" id=${listId}>
+        <${Overlay} hostRef=${listHost} gap=${2}>
+        <ul class="combo-list" role="listbox" id=${listId} ref=${listEl}>
           ${matches.map((o, i) => html`
             <li key=${o.value} id=${`${listId}-${i}`} role="option" aria-selected=${o.value === value} data-active=${i === active}
               onMouseDown=${(e) => { e.preventDefault(); pick(o); }} onMouseEnter=${() => setActive(i)}>
@@ -98,7 +115,14 @@ export function Combo({ field, value, options, free, label, note, missing = "is 
             </li>`)}
         </ul>
         <//>`}
-      ${open && matches.length === 0 && !free && html`<${Overlay} fit gap=${2}><ul class="combo-list" id=${listId}><li class="combo-empty">Nothing matches</li></ul><//>`}
+      ${open && matches.length === 0 && !free && html`<${Overlay} gap=${2}><ul class="combo-list" id=${listId}><li class="combo-empty">Nothing matches</li></ul><//>`}
+      ${open && matches[active] && (matches[active].signature || matches[active].doc) && html`
+        <${Overlay} anchorRef=${activeOption} placement="right-start" gap=${{ mainAxis: 4, crossAxis: -2 }}>
+        <div class="combo-doc">
+          ${matches[active].signature && html`<code class="combo-signature">${matches[active].signature}</code>`}
+          ${matches[active].doc && html`<div class="combo-doc-body" dangerouslySetInnerHTML=${{ __html: matches[active].doc }}></div>`}
+        </div>
+        <//>`}
       ${!valid && html`<small class="error">${EMPTY[field.type]}</small>`}
       ${unknown && html`<small class="error">${value} ${missing}.</small>`}
       ${note && html`<small class="error">${note}</small>`}
@@ -113,6 +137,7 @@ const EMPTY = {
   expr: "Enter a number or a name.",
   handle: "Enter a variable name.",
   name: "Enter a name.",
+  sprite: "Enter a RadarSprite member, a number, or a name.",
   function: "Choose a function from the mission's includes.",
 };
 
@@ -136,6 +161,8 @@ export function FieldInput({ field, value, onCommit }) {
     // The row's own label wraps this input, so the checkbox needs none of its own.
     return html`<input type="checkbox" class="toggle" checked=${value === "true"} onChange=${(e) => { last.current = String(e.currentTarget.checked); onCommit(last.current); }} />`;
   }
+  // A map icon is a RadarSprite member, written `RadarSprite.Savehouse`, or an int constant, local, or number, typed freely.
+  if (field.type === "sprite") return html`<${Combo} field=${field} value=${value} options=${spriteOptions(field.enum, enums[field.enum] ?? [], constants)} free label=${field.label} note=${numberProblem(field, value, constants)} onCommit=${onCommit} />`;
   // A Sanny enum member is picked from the enum's list: a select, or a typeahead for a long list such as the map icons.
   if (field.enum && field.typeahead) return html`<${Combo} field=${field} value=${value} options=${enumOptions(enums[field.enum] ?? [])} label=${field.label} missing=${`is not a ${field.enum} member`} onCommit=${onCommit} />`;
   if (field.enum) {
@@ -381,14 +408,15 @@ function Row({ item, kind, n, onChange, onRemove, reorder, lift }) {
   const when = isCond || parsed ? null : parseWhen(steps, conds, item);
   const raw = sanny || (!parsed && !when);
   const setWhen = (patch) => onChange(buildWhen({ ...when, ...patch }));
-  const hasSanny = !isCond && item.some((line) => line.trim() !== "");
+  const lines = sannyLines(kind, item);
+  const hasSanny = lines.some((line) => line.trim() !== "");
   const card = reorder?.card ?? {};
   const grip = reorder?.grip ?? null;
 
   useEffect(() => () => clearTimeout(copyTimer.current), []);
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(item.join("\n"));
+      await navigator.clipboard.writeText(lines.join("\n"));
     } catch {
       return;
     }
@@ -422,17 +450,16 @@ function Row({ item, kind, n, onChange, onRemove, reorder, lift }) {
   return html`
     <li class=${rowClass} style=${lift ? { transform: `translateY(${lift.dy}px)` } : undefined} data-index=${card["data-index"]} tabIndex=${card.tabIndex} onKeyDown=${card.onKeyDown}>
       <div class="item-head">
-        <${CardTitle} label=${parsed ? parsed.descriptor.label : when ? "Conditional Steps" : "Custom Sanny"} grip=${grip} />
+        <${CardTitle} label=${parsed ? parsed.descriptor.label : when ? "Conditional Steps" : "Custom Sanny Builder Script"} grip=${grip} />
         <span class="item-tools">
           ${paired && html`
             <div class="mode-switch" data-variant="compact" role="group" aria-label="Card Mode">
               ${["2D", "3D"].map((mode) => html`<button class=${parsed.descriptor.mode === mode ? "mode-btn active" : "mode-btn"} key=${mode} aria-pressed=${parsed.descriptor.mode === mode} onClick=${() => switchMode(mode)}>${mode}</button>`)}
             </div>`}
           ${(parsed || when) && html`<button class="tool icon-only" title=${sanny ? "Show Typed Controls" : "Edit As Sanny"} aria-label=${sanny ? "Show Typed Controls" : `Edit this ${noun} as Sanny Builder`} onClick=${() => setSanny(!sanny)}><${SannyEditIcon} /></button>`}
-          ${!isCond && html`
-            <button class=${copied ? "tool icon-only copied" : "tool icon-only"} aria-label="Copy Step Sanny" title=${copyTitle} disabled=${!hasSanny} onClick=${copy}>
-              ${copied ? html`<${CheckIcon} />` : html`<${CopyIcon} />`}
-            </button>`}
+          <button class=${copied ? "tool icon-only copied" : "tool icon-only"} aria-label=${isCond ? "Copy Condition Sanny" : "Copy Step Sanny"} title=${copyTitle} disabled=${!hasSanny} onClick=${copy}>
+            ${copied ? html`<${CheckIcon} />` : html`<${CopyIcon} />`}
+          </button>
           <button class="tool danger icon-only" aria-label=${`Remove ${noun} ${n}`} title=${`Remove ${isCond ? "Condition" : "Step"}`} onClick=${onRemove}>✕</button>
         </span>
       </div>
@@ -501,7 +528,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
           <optgroup key=${group} label=${group}>
             ${descriptors.filter((d) => d.group === group && d.shown?.on !== false && d.mode !== "2D").map((d) => html`<option key=${d.name} value=${d.name}>${d.label}</option>`)}
           </optgroup>`)}
-        <option value="__sanny">Custom Sanny</option>
+        <option value="__sanny">Custom Sanny Builder Script</option>
       </select>
     </div>
   `;

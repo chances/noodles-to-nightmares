@@ -1,5 +1,12 @@
 import { html, render, useLayoutEffect, useRef } from "/vendor/preact.js";
-import { autoUpdate, computePosition, flip, offset, shift, size } from "/vendor/floating-ui-dom.js";
+import {
+  autoUpdate,
+  computePosition,
+  flip,
+  offset,
+  shift,
+  size,
+} from "/vendor/floating-ui-dom.js";
 
 const EDGE = 8;
 
@@ -8,10 +15,20 @@ const EDGE = 8;
  * is never clipped by a pane and always sits above everything else. The host is placed under the element that
  * contains the `<Overlay>` (its anchor) and may grow to the viewport's edges. `align="end"` lines up the right
  * edges, `fit` makes the host as wide as the anchor, and `free` skips placing it for an overlay that positions itself.
+ * `anchorRef` anchors it to another element, and `placement` sets its side (default: below the anchor).
  * `hostRef` receives the host element, which holds the overlay's content for outside-click and focus checks.
  */
 export function Overlay(
-  { children, hostRef, align = "start", gap = 4, fit = false, free = false },
+  {
+    children,
+    hostRef,
+    align = "start",
+    gap = 4,
+    fit = false,
+    free = false,
+    anchorRef,
+    placement = align === "end" ? "bottom-end" : "bottom-start",
+  },
 ) {
   const marker = useRef(null);
   const host = useRef(null);
@@ -37,12 +54,15 @@ export function Overlay(
     const el = host.current;
     render(children, el);
     if (free) return;
-    const anchor = marker.current?.parentElement;
+    const anchor = anchorRef?.current ?? marker.current?.parentElement;
     if (!anchor) return;
     const place = async () => {
+      // Measure the content's natural width: a width left from an earlier placement would hide the room a flip needs.
+      // The block size is left alone, since clearing it would clamp a scrolled list back to its top.
+      el.style.maxInlineSize = "";
       const { x, y } = await computePosition(anchor, el, {
         strategy: "fixed",
-        placement: align === "end" ? "bottom-end" : "bottom-start",
+        placement,
         middleware: [
           offset(gap),
           flip({ padding: EDGE }),
@@ -52,7 +72,10 @@ export function Overlay(
             apply({ availableHeight, availableWidth, rects }) {
               el.style.maxBlockSize = `${Math.max(availableHeight, 0)}px`;
               el.style.maxInlineSize = `${Math.max(availableWidth, 0)}px`;
-              el.style.setProperty("--anchor-inline-size", `${rects.reference.width}px`);
+              el.style.setProperty(
+                "--anchor-inline-size",
+                `${rects.reference.width}px`,
+              );
               if (fit) el.style.inlineSize = `${rects.reference.width}px`;
             },
           }),

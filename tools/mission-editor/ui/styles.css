@@ -1295,6 +1295,7 @@ small.error {
   background: var(--panel);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
   list-style: none;
+  white-space: nowrap;
 }
 
 .combo-list li {
@@ -1330,6 +1331,41 @@ small.error {
 
 .combo-empty {
   padding: 8px;
+}
+
+/* The tooltip beside a typeahead list: the highlighted option's signature and its doc comment. */
+.combo-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-inline-size: 42ch;
+  padding-block: 8px;
+  padding-inline: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.combo-signature {
+  color: var(--accent);
+  font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+
+.combo-doc-body p {
+  margin: 0;
+}
+
+.combo-doc-body p + p {
+  margin-block-start: 8px;
+}
+
+.combo-doc-body code {
+  font-family: ui-monospace, monospace;
 }
 
 .title-tools {

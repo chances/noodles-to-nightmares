@@ -183,14 +183,28 @@ const SAVE_TEXT = { saving: "Saving", saved: "Saved" };
 
 /** Gives the step and condition controls inside it the vocabulary and the mission's monitors. */
 function Vocabulary({ vocabulary, mission, names, sannyFiles, children }) {
+  // The mission's constant comments are rendered as Markdown by the server, since the editor holds them in memory.
+  const [ownDocs, setOwnDocs] = useState({});
+  const ownComments = Object.entries(mission.consts ?? {}).flatMap(([name, v]) => Array.isArray(v) && v[1] ? [[name, v[1]]] : []);
+  const commentKey = JSON.stringify(ownComments);
+  useEffect(() => {
+    if (ownComments.length === 0) return;
+    fetch("/api/markdown", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ texts: ownComments.map(([, text]) => text) }),
+    }).then((response) => response.json()).then(({ html }) => {
+      setOwnDocs(Object.fromEntries(ownComments.map(([name], i) => [name, html[i]])));
+    });
+  }, [commentKey]);
   // The mission's own constants come first and follow its edits; the project's files add the rest.
   const own = Object.entries(mission.consts ?? {}).map(([name, v]) => {
     const value = Array.isArray(v) ? v[0] : v;
-    return { name, kind: Number.isInteger(value) ? "int" : "float", value: String(value), comment: Array.isArray(v) ? v[1] : undefined, source: "This mission" };
+    return { name, kind: Number.isInteger(value) ? "int" : "float", value: String(value), comment: Array.isArray(v) ? v[1] : undefined, source: "This mission", mission: true, docHtml: ownDocs[name] };
   });
   const constants = [...own, ...(names?.constants ?? []).filter((c) => !(c.name in (mission.consts ?? {})))];
   // @remarks A handle field offers the project's `$` globals and the mission's own locals, which have no `$`.
-  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: [...(names?.globals ?? []), ...(mission.locals ?? []).map((local) => ({ name: local.name, type: local.type }))], functions: names?.functions ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id), sannyFiles: sannyFiles ?? [] }}>${children}<//>`;
+  return html`<${EditorContext.Provider} value=${{ ...vocabulary, constants, globals: [...(names?.globals ?? []), ...(mission.locals ?? []).map((local) => ({ name: local.name, type: local.type, local: true }))], functions: names?.functions ?? [], monitorIds: (mission.monitors ?? []).map((x) => x.id), sannyFiles: sannyFiles ?? [] }}>${children}<//>`;
 }
 
 function App() {

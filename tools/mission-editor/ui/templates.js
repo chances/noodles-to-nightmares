@@ -11,6 +11,7 @@ const PATTERNS = {
   // A global variable with its `$`, or a mission local without one.
   handle: "\\$?[A-Za-z_]\\w*",
   name: "\\w+",
+  sprite: "RadarSprite\\.\\w+|\\d+|\\$?[A-Za-z_]\\w*",
   latch: "[A-Z]\\w*",
   // A POI id; its `_X`, `_Y`, and `_Z` follow in the line, so this must give them back when it backtracks.
   spot: "[A-Z][A-Z0-9_]*",
@@ -47,8 +48,9 @@ const FORMATS = {
   text: (text) => text.replace(/["\n]/g, ""),
   number: (text) => text.replace(/\D/g, "").replace(/^0+(?=\d)/, ""),
   expr: (text) => text.replace(/[^A-Za-z0-9_$.#-]/g, "").replace(/(?!^)#/g, ""),
-  handle: (text) => "$" + text.replace(/[^\w]/g, ""),
+  handle: (text) => text.replace(/[^\w$]/g, "").replace(/(?!^)\$/g, ""),
   name: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
+  sprite: (text) => text.replace(/\s+/g, "_").replace(/[^\w.$]/g, ""),
   function: (text) => text.replace(/\s+/g, "_").replace(/[^\w]/g, ""),
   spot: (text) => text.toUpperCase().replace(/[^A-Z0-9_]/g, ""),
 };
@@ -99,6 +101,7 @@ export function spotOptions(spots) {
     meta: [s.group, s.category].filter(Boolean).join(" · "),
     search: [s.id, s.group, s.category, s.district, ...(s.tags ?? [])]
       .filter(Boolean).join(" "),
+    doc: s.docHtml,
   }));
 }
 
@@ -136,13 +139,55 @@ export function flipShown(steps, descriptor, values, remembered, context) {
   };
 }
 
-/** The members of a Sanny enum as options, with each member's numeric id as its meta. */
+/** The Sanny lines a card copies: a step's lines as written, or a condition's pre lines followed by its test. */
+export function sannyLines(kind, item) {
+  return kind === "cond" ? [...(item.pre ?? []), item.test] : item;
+}
+
+/**
+ * The rectangle a list item's tooltip is placed against: the list's full width, with the item's top and height. The
+ * tooltip's `right-start` placement then sits beside the list's right edge, and its `left-start` flip beside the left
+ * edge. `contextElement` lets floating-ui track the list's scrolling.
+ */
+export function optionAnchor(item, list) {
+  return {
+    contextElement: item,
+    getBoundingClientRect() {
+      const row = item.getBoundingClientRect();
+      const box = list.getBoundingClientRect();
+      return {
+        x: box.left,
+        y: row.top,
+        top: row.top,
+        bottom: row.bottom,
+        left: box.left,
+        right: box.right,
+        width: box.width,
+        height: row.height,
+      };
+    },
+  };
+}
+
+/** The members of a Sanny enum as options, with each member's numeric id as its meta and its place in the enum as `enumIndex`. */
 export function enumOptions(members) {
-  return members.map((m) => ({
+  return members.map((m, enumIndex) => ({
     value: m.name,
     meta: m.id === null ? "" : `id ${m.id}`,
     search: m.id === null ? m.name : `${m.name} ${m.id}`,
+    enumIndex,
   }));
+}
+
+/** The Map Icon options: each member of `enumName` as `Enum.Member`, then the constants of the field's int type. */
+export function spriteOptions(enumName, members, constants) {
+  return [
+    ...enumOptions(members).map((o) => ({
+      ...o,
+      value: `${enumName}.${o.value}`,
+    })),
+    ...constantOptions(constants, "int"),
+  ];
 }
 
 /** The constants a field with this `numeric` type can take: only those written as that type. */
@@ -151,10 +196,12 @@ export function constantOptions(constants, numeric) {
     .filter((c) => !numeric || c.kind === numeric)
     .map((c) => ({
       value: c.name,
-      meta: [c.kind ?? "expression", c.value, c.comment, c.source].filter(
+      meta: [c.kind ?? "expression", c.value, c.source].filter(
         Boolean,
       ).join(" · "),
       search: [c.name, c.value, c.comment, c.source].filter(Boolean).join(" "),
+      mission: c.mission === true,
+      doc: c.docHtml,
     }));
 }
 
@@ -164,17 +211,21 @@ export function functionOptions(functions) {
     value: f.name,
     meta: f.source,
     search: [f.name, f.source].join(" "),
+    signature: f.signature,
+    doc: f.docHtml,
   }));
 }
 
-/** The global variables a field can take, only those declared as `varType` when the field names one. */
+/** The variables a field can take: the globals declared as `varType` when the field names one, and every mission local (`local: true`) whatever its type. */
 export function globalOptions(globals, varType) {
   return globals
-    .filter((g) => !varType || g.type === varType)
+    .filter((g) => !varType || g.local || g.type === varType)
     .map((g) => ({
       value: g.name,
-      meta: g.type ?? "",
+      meta: g.local ? `${g.type} · local` : g.type ?? "",
       search: [g.name, g.type].filter(Boolean).join(" "),
+      mission: g.local === true,
+      doc: g.docHtml,
     }));
 }
 
@@ -186,12 +237,29 @@ export function closedCombo(committed) {
   return { open: false, typed: null, draft: committed };
 }
 
-/** The options whose `search` text holds every word of `query`, in their given order. */
+/**
+ * The options whose `search` text holds every word of `query`, in this order: an enum's members first, in the enum's
+ * order; then values the current mission declares (`mission`); then the rest. Within the last two, names that start
+ * with the query's first word come first. Each run is alphabetized, with numbers in order (`Blip2` before `Blip10`).
+ */
 export function filterOptions(options, query) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return options.filter((o) =>
+  const kept = options.filter((o) =>
     words.every((w) => (o.search ?? o.value).toLowerCase().includes(w))
   );
+  const byName = (a, b) =>
+    a.value.localeCompare(b.value, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  const prefixed = (o) =>
+    words.length > 0 && o.value.toLowerCase().startsWith(words[0]) ? 0 : 1;
+  const run = (o) => o.enumIndex !== undefined ? 0 : o.mission ? 1 : 2;
+  return kept.sort((a, b) => {
+    if (run(a) !== run(b)) return run(a) - run(b);
+    if (run(a) === 0) return a.enumIndex - b.enumIndex;
+    return prefixed(a) - prefixed(b) || byName(a, b);
+  });
 }
 
 /**

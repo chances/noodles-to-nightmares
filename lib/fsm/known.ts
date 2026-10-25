@@ -19,35 +19,69 @@ const readOrEmpty = async (path: string) => {
   }
 };
 
-/** Every `const NAME = value // comment` in `source`. */
+/**
+ * Each line of `source` that `declaration` matches, with the `///` doc comment directly above it. A `//` line or a line
+ * of code between the doc and the declaration leaves the declaration without a doc. Applies to every Sanny source.
+ */
+function declarations(
+  source: string,
+  declaration: RegExp,
+): { line: string; match: RegExpMatchArray; doc?: string }[] {
+  const found: { line: string; match: RegExpMatchArray; doc?: string }[] = [];
+  let doc: string[] = [];
+  for (const line of source.split("\n")) {
+    const match = line.match(declaration);
+    if (match) {
+      found.push({ line, match, doc: doc.length ? doc.join("\n") : undefined });
+      doc = [];
+      continue;
+    }
+    const comment = line.match(/^\s*\/\/\/ ?(.*)$/);
+    if (comment) doc.push(comment[1].trimEnd());
+    else if (line.trim() !== "") doc = [];
+  }
+  return found;
+}
+
+/** Every `const NAME = value` in `source`, with its `///` doc comment as its comment. */
 export function parseConsts(
   source: string,
   from: string,
 ): Map<string, ConstInfo> {
   const found = new Map<string, ConstInfo>();
   for (
-    const m of source.matchAll(
-      /^\s*const\s+([A-Za-z_]\w*)\s*=\s*([^\s/]+)(?:\s*\/\/\s*(.*))?$/gm,
+    const { match, doc } of declarations(
+      source,
+      /^\s*const\s+([A-Za-z_]\w*)\s*=\s*([^\s/]+)/,
     )
   ) {
-    found.set(m[1], {
-      kind: kindOfLiteral(m[2]),
-      value: m[2],
-      comment: m[3]?.trim() || undefined,
+    found.set(match[1], {
+      kind: kindOfLiteral(match[2]),
+      value: match[2],
+      comment: doc,
       source: from,
     });
   }
   return found;
 }
 
-/** Every `$global` in `source`, with the type a `$name: Type` declaration gives it. */
+/** Every `$global` in `source`, with the type and `///` doc comment a `$name: Type` declaration gives it. */
 export function parseGlobals(source: string): Map<string, GlobalInfo> {
   const found = new Map<string, GlobalInfo>();
   for (const m of source.matchAll(/\$[A-Za-z_]\w*/g)) {
     if (!found.has(m[0])) found.set(m[0], {});
   }
-  for (const m of source.matchAll(/^\s*(\$[A-Za-z_]\w*)\s*:\s*(\w+)/gm)) {
-    found.set(m[1], { ...found.get(m[1]), type: m[2] });
+  for (
+    const { match, doc } of declarations(
+      source,
+      /^\s*(\$[A-Za-z_]\w*)\s*:\s*(\w+)/,
+    )
+  ) {
+    found.set(match[1], {
+      ...found.get(match[1]),
+      type: match[2],
+      ...(doc === undefined ? {} : { doc }),
+    });
   }
   for (
     const m of source.matchAll(/Alloc\(\s*(\$[A-Za-z_]\w*)\s*,\s*(\d+)\s*\)/g)
@@ -57,14 +91,26 @@ export function parseGlobals(source: string): Map<string, GlobalInfo> {
   return found;
 }
 
-/** Every `function NAME(` definition in `source`. */
+/**
+ * Every `function NAME(` definition in `source`, with its signature line and the `///` doc comment directly above it.
+ * A plain `//` line or a line of code between the doc and the definition leaves the definition without a doc.
+ */
 export function parseFunctions(
   source: string,
   from: string,
-): Map<string, { source: string }> {
-  const found = new Map<string, { source: string }>();
-  for (const m of source.matchAll(/^\s*function\s+([A-Za-z_]\w*)\s*\(/gm)) {
-    found.set(m[1], { source: from });
+): Map<string, { source: string; signature: string; doc?: string }> {
+  const found = new Map<
+    string,
+    { source: string; signature: string; doc?: string }
+  >();
+  for (
+    const { line, match, doc } of declarations(
+      source,
+      /^\s*function\s+([A-Za-z_]\w*)\s*\(/,
+    )
+  ) {
+    const info = { source: from, signature: line.trim() };
+    found.set(match[1], doc === undefined ? info : { ...info, doc });
   }
   return found;
 }
@@ -118,7 +164,10 @@ export async function loadKnown(
     ),
     globals: new Map(),
   };
-  const functions = new Map<string, { source: string }>();
+  const functions = new Map<
+    string,
+    { source: string; signature: string; doc?: string }
+  >();
   for (const [label, text] of sources) {
     for (const [name, info] of parseConsts(text, label)) {
       known.constants.set(name, info);

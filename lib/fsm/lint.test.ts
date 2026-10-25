@@ -137,6 +137,33 @@ Deno.test("a map icon that is not a RadarSprite member is an error, with or with
   }
 });
 
+Deno.test("a map icon may be an int constant or a RadarSprite member, but not a float constant or a bare member name", () => {
+  const payphone = (sprite: string) => ({
+    ...withLines(
+      `payphoneBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, ${sprite})`,
+    ),
+    locals: [{ name: "payphoneBlip", type: "int", value: 0 }],
+  });
+  const withPayphone: Known = {
+    constants: new Map([
+      ...known.constants,
+      ["PAYPHONE", { kind: "int", value: "8", source: "constants.txt" }],
+    ]),
+    globals: known.globals,
+  };
+  assertEquals(messages(payphone("PAYPHONE"), withPayphone), []);
+  assertEquals(messages(payphone("RadarSprite.Savehouse"), withPayphone), []);
+  assertEquals(messages(payphone("RadarSprite.Payphone"), withPayphone), [
+    "error: RadarSprite.Payphone does not exist.",
+  ]);
+  assertEquals(messages(payphone("WIDE"), withPayphone), [
+    "error: Map Icon needs an int, but WIDE is a float constant. Use a whole number.",
+  ]);
+  assertEquals(messages(payphone("Savehouse"), withPayphone), [
+    "error: Savehouse is a RadarSprite member, so write RadarSprite.Savehouse.",
+  ]);
+});
+
 Deno.test("the radar sprite list matches the ids constants.txt relies on", () => {
   const sprites = enumsFor("gta3").RadarSprite;
   const diablo = sprites.find((m) => m.name === "Diablo");
@@ -155,6 +182,20 @@ Deno.test("a ScriptSound the library names without a number is still a member", 
       "error: ScriptSound.SoundNotASound does not exist.",
     ]);
   }
+});
+
+Deno.test("a handle without a $ is a mission local, and must be declared as one", () => {
+  const blip = (handle: string) => ({
+    ...withLines(
+      `${handle} = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)`,
+    ),
+    locals: [{ name: "payphoneBlip", type: "int", value: 0 }],
+  });
+  assertEquals(messages(blip("payphoneBlip"), known), []);
+  assertEquals(messages(blip("$SafeBlip"), known), []);
+  assertEquals(messages(blip("payphoneBlpi"), known), [
+    "error: payphoneBlpi is used, but no local declares it.",
+  ]);
 });
 
 Deno.test("a variable of the wrong declared type is an error", () => {
@@ -219,7 +260,7 @@ Deno.test("every geography constant is declared as a float", () => {
 
 Deno.test("constants.txt is read with each constant's type and comment", () => {
   const consts = parseConsts(
-    "const CHONG = 87\nconst PAYPHONE = 8 // RadarSprite.Diablo\nconst R = 2.5\n",
+    "const CHONG = 87\n/// RadarSprite.Diablo\nconst PAYPHONE = 8\nconst R = 2.5\n",
     "constants.txt",
   );
   assertEquals(consts.get("CHONG"), {
@@ -230,6 +271,16 @@ Deno.test("constants.txt is read with each constant's type and comment", () => {
   });
   assertEquals(consts.get("PAYPHONE")?.comment, "RadarSprite.Diablo");
   assertEquals(consts.get("R")?.kind, "float");
+});
+
+Deno.test("only a /// doc comment is a constant's comment, not a // comment after its value", () => {
+  const consts = parseConsts(
+    "const INLINE = 3 // not a doc comment\n// not a doc comment either\nconst ABOVE = 4\n",
+    "constants.txt",
+  );
+  assertEquals(consts.get("INLINE")?.comment, undefined);
+  assertEquals(consts.get("INLINE")?.value, "3");
+  assertEquals(consts.get("ABOVE")?.comment, undefined);
 });
 
 Deno.test("the tutorial and its project files declare every name it uses", async () => {

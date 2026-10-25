@@ -29,11 +29,14 @@ import {
   globalOptions,
   isValid,
   numberProblem,
+  optionAnchor,
   pairOf,
   parseCond,
   parseLines,
   parseWhen,
+  sannyLines,
   spotOptions,
+  spriteOptions,
 } from "./ui/templates.js";
 
 const missions = fromFileUrl(new URL("../../missions", import.meta.url));
@@ -75,8 +78,8 @@ Deno.test("every step descriptor builds the lines its builder builds", () => {
     ["blipRemove", { handle: "$B" }, step.blipRemove("$B")],
     [
       "blipAt",
-      { handle: "$B", spot: "SAFEHOUSE", sprite: "Savehouse" },
-      step.blipAt("$B", "SAFEHOUSE", "Savehouse"),
+      { handle: "$B", spot: "SAFEHOUSE", sprite: "RadarSprite.Savehouse" },
+      step.blipAt("$B", "SAFEHOUSE", "RadarSprite.Savehouse"),
     ],
     [
       "cameraAtPlayer",
@@ -792,7 +795,11 @@ Deno.test("typing is rewritten into the field's format", () => {
   assertEquals(formatField(text, 'say "hi"'), "say hi");
   assertEquals(formatField(ms, "0042 ms"), "42");
   const [handle] = byName(stepDescriptors, "blipAt").fields;
-  assertEquals(formatField(handle, "Safe Blip"), "$SafeBlip");
+  assertEquals(formatField(handle, "Safe Blip"), "SafeBlip");
+  assertEquals(formatField(handle, "$Safe Blip"), "$SafeBlip");
+  assertEquals(formatField(handle, "$$Safe"), "$Safe");
+  // The `$` is optional, so a local's name is typed as it is written.
+  assertEquals(formatField(handle, "payphoneBlip"), "payphoneBlip");
   const [spot, expr] = byName(condDescriptors, "playerNear3D").fields;
   assertEquals(formatField(expr, "SAFE HOUSE_X"), "SAFEHOUSE_X");
   assertEquals(formatField(spot, "safe house-1"), "SAFEHOUSE1");
@@ -960,6 +967,229 @@ Deno.test("typing in a spot field keeps the spots that match every word", () => 
   assertEquals(ids("nothing"), []);
 });
 
+Deno.test("typeahead suggestions come alphabetized, whatever order their options were built in", () => {
+  const options = [
+    { value: "sal" },
+    { value: "Savehouse" },
+    { value: "$myCar" },
+    { value: "payphoneBlip" },
+    { value: "Blip10" },
+    { value: "Blip2" },
+  ];
+  assertEquals(
+    filterOptions(options, "").map((o: { value: string }) => o.value),
+    ["$myCar", "Blip2", "Blip10", "payphoneBlip", "sal", "Savehouse"],
+  );
+});
+
+Deno.test("typeahead suggestions list an enum's members first, in the enum's order, then the rest alphabetized", () => {
+  const members = [{ name: "Zed", id: 1 }, { name: "Apple", id: 2 }];
+  const options = [{ value: "Aardvark" }, ...enumOptions(members)];
+  assertEquals(
+    filterOptions(options, "").map((o: { value: string }) => o.value),
+    ["Zed", "Apple", "Aardvark"],
+  );
+});
+
+Deno.test("typeahead suggestions put the names that start with the query before the names that only contain it", () => {
+  const options = [{ value: "Bsal" }, { value: "salHeading" }, {
+    value: "sal",
+  }];
+  assertEquals(
+    filterOptions(options, "sal").map((o: { value: string }) => o.value),
+    ["sal", "salHeading", "Bsal"],
+  );
+});
+
+Deno.test("a condition card copies its pre lines and its test as Sanny, and a step card copies its lines", () => {
+  const cond = {
+    pre: ["health = 0", "Player.GetHealth($player, health)"],
+    test: "health < 20",
+    locals: ["health"],
+  };
+  assertEquals(sannyLines("cond", cond), [
+    "health = 0",
+    "Player.GetHealth($player, health)",
+    "health < 20",
+  ]);
+  assertEquals(sannyLines("step", ["wait 0"]), ["wait 0"]);
+  assertEquals(
+    sannyLines("cond", { test: "" }).some((l: string) => l.trim() !== ""),
+    false,
+  );
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertStringIncludes(
+    source,
+    'aria-label=${isCond ? "Copy Condition Sanny" : "Copy Step Sanny"}',
+  );
+});
+
+Deno.test("a function option carries its signature and its rendered doc for the tooltip", () => {
+  const [option] = functionOptions([{
+    name: "finishMission",
+    source: "../utils/missions.txt",
+    signature: "function finishMission()",
+    docHtml: "<p>Ends a mission.</p>",
+  }]);
+  assertEquals(option.signature, "function finishMission()");
+  assertEquals(option.doc, "<p>Ends a mission.</p>");
+});
+
+Deno.test("a typeahead shows the highlighted function's signature and doc beside its list", () => {
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertStringIncludes(source, "anchorRef=${activeOption}");
+  assertStringIncludes(source, 'placement="right-start"');
+  assertStringIncludes(source, "dangerouslySetInnerHTML=${{ __html: ");
+  const overlay = Deno.readTextFileSync(
+    new URL("./ui/overlay.js", import.meta.url),
+  );
+  assertStringIncludes(overlay, "anchorRef?.current");
+  assertStringIncludes(overlay, "placement = ");
+});
+
+Deno.test("arrow keys scroll the highlighted typeahead option into view, and hovering does not", () => {
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertStringIncludes(source, "reveal.current = true;");
+  assertStringIncludes(
+    source,
+    `listEl.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: "nearest" });`,
+  );
+  assertStringIncludes(source, "ref=${listEl}");
+});
+
+Deno.test("constant and spot options carry their doc comment, rendered as HTML, for the tooltip", () => {
+  const [constant] = constantOptions([{
+    name: "REWARD",
+    kind: "int",
+    value: "250",
+    comment: "Rosa's paycheck",
+    source: "This mission",
+    docHtml: "<p>Rosa's paycheck</p>",
+  }], "int");
+  assertEquals(constant.doc, "<p>Rosa's paycheck</p>");
+  const [spot] = spotOptions([{
+    id: "SAFEHOUSE",
+    docHtml: "<p>Safehouse</p>",
+  }]);
+  assertEquals(spot.doc, "<p>Safehouse</p>");
+});
+
+Deno.test("the editor renders the mission's own constant comments through the markdown route", async () => {
+  const app = Deno.readTextFileSync(new URL("./ui/app.js", import.meta.url));
+  assertStringIncludes(app, '"/api/markdown"');
+});
+
+Deno.test("a list item shows a constant's value and source, and its doc comment only in the tooltip", () => {
+  const [constant] = constantOptions([{
+    name: "REWARD",
+    kind: "int",
+    value: "250",
+    comment: "Rosa's paycheck",
+    source: "This mission",
+    docHtml: "<p>Rosa's paycheck</p>",
+  }], "int");
+  assertEquals(constant.meta, "int · 250 · This mission");
+  assertEquals(constant.doc, "<p>Rosa's paycheck</p>");
+  const [global] = globalOptions([{
+    name: "$SafeBlip",
+    type: "Blip",
+    docHtml: "<p>Safehouse</p>",
+  }], "Blip");
+  assertEquals(global.doc, "<p>Safehouse</p>");
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertStringIncludes(source, "anchorRef=${activeOption}");
+});
+
+Deno.test("a list item's tooltip is placed against the list's full width, level with the item, so it can flip to either side", () => {
+  const item = {
+    getBoundingClientRect: () => ({ top: 100, bottom: 120, height: 20 }),
+  };
+  const list = {
+    getBoundingClientRect: () => ({
+      left: 50,
+      right: 300,
+      width: 250,
+      top: 40,
+      bottom: 400,
+    }),
+  };
+  const anchor = optionAnchor(item, list);
+  assertEquals(anchor.getBoundingClientRect().left, 50);
+  assertEquals(anchor.getBoundingClientRect().right, 300);
+  assertEquals(anchor.getBoundingClientRect().width, 250);
+  assertEquals(anchor.getBoundingClientRect().top, 100);
+  assertEquals(anchor.getBoundingClientRect().height, 20);
+  assertEquals(anchor.contextElement, item);
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertStringIncludes(
+    source,
+    'placement="right-start" gap=${{ mainAxis: 4, crossAxis: -2 }}',
+  );
+});
+
+Deno.test("typeahead suggestions list enum members, then values the current mission declares, then the rest", () => {
+  const values = (options: unknown[], query = "") =>
+    filterOptions(options as { value: string }[], query).map((
+      o: { value: string },
+    ) => o.value);
+  const options = [
+    { value: "Aardvark" },
+    { value: "salHeading", mission: true },
+    { value: "Zed", enumIndex: 0 },
+    { value: "sal", mission: true },
+    { value: "Bsal" },
+  ];
+  assertEquals(values(options), [
+    "Zed",
+    "sal",
+    "salHeading",
+    "Aardvark",
+    "Bsal",
+  ]);
+  assertEquals(values(options, "sal"), ["sal", "salHeading", "Bsal"]);
+  const [reward] = constantOptions([{
+    name: "REWARD",
+    kind: "int",
+    value: "250",
+    source: "This mission",
+    mission: true,
+  }], "int");
+  assertEquals(reward.mission, true);
+  const [local] = globalOptions([{
+    name: "payphoneBlip",
+    type: "int",
+    local: true,
+  }], "Blip");
+  assertEquals(local.mission, true);
+});
+
+Deno.test("an overlay measures its natural size before placing, so a flip sees the room it really needs", () => {
+  const overlay = Deno.readTextFileSync(
+    new URL("./ui/overlay.js", import.meta.url),
+  );
+  assertStringIncludes(overlay, 'el.style.maxInlineSize = "";');
+  // Clearing the block size lets the list grow for a moment, which clamps its scroll position to the top.
+  assertEquals(overlay.includes('el.style.maxBlockSize = "";'), false);
+});
+
+Deno.test("a doc tooltip wraps a long unbroken token, so its text never overflows its box", () => {
+  const css = Deno.readTextFileSync(
+    new URL("./ui/styles.css", import.meta.url),
+  );
+  const rule = css.match(/\.combo-doc \{[^}]*\}/)?.[0] ?? "";
+  assertStringIncludes(rule, "overflow-wrap: anywhere");
+});
+
 Deno.test("the editor's field patterns are the library's", () => {
   for (const d of [...stepDescriptors, ...condDescriptors]) {
     for (const f of d.fields) {
@@ -988,7 +1218,7 @@ Deno.test("a float field offers only float constants, an int field only int ones
   assertEquals(names("int"), ["REWARD", "CHONG"]);
   assertEquals(names(), ["REWARD", "WIDE", "CHONG", "SUM"]);
   const [reward] = constantOptions(constants, "int");
-  assertEquals(reward.meta, "int · 250 · Rosa's paycheck · This mission");
+  assertEquals(reward.meta, "int · 250 · This mission");
 });
 
 Deno.test("a new variable field starts on a declared variable of its type", () => {
@@ -1019,7 +1249,7 @@ Deno.test("unchecking Shown turns Add Blip into Remove Blip, and checking it aga
   }]);
 
   const context = { monitorIds: [], spotIds: ["SAFEHOUSE"], globals: [] };
-  const lines = step.blipAt("$SafeBlip", "PAYPHONE", "Diablo");
+  const lines = step.blipAt("$SafeBlip", "PAYPHONE", "RadarSprite.Diablo");
   const parsed = parseLines(stepDescriptors, lines)!;
 
   const hidden = flipShown(
@@ -1058,7 +1288,7 @@ Deno.test("unchecking Shown turns Add Blip into Remove Blip, and checking it aga
   assertEquals(fresh.values, {
     handle: "$SafeBlip",
     spot: "SAFEHOUSE",
-    sprite: "Savehouse",
+    sprite: "RadarSprite.Savehouse",
   });
 });
 
@@ -1136,6 +1366,39 @@ Deno.test("the map icon field offers the RadarSprite members, filtered as you ty
   );
 });
 
+Deno.test("the map icon offers each member as RadarSprite.Name, then the int constants", () => {
+  const options = spriteOptions("RadarSprite", enumsFor("gta3").RadarSprite, [
+    {
+      name: "PAYPHONE",
+      kind: "int",
+      value: "8",
+      comment: "RadarSprite.Diablo",
+      source: "constants.txt",
+    },
+    { name: "WIDE", kind: "float", value: "20.0", source: "constants.txt" },
+  ]);
+  const values = options.map((o: { value: string }) => o.value);
+  assertEquals(values.includes("RadarSprite.Savehouse"), true);
+  assertEquals(values.at(-1), "PAYPHONE");
+});
+
+Deno.test("Add Blip reads a constant map icon and a RadarSprite member back as its card", () => {
+  const constant =
+    "payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_BLIP_X, PAYPHONE_BLIP_Y, PAYPHONE_BLIP_Z, PAYPHONE)";
+  const card = parseLines(stepDescriptors, [constant])!;
+  assertEquals(card.descriptor.name, "blipAt");
+  assertEquals(card.values.handle, "payphoneBlip");
+  assertEquals(card.values.spot, "PAYPHONE_BLIP");
+  assertEquals(card.values.sprite, "PAYPHONE");
+  assertEquals(buildLines(card.descriptor, card.values), [constant]);
+
+  const member = parseLines(stepDescriptors, [
+    "$SafeBlip = Blip.AddSpriteForCoord(SAFEHOUSE_X, SAFEHOUSE_Y, SAFEHOUSE_Z, RadarSprite.Savehouse)",
+  ])!;
+  assertEquals(member.descriptor.name, "blipAt");
+  assertEquals(member.values.sprite, "RadarSprite.Savehouse");
+});
+
 Deno.test("a variable field offers the globals of its declared type", () => {
   const globals = [
     { name: "$SafeBlip", type: "Blip" },
@@ -1149,6 +1412,18 @@ Deno.test("a variable field offers the globals of its declared type", () => {
   assertEquals(names(), ["$SafeBlip", "$myCar", "$onMission"]);
   const car = byName(condDescriptors, "carInWater").fields[0];
   assertEquals(car.varType, "Car");
+});
+
+Deno.test("a typeahead list sizes to its longest name, not its input, and keeps each name on one line", () => {
+  const source = Deno.readTextFileSync(
+    new URL("./ui/step-controls.js", import.meta.url),
+  );
+  assertEquals(source.includes("<${Overlay} fit"), false);
+  const css = Deno.readTextFileSync(
+    new URL("./ui/styles.css", import.meta.url),
+  );
+  const rule = css.match(/\.combo-list \{[^}]*\}/)?.[0] ?? "";
+  assertStringIncludes(rule, "white-space: nowrap");
 });
 
 Deno.test("typing a number of the wrong type into a numbered field is called out as it is typed", () => {
@@ -1355,6 +1630,20 @@ Deno.test("a handle field takes a mission local's name as well as a $global, and
     globalOptions(globals, "Blip").map((o: { value: string }) => o.value),
     ["$Blip", "payphoneBlip"],
   );
+});
+
+Deno.test("a variable typeahead also offers the mission's locals, whatever their type", () => {
+  const globals = [
+    { name: "$myCar", type: "Car" },
+    { name: "payphoneBlip", type: "int", local: true },
+    { name: "sal", type: "Char", local: true },
+  ];
+  const options = globalOptions(globals, "Blip");
+  assertEquals(options.map((o: { value: string }) => o.value), [
+    "payphoneBlip",
+    "sal",
+  ]);
+  assertEquals(options[0].meta, "int · local");
 });
 
 Deno.test("lines that are not a conditional the editor wrote stay untyped", () => {

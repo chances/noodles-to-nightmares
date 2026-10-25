@@ -1,6 +1,88 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { fromFileUrl, join } from "@std/path";
-import { createApp, createHandler, handler } from "./server.ts";
+import { createApp, createHandler, handler, withDocHtml } from "./server.ts";
+
+Deno.test("a constant's comment is rendered as Markdown for its tooltip", () => {
+  const names = withDocHtml({
+    constants: [{
+      name: "PAYPHONE",
+      kind: "int",
+      value: "8",
+      comment: "**Diablo**",
+      source: "constants.txt",
+    }],
+    globals: [],
+    functions: [],
+  });
+  assertStringIncludes(
+    names.constants[0].docHtml ?? "",
+    "<strong>Diablo</strong>",
+  );
+});
+
+Deno.test("a spot's comment is rendered as Markdown in the vocabulary the editor loads", async () => {
+  const response = await handler(
+    new Request("http://editor.test/api/vocabulary"),
+  );
+  const body = await response.json();
+  const commented = body.spots.find((s: { comment?: string }) => s.comment);
+  assertStringIncludes(commented.docHtml, "<p>");
+});
+
+Deno.test("the markdown route renders each text it is sent", async () => {
+  const response = await handler(
+    new Request("http://editor.test/api/markdown", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ texts: ["**Full** pay"] }),
+    }),
+  );
+  assertEquals(response.status, 200);
+  assertStringIncludes(
+    (await response.json()).html[0],
+    "<strong>Full</strong>",
+  );
+});
+
+Deno.test("a global's doc comment is rendered as Markdown for its tooltip", () => {
+  const names = withDocHtml({
+    constants: [],
+    globals: [{
+      name: "$SafeBlip",
+      type: "Blip",
+      slot: 4501,
+      doc: "**Safehouse**",
+    }],
+    functions: [],
+  });
+  assertStringIncludes(
+    names.globals[0].docHtml ?? "",
+    "<strong>Safehouse</strong>",
+  );
+});
+
+Deno.test("a function's doc comment is rendered as Markdown for its tooltip, and its signature is kept", () => {
+  const names = withDocHtml({
+    constants: [],
+    globals: [],
+    functions: [{
+      name: "finishMission",
+      source: "../utils/missions.txt",
+      signature: "function finishMission()",
+      doc: "Ends a mission as **passed**.",
+    }, {
+      name: "clearUI",
+      source: "../utils/missions.txt",
+      signature: "function clearUI()",
+    }],
+  });
+  assertStringIncludes(
+    names.functions[0].docHtml ?? "",
+    "<strong>passed</strong>",
+  );
+  assertEquals(names.functions[0].signature, "function finishMission()");
+  assertEquals(names.functions[1].docHtml, undefined);
+});
 
 const get = (path: string) => handler(new Request(`http://editor.test${path}`));
 const repo = encodeURIComponent(
@@ -351,7 +433,8 @@ Deno.test("build answers with the build step's result", async () => {
   const api = createApp(
     { appData: "unused", documents: "unused" },
     {
-      runBuild: () => Promise.resolve({ ok: false, lines: ["Unknown state GHOST"] }),
+      runBuild: () =>
+        Promise.resolve({ ok: false, lines: ["Unknown state GHOST"] }),
     },
   );
   const res = await api.request(`/api/build?project=${repo}`, {
