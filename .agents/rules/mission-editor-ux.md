@@ -12,3 +12,5 @@
 - **Checkbox Labels Stay Visible**: A checkbox, whether the Shown checkbox or a `toggle` field, keeps its label visible, inline after its box. A card's label is hidden with `sr-only` only when the card's lone control is not a checkbox.
 - **Scroll Reveal Keeps Layout Space**: Reveal a selected item with `revealElement` from `ui/reveal.js`, never `scrollIntoView`. The view moves to the end of its scroller when the item sits nearer that end. Otherwise it keeps the item's layout gap and the scroller's padding in view.
 - **Range Fields Share One Inset**: A range field's box, gaps, typeahead text, and toggle edges all use `--range-inset` (4px). The box draws the one focus outline, and its slider, input, and toggle draw none.
+- **One Outline Per State**: An element shows one outline for each state. Selected and focused elements take one border or one outline, never a border stacked with a `box-shadow` ring or a second outline on the same element.
+- **Selection And Focus Use Amber**: `--accent` marks selection and focus. Primary action fills use `--primary`. A selected timeline beat's start dot takes `--accent` with its card.

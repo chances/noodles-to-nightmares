@@ -423,7 +423,7 @@ function MissionForm({ doc, edit, onSelect }) {
               <${Combo} value=${path} options=${fileOptions} label=${`Sanny file for include ${i + 1}`} missing="is not a Sanny file in this project"
                 onCommit=${(next) => setIncludes("Include", included.map((p, j) => (j === i ? next : p)))} />
             </li>`)}
-          ${reorder.line !== null && html`<li class="drop-line" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
+          ${reorder.line !== null && html`<li class="drop-cue" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
         </ol>
         <p class="sr-only" role="status" aria-live="polite">${reorder.message}</p>
         ${adding && addable.length > 0 && html`

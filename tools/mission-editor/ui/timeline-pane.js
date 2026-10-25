@@ -12,7 +12,7 @@ const LABEL_EVERY = 5;
 const MIN_SECONDS = 5;
 /** The narrowest a beat's card is drawn, in pixels, so a beat that waits no time can still be clicked. */
 const MIN_CARD = 64;
-const CARD_GAP = 3;
+const CARD_GAP = 8;
 
 const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`;
 
@@ -92,6 +92,9 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
   const totalSeconds = Math.max(MIN_SECONDS, Math.ceil(start / 1000));
   const labels = Array.from({ length: Math.floor(totalSeconds / LABEL_EVERY) + 1 }, (_, i) => i * LABEL_EVERY);
   const spanPx = Math.max(x(totalSeconds * 1000), cursor) + PAD;
+  const trackStart = placed[0]?.left ?? PAD;
+  const trackEnd = placed.length ? placed[placed.length - 1].left + placed[placed.length - 1].width : trackStart;
+  const trackWidth = trackEnd - trackStart;
 
   return html`
     <div class="timeline-grid" ref=${grid} role="table" aria-label=${`Beats of ${selected}`} style=${`--span: ${spanPx}px`}>
@@ -107,6 +110,7 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
           <span>${beats.length} · ${seconds(start)}</span>
         </div>
         <div class="tl-track" role="cell">
+          ${placed.length > 0 && html`<div class="tl-range" aria-hidden="true" style=${`inset-inline-start: ${trackStart}px; inline-size: ${trackWidth}px`}></div>`}
           ${placed.map(({ beat, index, at, left, width }) => {
             const steps = beat.do ?? [];
             const wait = beat.wait ?? 0;
@@ -120,8 +124,8 @@ export function TimelinePane({ doc, selected, beat: shown, onSelectBeat }) {
                   <strong>${beat.await ? "Await" : steps.length ? describe(steps[0]) : "Wait"}</strong>
                   <span>${details(beat)}</span>
                 </span>
-                ${wait > 0 && html`<span class="kf-end" style=${`inset-inline-start: ${left + width}px`}></span>`}
-                <span class="kf-start" aria-hidden="true" onClick=${pick} style=${`inset-inline-start: ${left}px`}></span>
+
+                <span class="kf-start" aria-hidden="true" onClick=${pick} style=${`inset-inline-start: ${index === 0 ? left : left - 1}px`}></span>
               </span>
             `;
           })}

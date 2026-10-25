@@ -21,10 +21,10 @@ export const StepOutIcon = () => icon(html`<path d="M8.5 10.5V2.5M5.5 5.5L8.5 2.
 export const StepOverIcon = () => icon(html`<path d="M4 11A4.5 4.5 0 0 1 13 11" /><path d="M11.5 10.5L13 12L14.5 10.5" /><circle cx="8.5" cy="13.5" r="1.5" fill="currentColor" stroke="none" />`);
 
 /** A curved arrow back to the left. */
-export const UndoIcon = () => icon(html`<path d="M7 5L3.5 8.5L7 12" /><path d="M3.5 8.5H9.5A3 3 0 0 1 9.5 14.5H7" />`);
+export const UndoIcon = () => icon(html`<path d="M7 3L3.5 6.5L7 10" /><path d="M3.5 6.5H9.5A3 3 0 0 1 9.5 12.5H7" />`);
 
 /** The same arrow mirrored. */
-export const RedoIcon = () => icon(html`<path d="M10 5L13.5 8.5L10 12" /><path d="M13.5 8.5H7.5A3 3 0 0 0 7.5 14.5H10" />`);
+export const RedoIcon = () => icon(html`<path d="M10 3L13.5 6.5L10 10" /><path d="M13.5 6.5H7.5A3 3 0 0 0 7.5 12.5H10" />`);
 
 /** Three stacked layers: build. */
 export const BuildIcon = () => icon(html`<path d="M8.5 2.5L14.5 5.5L8.5 8.5L2.5 5.5Z" /><path d="M2.5 8.5L8.5 11.5L14.5 8.5" /><path d="M2.5 11.5L8.5 14.5L14.5 11.5" />`);

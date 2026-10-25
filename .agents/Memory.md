@@ -51,10 +51,17 @@
 - Match dimensions, radii, baseline alignment, and gutters (14-15 px) directly.
 
 ## File Tool Discipline & Surgical Edits
+- **Never Ask User to Read Project Files**: The workspace is accessible; resolve paths directly without prompting the user.
 - **Strictly Use Built-in Tools**: Use `view_file` for reading and `replace_file_content` for surgical chunk edits. Never overwrite whole files.
 - **No Terminal File Gymnastics**: NEVER use PowerShell pipelines (`Select-String`, `Get-Content`), shell redirection, or inline Python/Node scripts (`python -c "import shutil..."`) to read, search, copy, or modify files.
 - **Git Restrictions**: Never inspect or manipulate `git stash` without explicit instruction. Never run parametrized shell git commands (`git diff <path>`, `git grep`, `git show <hash>`) as they trigger interactive Antigravity permission prompts due to exact-string matching in `~/.gemini/config/config.json`. Use built-in file reading tools (`read_file`) instead. Bare `git status` and `git diff` only.
 - **Dedicated Scripts**: Tooling belongs in formal scripts under `./scripts/` (e.g. `scripts/install.ts`, `scripts/manage-txd.py`), invoked directly.
+- **War Story Reference**: See [`war-stories/cross-agent-hook-and-permission-churn.md`](war-stories/cross-agent-hook-and-permission-churn.md) for root-cause analysis of cross-agent hook collisions and path resolution failures.
+
+## AGY Lifecycle Hooks & Environment Isolation
+- **Hook Schema**: Antigravity deserializes hook stdout with strict `protojson.Unmarshal`. Hooks must output pure AGY schema (`{ "decision": "allow" | "deny" | "ask" | "force_ask", "reason": "...", "overwrite": {...}, "permissionOverrides": [...] }`). Emitting Claude-specific fields (`hookSpecificOutput`, `event`) crashes the deserializer with `proto: unknown field`.
+- **Environment Isolation**: AGY hooks live in `~/.gemini/config/hooks/` and are configured in `~/.gemini/config/hooks.json`. Never point AGY configurations to Claude's `~/.claude/hooks/` or vice versa.
+- **Permission Grants**: Bypassing IDE permission prompts across a project requires regex permission grants (`read_file(regex:.*)`, `edit_file(regex:.*)`, `write_file(regex:.*)`) in `globalPermissionGrants.allow` inside `~/.gemini/config/config.json`.
 
 ## Project Skills & Asset Locations
 - **Skills Location**: Repository skills must be saved in `.agents/skills/<skill-name>/SKILL.md` (e.g. `.agents/skills/txd-importing/SKILL.md`), never in global runtime folders.
@@ -143,6 +150,8 @@
 - **Checking the UI**: serve `createApp` on a spare port (not 8000, which may be the user's) against a throwaway project seeded by a `PUT`, never the repo's `missions/`. Run tests with `deno task --cwd tools/mission-editor test`, which grants `--allow-run`.
 - **Test Scope**: The editor suite tests editor behavior only. A test that names a mission's states, steps, or warnings is removed, because each mission refactor breaks it. Test a rule with an inline `defineMission` table.
 - **Card Rows**: Step, condition, and include rows share `useReorder` and the grip in `tools/mission-editor/ui/step-controls.js`, so drag, grip, and icon-only actions apply to every card type. Copy Sanny is step-only.
+- **Drop Cue**: The insertion line that shows where a dragged card will land is called the "drop cue" in prose and tests (`reorder_test.ts`). Its CSS class is `.drop-cue`, rendered in `inspector-pane.js` and `step-controls.js`.
+- **Beat Cell Geometry**: Beat cell and range styles live isolated in `ui/story-beats.css` (imported by `ui/styles.css`, linked in `app.html` and `index.html`). A beat cell (`.kf-card`) is 36px border-box, with a 1px muted border on top and bottom (`border-block: 1px solid var(--muted)`), `#33353a` unselected background across all variants, and a continuous time box frame (`.tl-range`) bridging beats and 8px intermediate negative space. Leading edge of first beat keeps a constant 1px inline-start border in both states (`1px solid var(--muted)` unselected, `1px solid var(--accent)` selected) and last beat keeps a constant 1px inline-end border (`1px solid var(--muted)` unselected, `1px solid var(--accent)` selected), preventing any text or content shift. When selected, cards use 2px amber block borders (`border-block: 2px solid var(--accent)`) with zero inline borders on intermediate edges, while the terminal ends achieve 2px apparent width via a 1px amber pseudo-element (`::before` on first beat, `::after` on last beat) adjacent to the 1px border. The start dot (`.kf-start`) is optically centered on cell start in both states. Measure rects and computed styles in the open tab before changing this geometry.
 - **Paired Cards**: Each 2D and 3D pair in the Sanny library is one card with a 2D/3D switch. The form is stored as `mode` on the condition, and fields that only one form uses are kept in `hidden`. Library ids: `LOCATE_PLAYER_ANY_MEANS_2D` (00E3) and `_3D` (00F5), `LOCATE_PLAYER_ON_FOOT_2D` (00E4) and `_3D` (00F6), `LOCATE_STOPPED_PLAYER_ON_FOOT_2D` (00E7) and `_3D`.
 - **Icons**: `tools/mission-editor/ui/icons.js` draws every icon on a 16-unit grid rendered at 16 px with 1 px strokes. Stroked lines centre on x.5 or y.5, filled edges sit on whole units, and the centre axis is 8.5. Check a zoomed render before reporting an icon as done.
 

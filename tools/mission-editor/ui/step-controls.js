@@ -618,7 +618,7 @@ function TypedList({ items, kind, onChange, addLabel, emptyText }) {
       ${items.length > 0 && html`
         <ul class="items reorder" ref=${reorder.list} aria-label=${kind === "cond" ? "Conditions" : "Steps"}>
           ${items.map((item, i) => html`<${Row} key=${`${generation}-${i}`} item=${item} kind=${kind} n=${i + 1} onChange=${replace(i)} onRemove=${remove(i)} reorder=${reorder.item(i)} lift=${reorder.lift(i)} />`)}
-          ${reorder.line !== null && html`<li class="drop-line" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
+          ${reorder.line !== null && html`<li class="drop-cue" role="presentation" aria-hidden="true" style=${{ top: `${reorder.line}px` }}></li>`}
         </ul>
         <p class="sr-only" role="status" aria-live="polite">${reorder.message}</p>`}
       <select class="add" aria-label=${addLabel} value="" onChange=${(e) => { const name = e.currentTarget.value; e.currentTarget.value = ""; add(name); }}>
