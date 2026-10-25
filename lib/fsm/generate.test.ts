@@ -445,6 +445,24 @@ Deno.test("cutsceneRegions groups the cutscene states that link to each other", 
   assertEquals(cutsceneRegions(scene), [["A", "B"]]);
 });
 
+const beatScene = defineMission({
+  header: ["Beat scene"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [],
+  states: {
+    A: { beats: [{ wait: 1000 }], next: "B" },
+    B: { beats: [{ wait: 1000 }], next: "C" },
+    C: { next: "D" },
+    D: { finish: true },
+    LOSE: { next: "A" },
+  },
+});
+
+Deno.test("cutsceneRegions counts a state with beats and no kind as a cutscene, as the editor shows it", () => {
+  assertEquals(cutsceneRegions(beatScene), [["A", "B"]]);
+});
+
 Deno.test("a cutscene region sets the flag and letterbox on entry and clears them on exit", () => {
   const text = generate(scene, "x");
   assertStringIncludes(

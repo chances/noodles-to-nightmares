@@ -1,7 +1,7 @@
 // What is wrong with a mission table. Errors stop the generator or produce Sanny that cannot compile; warnings are legal but suspicious.
 
 import { latchLocal, stateConst } from "./emit.ts";
-import { transitions } from "./graph.ts";
+import { effectiveKind, transitions } from "./graph.ts";
 import { describeMismatch, fieldUses, numberMismatches } from "./numeric.ts";
 import type { NumberKind } from "./numeric.ts";
 import { enumsFor } from "./enums.ts";
@@ -59,17 +59,6 @@ const STRING = /"[^"]*"|'[^']*'/g;
 const stripNonCode = (line: string) =>
   line.replace(STRING, '""').replace(/\/\/.*$/, "");
 
-/** The kind the editor shows a state as. Mirrors `kindOf` in tools/mission-editor/ui/sections.js. */
-function effectiveKind(state: State): string {
-  if (state.kind) return state.kind;
-  if (state.finish) return "ending";
-  if (state.on?.length) return state.onEnter?.length ? "encounter" : "choice";
-  if (state.until?.length) {
-    return state.onEnter?.length ? "objective" : "interaction";
-  }
-  if (state.beats?.length) return "cutscene";
-  return "";
-}
 
 /** A problem message ends with a period, so the editor's "Go To" link after it reads as a new sentence. */
 const sentence = (message: string) =>

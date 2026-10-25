@@ -1,5 +1,7 @@
 // Pure operations on a mission table and its graph layout. No DOM and no Preact, so the editor tests import it.
 
+import { kindOf } from "./sections.js";
+
 /** Edges of the graph: a state's `next`, then its `on` branches. */
 export function transitions(mission) {
   const edges = [];
@@ -13,13 +15,13 @@ export function transitions(mission) {
 }
 
 /**
- * The cutscene regions, the same ones `lib/fsm/graph.ts` finds: each run of `cutscene` states linked by
- * transitions in either direction, in table order.
+ * The cutscene regions, the same ones `lib/fsm/graph.ts` finds: each run of cutscene states (by `kindOf`) linked
+ * by transitions in either direction, in table order.
  */
 export function cutsceneRegions(mission) {
   const states = Object.entries(mission.states).map(([id, state]) => ({
     id,
-    cutscene: state.kind === "cutscene",
+    cutscene: kindOf(state) === "cutscene",
   }));
   const cutscene = new Set(states.filter((s) => s.cutscene).map((s) => s.id));
   const linked = new Map();

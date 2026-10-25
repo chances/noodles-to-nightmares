@@ -33,14 +33,26 @@ export function transitions(mission: Mission): Edge[] {
   return edges;
 }
 
+/** The kind the editor shows a state as. Mirrors `kindOf` in tools/mission-editor/ui/sections.js. */
+export function effectiveKind(state: State): string {
+  if (state.kind) return state.kind;
+  if (state.finish) return "ending";
+  if (state.on?.length) return state.onEnter?.length ? "encounter" : "choice";
+  if (state.until?.length) {
+    return state.onEnter?.length ? "objective" : "interaction";
+  }
+  if (state.beats?.length) return "cutscene";
+  return "";
+}
+
 /**
- * The cutscene regions of a mission: each run of `cutscene` states linked by transitions in either direction,
- * in table order. A transition that enters a region sets the cutscene flag and letterbox; one that leaves it clears them.
+ * The cutscene regions of a mission: each run of cutscene states (by effective kind) linked by transitions in either
+ * direction, in table order. A transition that enters a region sets the cutscene flag and letterbox; one that leaves it clears them.
  */
 export function cutsceneRegions(mission: Mission): string[][] {
   const states = Object.entries(mission.states) as [string, State][];
   const cutscene = new Set(
-    states.filter(([, state]) => state.kind === "cutscene").map(([id]) => id),
+    states.filter(([, state]) => effectiveKind(state) === "cutscene").map(([id]) => id),
   );
   const linked = new Map<string, Set<string>>();
   for (const { from, to } of transitions(mission)) {
