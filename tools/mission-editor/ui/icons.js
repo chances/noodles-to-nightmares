@@ -81,7 +81,7 @@ export const STATE_KIND_ICONS = {
 };
 
 /** Six dots in two columns: the handle a card is dragged by. */
-export const GripIcon = () => html`<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" stroke="none" aria-hidden="true"><path d="M4 3h2v2H4zM11 3h2v2h-2zM4 7h2v2H4zM11 7h2v2h-2zM4 11h2v2H4zM11 11h2v2h-2z" /></svg>`;
+export const GripIcon = () => html`<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" stroke="none" aria-hidden="true"><path d="M4 3 L6 3 L6 5 L4 5 Z M9 3 L11 3 L11 5 L9 5 Z M4 7 L6 7 L6 9 L4 9 Z M9 7 L11 7 L11 9 L9 9 Z M4 11 L6 11 L6 13 L4 13 Z M9 11 L11 11 L11 13 L9 13 Z" /></svg>`;
 
 /** Two overlapping sheets: copy. */
 export const CopyIcon = () => icon(html`<rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M5.5 11.5H5A1.5 1.5 0 0 1 3.5 10V5A1.5 1.5 0 0 1 5 3.5H10A1.5 1.5 0 0 1 11.5 5V5.5" />`);
