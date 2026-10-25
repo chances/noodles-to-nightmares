@@ -28,6 +28,7 @@ import {
   stepDescriptors,
   transitions,
 } from "@noodles/fsm";
+import { ScriptWriter } from "./script-emit.ts";
 import { parseEventLine } from "../../scripts/run-events.ts";
 import {
   listenTelemetry,
@@ -187,6 +188,19 @@ export function createApp(
   } = {},
 ) {
   const app = new Hono();
+  // One writer per project, so saves to two projects never share a debounce timer.
+  const scriptWriters = new Map<string, ScriptWriter>();
+  const scriptWriterFor = (project: string) => {
+    let writer = scriptWriters.get(project);
+    if (!writer) {
+      const missionsDir = join(project, "missions");
+      writer = new ScriptWriter((stem, text) =>
+        Deno.writeTextFile(join(missionsDir, `${stem}.txt`), text)
+      );
+      scriptWriters.set(project, writer);
+    }
+    return writer;
+  };
 
   if (log) app.use(logger());
   app.use(secureHeaders());
@@ -266,14 +280,18 @@ export function createApp(
           layout,
         });
       });
-      return c.json({
-        source: saved.source,
-        problems: problems(
-          saved.mission,
-          await loadKnown(join(resolve(project), "missions"), saved.mission),
-          enumsFor(await projectGame(resolve(project))),
-        ),
-      });
+      const found = problems(
+        saved.mission,
+        await loadKnown(join(resolve(project), "missions"), saved.mission),
+        enumsFor(await projectGame(resolve(project))),
+      );
+      scriptWriterFor(resolve(project)).schedule(
+        stem,
+        saved.source,
+        saved.mission,
+        found,
+      );
+      return c.json({ source: saved.source, problems: found });
     },
   );
 

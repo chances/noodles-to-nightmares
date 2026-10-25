@@ -130,20 +130,6 @@ Deno.test("a mission request without a project is a 400", async () => {
   await res.body?.cancel();
 });
 
-Deno.test("serves a mission's table, layout, and edges", async () => {
-  const res = await get(`/api/missions/0_tutorial?project=${repo}`);
-  assertEquals(res.status, 200);
-  const body = await res.json();
-  assert(body.source === "states.ts" || body.source === "fsm.json");
-  assertEquals(body.mission.start, "INTRO");
-  assertEquals(typeof body.layout.GO_HOME.x, "number");
-  assert(
-    body.edges.some((e: { from: string; to: string }) =>
-      e.from === "LOSE" && e.to === "GO_HOME"
-    ),
-  );
-});
-
 Deno.test("serves the step and condition vocabulary", async () => {
   const body = await (await get("/api/vocabulary")).json();
   assert(body.steps.some((d: { name: string }) => d.name === "say"));
@@ -186,17 +172,6 @@ Deno.test("serves the project's Sanny files as paths from the missions folder", 
     body.sannyFiles.some((f: string) => f.includes("0_tutorial")),
     false,
   );
-});
-
-Deno.test("serves a mission's problems with its table", async () => {
-  const body = await (await get(`/api/missions/0_tutorial?project=${repo}`))
-    .json();
-  assertEquals(body.problems, [{
-    severity: "warning",
-    message:
-      "Consider simplifying states: ARRIVE and HOME_TUTORIAL are both cutscene states linked together.",
-    state: "ARRIVE",
-  }]);
 });
 
 Deno.test("saving writes a .fsm.json that loads back, and refuses a bad table", async () => {

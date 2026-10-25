@@ -24,6 +24,8 @@ int latchDyingWarning = false
 int health = 0
 
 $onMission = true
+$onCutscene = true
+Hud.SwitchWidescreen(true)
 
 while true
   wait 0
@@ -143,6 +145,8 @@ end
       return
     end
   end
+  $onCutscene = false
+  Hud.SwitchWidescreen(false)
   state = STATE_GO_HOME
   return
 
@@ -164,11 +168,15 @@ end
     if
       state == STATE_LOSE
     then
+      $onCutscene = true
+      Hud.SwitchWidescreen(true)
       return
     end
     if
       Player.LocateAnyMeans3D($player, SAFEHOUSE_ARRIVE_X, SAFEHOUSE_ARRIVE_Y, SAFEHOUSE_ARRIVE_Z, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, SAFEHOUSE_ARRIVE_RADIUS, true)
     then
+      $onCutscene = true
+      Hud.SwitchWidescreen(true)
       state = STATE_ARRIVE
       return
     end
@@ -242,6 +250,8 @@ end
     wait 0
     runMonitors()
   end
+  $onCutscene = false
+  Hud.SwitchWidescreen(false)
   state = STATE_WIN
   return
 
@@ -260,6 +270,8 @@ end
     wait 0
     runMonitors()
   end
+  $onCutscene = false
+  Hud.SwitchWidescreen(false)
   state = STATE_GO_HOME
   return
 

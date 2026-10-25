@@ -91,6 +91,8 @@ Deno.test("an await beat spin-waits with the watchers, then breaks out once ever
       "    if",
       "      state == STATE_LOSE",
       "    then",
+      "      $onCutscene = false",
+      "      Hud.SwitchWidescreen(false)",
       "      return",
       "    end",
       "    if and",
@@ -461,6 +463,25 @@ const beatScene = defineMission({
 
 Deno.test("cutsceneRegions counts a state with beats and no kind as a cutscene, as the editor shows it", () => {
   assertEquals(cutsceneRegions(beatScene), [["A", "B"]]);
+});
+
+const twoRegions = defineMission({
+  header: ["Two regions"],
+  start: "A",
+  onFail: "LOSE",
+  fail: [cond.playerDead()],
+  states: {
+    A: { beats: [{ wait: 1000 }], next: "G" },
+    G: { next: "F" },
+    F: { finish: true },
+    LOSE: { fail: false, beats: [{ wait: 1000 }], next: "G" },
+  },
+});
+
+Deno.test("a fail from one cutscene region into another leaves the flag on, with no off and on pair", () => {
+  const text = generate(twoRegions, "x");
+  const routine = text.slice(text.indexOf(":stateA"), text.indexOf(":stateG"));
+  assertEquals(routine.includes("$onCutscene = true"), false);
 });
 
 Deno.test("a cutscene region sets the flag and letterbox on entry and clears them on exit", () => {

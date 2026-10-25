@@ -104,15 +104,11 @@ export function generate(mission: Mission, source: string): string {
   /** Calls the routine that runs the state's `onExit` steps, when it has one. */
   const leave = (id: string) => leaves.has(id) ? [`${leaveLabel(id)}()`] : [];
 
-  /** The cutscene lines a transition from `from` to `to` needs: none inside a region, off when leaving one, on when entering one. */
+  /** The cutscene lines a transition from `from` to `to` needs. The flag is on inside any region, so only a change of inside or outside writes it. */
   const flagsFor = (from: string, to: string): string[] => {
-    const before = regionOf.get(from);
-    const after = regionOf.get(to);
-    if (before === after) return [];
-    return [
-      ...(before === undefined ? [] : CUTSCENE_OFF),
-      ...(after === undefined ? [] : CUTSCENE_ON),
-    ];
+    const inside = regionOf.has(to);
+    if (regionOf.has(from) === inside) return [];
+    return inside ? CUTSCENE_ON : CUTSCENE_OFF;
   };
 
   /** Leaves `id` for `target` and returns to the dispatcher. */

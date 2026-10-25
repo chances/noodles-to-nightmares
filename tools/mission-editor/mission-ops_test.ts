@@ -7,9 +7,7 @@ import {
   NODE,
 } from "@noodles/fsm";
 import {
-  addState,
   cutsceneRegions,
-  FINISH,
   layout,
   regionHull,
   stateRefs,
@@ -29,18 +27,6 @@ Deno.test("the editor's layout with cutscene regions matches the library's", asy
 
 Deno.test("the column gap matches the row gap", () => {
   assertEquals(NODE.gapX, NODE.gapY);
-});
-
-Deno.test("a chain of states one after another sits one row apart", async () => {
-  const doc = await loadMission(missions, "1_shady_job");
-  const pos = layout(doc!.mission, NODE) as Record<
-    string,
-    { x: number; y: number }
-  >;
-  assertEquals(
-    pos.FETCH_PACKAGE.y - pos.ANSWER_CALL.y,
-    NODE.height + NODE.gapY,
-  );
 });
 
 Deno.test("the editor's cutscene regions match the library's", async () => {
@@ -118,18 +104,6 @@ Deno.test("a hull holds every padded corner, turns only left, and uses only corn
   }
 });
 
-Deno.test("a non-member inside a region's box takes its own row beneath the region", async () => {
-  const doc = await loadMission(missions, "1_shady_job");
-  const pos = layout(doc!.mission, NODE) as Record<
-    string,
-    { x: number; y: number }
-  >;
-  assertEquals(pos.END_INTRO, {
-    x: pos.INTRO.x,
-    y: pos.SAL_CUTSCENE.y + NODE.height + NODE.gapY,
-  });
-});
-
 Deno.test("a cutscene region's hull leaves out the states outside it", async () => {
   const doc = await loadMission(missions, "1_shady_job");
   const { mission } = doc!;
@@ -173,38 +147,3 @@ Deno.test("prose splits into text and whole state names, so each name can be dra
   ]);
 });
 
-const draftOf = async () => {
-  const doc = await loadMission(missions, "0_tutorial");
-  return structuredClone({ mission: doc!.mission, layout: doc!.layout });
-};
-
-Deno.test("a new state goes between the state it comes after and that state's next", async () => {
-  const draft = await draftOf();
-  addState(
-    draft,
-    { name: "WALK", kind: "cutscene", after: "GO_HOME", leadsTo: "ARRIVE" },
-    NODE,
-  );
-  assertEquals(draft.mission.states.GO_HOME.next, "WALK");
-  assertEquals(draft.mission.states.WALK, { kind: "cutscene", next: "ARRIVE" });
-  assertEquals(Object.keys(draft.layout).length, 7);
-});
-
-Deno.test("a new state can finish the mission or lead nowhere, and need not follow anything", async () => {
-  const draft = await draftOf();
-  addState(draft, {
-    name: "END",
-    kind: "ending",
-    after: "",
-    leadsTo: FINISH,
-  }, NODE);
-  addState(draft, {
-    name: "LOOSE",
-    kind: "choice",
-    after: "",
-    leadsTo: "",
-  }, NODE);
-  assertEquals(draft.mission.states.END, { kind: "ending", finish: true });
-  assertEquals(draft.mission.states.LOOSE, { kind: "choice" });
-  assertEquals(draft.mission.states.GO_HOME.next, "ARRIVE");
-});

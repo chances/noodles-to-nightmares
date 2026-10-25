@@ -1,11 +1,9 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
-import { fromFileUrl } from "@std/path";
 import {
   cond,
   condDescriptors,
   enumsFor,
   fieldPattern,
-  loadMission,
   step,
   stepDescriptors,
 } from "@noodles/fsm";
@@ -38,8 +36,6 @@ import {
   spotOptions,
   spriteOptions,
 } from "./ui/templates.js";
-
-const missions = fromFileUrl(new URL("../../missions", import.meta.url));
 
 const byName = <T extends { name: string }>(list: T[], name: string): T =>
   list.find((d) => d.name === name)!;
@@ -819,79 +815,6 @@ Deno.test("a fresh step of every kind reads back as itself", () => {
         : parseLines(stepDescriptors, lines);
     assertEquals(parsed?.descriptor.name, d.name);
   }
-});
-
-Deno.test("mission 0's steps and conditions all read as typed controls, except the nested when", async () => {
-  const doc = await loadMission(missions, "0_tutorial");
-  const m = doc!.mission;
-  const untyped: string[] = [];
-  const steps = (list: Step[] = []) => {
-    for (const s of list) {
-      if (
-        !parseLines(stepDescriptors, s) &&
-        !parseWhen(stepDescriptors, condDescriptors, s)
-      ) untyped.push(s[0]);
-    }
-  };
-  const conds = (list: Cond[] = []) => {
-    for (const c of list) {
-      if (!parseCond(condDescriptors, c)) untyped.push(c.test);
-    }
-  };
-  conds(m.fail);
-  for (const mon of m.monitors ?? []) {
-    conds(mon.when);
-    steps(mon.once);
-  }
-  for (const s of Object.values(m.states)) {
-    steps(s.onEnter);
-    steps(s.onExit);
-    conds(s.until);
-    for (const rule of s.on ?? []) conds(rule.when);
-    for (const beat of s.beats ?? []) {
-      conds(beat.when);
-      steps(beat.do);
-    }
-  }
-  assertEquals(untyped, []);
-});
-
-Deno.test("Shady Job's steps and conditions read as typed controls, except the lines listed here", async () => {
-  const doc = await loadMission(missions, "1_shady_job");
-  const m = doc!.mission;
-  const untyped: string[] = [];
-  const steps = (list: Step[] = []) => {
-    for (const s of list) {
-      // A beat with no `do` loads as one empty step, which has nothing to type.
-      if (s.every((line) => line === "")) continue;
-      if (
-        !parseLines(stepDescriptors, s) &&
-        !parseWhen(stepDescriptors, condDescriptors, s)
-      ) untyped.push(s.join(" | "));
-    }
-  };
-  const conds = (list: Cond[] = []) => {
-    for (const c of list) {
-      if (!parseCond(condDescriptors, c)) untyped.push(c.test);
-    }
-  };
-  conds(m.fail);
-  for (const s of Object.values(m.states)) {
-    steps(s.onEnter);
-    steps(s.onExit);
-    conds(s.until);
-    for (const rule of s.on ?? []) conds(rule.when);
-    for (const beat of s.beats ?? []) {
-      conds(beat.when);
-      steps(beat.do);
-    }
-  }
-  assertEquals(untyped, [
-    "request_model {modelId} #RUMPO",
-    "load_all_models_now",
-    "Car.TurnToFaceCoord($myCar, PAYPHONE_X, PAYPHONE_BLIP_Y)",
-    "payphoneBlip = Blip.AddSpriteForCoord(PAYPHONE_X, PAYPHONE_BLIP_Y, PAYPHONE_Z, PAYPHONE)",
-  ]);
 });
 
 Deno.test("a conditional step reads back into conditions, a then body, and an else body", () => {

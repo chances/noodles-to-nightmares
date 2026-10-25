@@ -23,6 +23,17 @@ The debugger shows player position and F8 captures, and `deno task editor:build`
 - [ ] Resolve the `server.ts` imports from `scripts/telemetry.ts` and `scripts/run-events.ts` that `deno desktop` does not build.
 - [ ] Run the binary, and confirm it starts, loads a project, and quits when its window closes.
 
+## Class Refactor Tasks
+
+Source: [factory-function-audit.md](../../../reports/factory-function-audit.md). Work in the audit's order, and run `deno task test` and `deno task --cwd tools/mission-editor test` after each step.
+
+- [ ] Add tests that pin the current behavior of `startCapture` and `listenTelemetry` before changing them: packets are logged, the summary counts them, a taken port returns `null`, and `close` releases the port.
+- [ ] Convert `startCapture` in `scripts/telemetry.ts` into a `CaptureSession` class with `static async start(port, logPath, onEvent)` and a `stop()` method. Keep the summary, the position throttle, and the log file as private fields.
+- [ ] Convert `listenTelemetry` into a `TelemetryListener` class with `static async listen(port, onPacket)` and a `close()` method. `CaptureSession.start` uses it.
+- [ ] Update every caller of `startCapture` and `listenTelemetry` that `grep` finds, including the desktop-build import list above.
+- [ ] Ask the user whether `createApp` in `tools/mission-editor/server.ts` becomes a `MissionEditor` class. The class would take `spawnRun`, `stopRun`, `runBuild`, and `telemetryPort` as constructor options and expose `fetch`, which keeps the Hono idiom and the test seams.
+- [ ] If the user agrees, fold `createHandler` into that class, then update `export const handler` and the `server_test.ts` imports.
+
 ## Done When
 
 - The debugger shows player position after a Run in Game, and the log shows the capture line.
