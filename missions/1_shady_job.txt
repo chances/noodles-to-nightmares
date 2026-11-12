@@ -168,6 +168,7 @@ end
   Camera.SetInterpolationParameters(0, 0)
   Camera.RestoreJumpcut()
   Camera.DoFade(500, Fade.In)
+  Player.SetHeading($player, 90.0)
   wait 525
   Player.SetControl($player, true)
   // Ensure the neighborhood is visible

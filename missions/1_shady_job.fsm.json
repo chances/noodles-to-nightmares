@@ -53,6 +53,14 @@
         "value": 0
       }
     ],
+    "cast": [
+      {
+        "model": "FRANKIE",
+        "name": "Salvatore",
+        "char": "sal",
+        "spot": "NOODLES_SAL"
+      }
+    ],
     "includes": [
       "../utils/missions.txt",
       "../utils/debug.txt"
@@ -87,13 +95,10 @@
           [
             "Player.SetControl($player, false)"
           ],
-          [
-            "Streaming.LoadSpecialCharacter(1, 'FRANKIE')",
-            "while not Streaming.HasSpecialCharacterLoaded(1)",
-            "  wait 0",
-            "end",
-            "Char.Create(PedType.Special, #SPECIAL01, NOODLES_SAL_X, NOODLES_SAL_Y, NOODLES_SAL_Z, sal)"
-          ],
+          {
+            "cast": "FRANKIE",
+            "spot": "NOODLES_SAL"
+          },
           [
             "Char.SetPersonality(sal, PedStat.ToughGuy)"
           ],
@@ -305,6 +310,9 @@
               ],
               [
                 "Camera.DoFade(500, Fade.In)"
+              ],
+              [
+                "Player.SetHeading($player, 90.0)"
               ]
             ],
             "wait": 525
@@ -383,7 +391,14 @@
             ]
           }
         ],
-        "next": "GOTO_PHONE"
+        "next": "GOTO_PHONE",
+        "cast": [
+          {
+            "model": "FRANKIE",
+            "spot": "NOODLES_SAL"
+          }
+        ],
+        "unload": []
       },
       "GOTO_PHONE": {
         "kind": "objective",
