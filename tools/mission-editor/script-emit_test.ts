@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import type { Mission, Problem } from "@noodles/fsm";
+import type { Mission, Problem } from "@mission-foundry/fsm";
 import { ScriptWriter } from "./script-emit.ts";
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));

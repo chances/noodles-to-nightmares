@@ -5,7 +5,7 @@ import {
   layout as serverLayout,
   loadMission,
   NODE,
-} from "@noodles/fsm";
+} from "@mission-foundry/fsm";
 import {
   cutsceneRegions,
   layout,

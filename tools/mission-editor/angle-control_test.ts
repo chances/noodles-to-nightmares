@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import { stepDescriptors } from "@noodles/fsm";
+import { stepDescriptors } from "@mission-foundry/fsm";
 import {
   angleFromPoint,
   literal,

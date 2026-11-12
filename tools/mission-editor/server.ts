@@ -32,7 +32,7 @@ import {
   TEMPLATE_IDS,
   TEMPLATES,
   transitions,
-} from "@noodles/fsm";
+} from "@mission-foundry/fsm";
 import { ScriptWriter } from "./script-emit.ts";
 import { parseEventLine } from "../../scripts/run-events.ts";
 import {

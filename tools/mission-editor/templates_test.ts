@@ -6,8 +6,8 @@ import {
   fieldPattern,
   step,
   stepDescriptors,
-} from "@noodles/fsm";
-import type { Cond, Step } from "@noodles/fsm";
+} from "@mission-foundry/fsm";
+import type { Cond, Step } from "@mission-foundry/fsm";
 import {
   buildCond,
   buildLines,

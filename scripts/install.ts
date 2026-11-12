@@ -9,7 +9,7 @@
 import { join } from "@std/path";
 import { lintOrExit } from "./lint-scripts.ts";
 import { say } from "./log.ts";
-import { syncMissions } from "@noodles/fsm";
+import { syncMissions } from "@mission-foundry/fsm";
 
 // Refuse to install sources whose variable slots would misbehave in game
 await lintOrExit(Deno.cwd());

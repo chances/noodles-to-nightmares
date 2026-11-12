@@ -1,7 +1,7 @@
 // Regenerates `missions/<stem>.txt` from every `missions/<stem>.states.ts` state table.
 // Usage: deno run --allow-read --allow-write scripts/sync-missions.ts [--check]
 
-import { syncMissions } from "@noodles/fsm";
+import { syncMissions } from "@mission-foundry/fsm";
 import { say } from "./log.ts";
 
 const check = Deno.args.includes("--check");

@@ -1,8 +1,8 @@
 // Writes a mission's Sanny `.txt` after an autosave. A table with an error lint keeps the `.txt` it had, and saves
 // within `delayMs` of each other coalesce into one write of the last table.
 
-import { generate } from "@noodles/fsm";
-import type { Mission, Problem } from "@noodles/fsm";
+import { generate } from "@mission-foundry/fsm";
+import type { Mission, Problem } from "@mission-foundry/fsm";
 
 export class ScriptWriter {
   readonly #emit: (stem: string, text: string) => Promise<void>;

@@ -26,7 +26,7 @@ import { basename, dirname, extname, join } from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { includeTree } from "./includes.ts";
 import { lintOrExit } from "./lint-scripts.ts";
-import { syncMissions } from "@noodles/fsm";
+import { syncMissions } from "@mission-foundry/fsm";
 import { capitalCase } from "change-case";
 import { say } from "./log.ts";
 
