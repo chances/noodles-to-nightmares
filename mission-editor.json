@@ -1,6 +1,7 @@
 {
   "game": "gta3",
   "gamePath": "C:\\Users\\enigm\\Documents\\GTA 3\\Grand Theft Auto 3",
-  "executable": "gta3-game.exe",
-  "sannyPath": "C:\\Users\\enigm\\Documents\\GTA 3\\Applications\\SannyBuilder\\sanny.exe"
+  "executable": "gta3-v1.exe",
+  "sannyPath": "C:\\Users\\enigm\\Documents\\GTA 3\\Applications\\SannyBuilder\\sanny.exe",
+  "modloaderFolder": "Noodles"
 }

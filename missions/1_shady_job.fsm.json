@@ -82,16 +82,25 @@
       "INTRO": {
         "kind": "cutscene",
         "notes": [
-          "Enter Salvatore Leone, Rosa's Handler; the \"mysterious contact\"",
+          "Enter Salvatore Leone, Rosa's Handler, aka the \"mysterious contact\"",
           "QUESTION: Trigger mission with this? Char.HasSpottedPlayer(sal, $player)",
           "QUESTION: How long after the game starts do we need to slow down the player?",
           "Ensure the neighborhood is loaded",
-          "TODO: Add more NPCs, e.g. the noodle man",
           "TODO: Model the interior of the noodle shop, with a ceiling collision mesh to prevent the camera from freaking out!",
+          "TODO: Add more NPCs, e.g. the noodle man",
           "FIXME: Continuity: Sal and other NPCs shall have already spawned _in_ the shop"
         ],
         "fail": false,
         "onEnter": [
+          [
+            "Text.PrintBigString(\"Easy Money\", 5000, TextStyle.BottomRight)"
+          ],
+          [
+            "Hud.LoadSplash('SPLASH1')"
+          ],
+          [
+            "Camera.DoFade(500, Fade.Out)"
+          ],
           [
             "Player.SetControl($player, false)"
           ],
@@ -103,33 +112,26 @@
             "Char.SetPersonality(sal, PedStat.ToughGuy)"
           ],
           [
+            "Char.SetIdle(sal)"
+          ],
+          [
+            "Char.SetAnimGroup(sal, AnimGroup.Man)"
+          ],
+          [
             "Char.TurnToFacePlayer(sal, $player)"
           ],
           [
             "Char.LookAtPlayerAlways(sal, $player)"
           ],
           [
-            "Char.SetAnimGroup(sal, AnimGroup.Man)"
+            "wait 1500"
           ]
         ],
         "beats": [
           {
-            "do": [
-              [
-                "Text.PrintBigString(\"Easy Money\", 5000, TextStyle.BottomRight)"
-              ],
-              [
-                "Camera.DoFade(500, Fade.Out)"
-              ],
-              [
-                "Hud.LoadSplash('SPLASH1')"
-              ]
-            ],
-            "wait": 500
-          },
-          {
             "notes": [
               "FIXME: The neighborhood text will not go away.",
+              "Artificially inflated wait to give the player a break",
               "NOTE: The neighborhood text stays there for at least five (5) seconds"
             ],
             "do": [
@@ -164,12 +166,6 @@
                 "Streaming.LoadAllModelsNow()"
               ]
             ],
-            "wait": 0
-          },
-          {
-            "notes": [
-              "Artificially inflated wait to give the player a break"
-            ],
             "wait": 1250
           },
           {
@@ -200,6 +196,12 @@
             ],
             "do": [
               [
+                "Char.PlayAnimation(sal, AnimGroup.Man, 12, 4.0)"
+              ],
+              [
+                "wait 500"
+              ],
+              [
                 "Text.PrintString(\"I hear you're meek like a mouse.\", 3500)"
               ]
             ],
@@ -213,6 +215,9 @@
               "FIXME: Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)"
             ],
             "do": [
+              [
+                "Char.PlayAnimation(sal, AnimGroup.Man, 122, 4.0)"
+              ],
               [
                 "salHeading = Char.GetHeading(sal)"
               ],
@@ -250,10 +255,19 @@
             ],
             "do": [
               [
+                "Char.PlayAnimation(sal, AnimGroup.Man, 11, 4.0)"
+              ],
+              [
                 "Text.PrintString(\"I'll call you soon.\", 2250)"
+              ],
+              [
+                "wait 1500"
+              ],
+              [
+                "Char.PlayAnimation(sal, AnimGroup.Man, 12, 4.0)"
               ]
             ],
-            "wait": 2250
+            "wait": 2500
           },
           {
             "notes": [
@@ -296,12 +310,7 @@
                 "Char.MarkAsNoLongerNeeded(sal)",
                 "Char.Delete(sal)",
                 "sal = 0"
-              ]
-            ],
-            "wait": 2500
-          },
-          {
-            "do": [
+              ],
               [
                 "Camera.SetInterpolationParameters(0, 0)"
               ],
@@ -309,21 +318,13 @@
                 "Camera.RestoreJumpcut()"
               ],
               [
-                "Camera.DoFade(500, Fade.In)"
+                "Camera.SetBehindPlayer()"
               ],
               [
                 "Player.SetHeading($player, 90.0)"
               ]
             ],
-            "wait": 525
-          },
-          {
-            "do": [
-              [
-                "Player.SetControl($player, true)"
-              ]
-            ],
-            "wait": 0
+            "wait": 2500
           },
           {
             "notes": [
@@ -331,12 +332,6 @@
               "Spawn Lee Chong's van outside the shop"
             ],
             "do": [
-              [
-                "Camera.SetInterpolationParameters(0, 0)"
-              ],
-              [
-                "Camera.SetBehindPlayer()"
-              ],
               [
                 "Streaming.RequestModel(333)"
               ],
@@ -377,16 +372,19 @@
                 "ensureVanBlip()"
               ],
               [
-                "debugLogInt(DEBUG_PLAYER, $player)"
+                "Camera.SetInterpolationParameters(0, 0)"
               ],
               [
-                "debugLogInt(DEBUG_VAN, $myCar)"
+                "Camera.SetBehindPlayer()"
               ],
               [
-                "debugLogInt(DEBUG_VAN_BLIP, $VanBlip)"
+                "Camera.DoFade(500, Fade.In)"
               ],
               [
-                "debugLogInt(DEBUG_PAYPHONE_BLIP, payphoneBlip)"
+                "wait 525"
+              ],
+              [
+                "Player.SetControl($player, true)"
               ]
             ]
           }
@@ -424,16 +422,10 @@
         ],
         "beats": [
           {
-            "wait": 2500
-          },
-          {
             "notes": [
               "Ring the payphone"
             ],
             "do": [
-              [
-                "Text.PrintString(\"Must be Sal calling.\", 4000)"
-              ],
               [
                 "Phone.Grab(PAYPHONE_X, PAYPHONE_Y, payphoneHandle)"
               ],
@@ -442,6 +434,14 @@
               ],
               [
                 "Sound.AddOneOffSound(PAYPHONE_X, PAYPHONE_Y, PAYPHONE_Z, ScriptSound.SoundPayphoneRinging)"
+              ]
+            ],
+            "wait": 2500
+          },
+          {
+            "do": [
+              [
+                "Text.PrintString(\"Must be Sal calling.\", 4000)"
               ]
             ]
           }
@@ -461,10 +461,10 @@
         "fail": false,
         "onEnter": [
           [
-            "Blip.Remove(payphoneBlip)"
+            "Phone.TurnOff(payphoneHandle)"
           ],
           [
-            "Phone.TurnOff(payphoneHandle)"
+            "Blip.Remove(payphoneBlip)"
           ],
           [
             "Player.SetControl($player, false)"
@@ -473,10 +473,7 @@
         "beats": [
           {
             "notes": [
-              "Player \"picks up\" the phone",
-              "See https://gtamods.com/wiki/0372",
-              "FIXME: Crash to desktop",
-              "Char.PlayAnimation($playerChar, AnimGroup.Player, 19 {Hand gestures (conversation)}, {blend (time?)} 100)"
+              "Player \"picks up\" the phone"
             ],
             "wait": 375
           },
@@ -518,6 +515,9 @@
               ],
               [
                 "wait 525"
+              ],
+              [
+                "Phone.TurnOff(payphoneHandle)"
               ],
               [
                 "Camera.RestoreJumpcut()"
@@ -570,7 +570,13 @@
           {
             "do": [
               [
-                "Text.PrintString(\"Take the ~r~drugs ~w~to the ~p~dropoff point~w~.\", 3000)"
+                "Text.PrintString(\"Take the ~r~drugs ~w~to the ~p~dropoff point~w~.\", 4500)"
+              ],
+              [
+                "Blip.Remove(pickupBlip)"
+              ],
+              [
+                "deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)"
               ],
               [
                 "Hud.FlashObject(HudObject.Radar)"
@@ -582,12 +588,6 @@
             "do": [
               [
                 "Hud.FlashObject(0)"
-              ],
-              [
-                "Blip.Remove(pickupBlip)"
-              ],
-              [
-                "deliveryBlip = Blip.AddForCoord(DELIVERY_X, DELIVERY_Y, DELIVERY_Z)"
               ]
             ],
             "wait": 0
@@ -604,13 +604,12 @@
           }
         ],
         "next": "PAYOUT",
-        "timeLimit": 150,
+        "timeLimit": 135,
         "showTimer": true
       },
       "PAYOUT": {
         "kind": "ending",
         "notes": [
-          "TODO: Refactor above from no-wanted-level to here into a main mission loop",
           "The player delivered the package, pass the mission"
         ],
         "fail": false,
@@ -648,7 +647,7 @@
       "LOSE": {
         "kind": "ending",
         "notes": [
-          "FIXME: Reset all blips back to whatever \"tryStartMission\" looks for"
+          "FIXME: Clear and reset all blips back to whatever \"tryStartMission\" looks for"
         ],
         "fail": false,
         "onEnter": [
